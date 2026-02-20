@@ -29,7 +29,7 @@ public class ChatImageHandler {
             String url = matcher.group();
             MutableComponent previewComponent = Component.literal(Constants.PREVIEW_LABEL)
                     .withStyle(style -> style
-                            .withClickEvent(new ClickEvent.RunCommand("/ba_preview " + url))
+                            .withClickEvent(new ClickEvent.RunCommand("/ba preview " + url))
                             .withHoverEvent(new HoverEvent.ShowText(Component.literal(Constants.PREVIEW_HOVER))));
 
             mutableMessage.append(previewComponent);

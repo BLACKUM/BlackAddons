@@ -22,6 +22,7 @@ import org.blackum.blackaddons.core.util.Constants;
 import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import org.blackum.blackaddons.gui.screen.PartyFinderScreen;
 import org.blackum.blackaddons.gui.screen.IrcScreen;
+import org.blackum.blackaddons.gui.screen.ImagePreviewScreen;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -341,23 +342,24 @@ public class CommandManager {
                                         });
                                         return 1;
                                 }));
+                                cmd.then(ClientCommandManager.literal("preview")
+                                                .then(ClientCommandManager
+                                                                .argument("url", StringArgumentType
+                                                                                .greedyString())
+                                                                .executes(ctx -> {
+                                                                        String url = StringArgumentType
+                                                                                        .getString(ctx, "url");
+                                                                        Minecraft.getInstance().execute(() -> {
+                                                                                Minecraft.getInstance()
+                                                                                                .setScreen(
+                                                                                                                new ImagePreviewScreen(
+                                                                                                                                url,
+                                                                                                                                Minecraft.getInstance().screen));
+                                                                        });
+                                                                        return 1;
+                                                                })));
+
                                 if (net.fabricmc.loader.api.FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                                        cmd.then(ClientCommandManager.literal("preview")
-                                                        .then(ClientCommandManager
-                                                                        .argument("url", StringArgumentType
-                                                                                        .greedyString())
-                                                                        .executes(ctx -> {
-                                                                                String url = StringArgumentType
-                                                                                                .getString(ctx, "url");
-                                                                                Minecraft.getInstance().execute(() -> {
-                                                                                        Minecraft.getInstance()
-                                                                                                        .setScreen(
-                                                                                                                        new org.blackum.blackaddons.gui.screen.ImagePreviewScreen(
-                                                                                                                                        url,
-                                                                                                                                        Minecraft.getInstance().screen));
-                                                                                });
-                                                                                return 1;
-                                                                        })));
                                 }
 
                                 dispatcher.register(cmd);
