@@ -95,4 +95,8 @@ public class SectionHeader extends Widget {
     public void setCollapsed(boolean collapsed) {
         this.collapsed = collapsed;
     }
+
+    public void setToggleCallback(Runnable onToggle) {
+        this.onToggle = onToggle;
+    }
 }

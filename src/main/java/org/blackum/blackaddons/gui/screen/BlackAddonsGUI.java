@@ -29,6 +29,7 @@ public class BlackAddonsGUI extends BaseScreen {
     private CheatsTabController cheatsController;
     private LegitTabController legitController;
     private AboutTabController aboutController;
+    private SoundAlertsTabController soundAlertsController;
 
     public BlackAddonsGUI() {
         this(null);
@@ -49,12 +50,14 @@ public class BlackAddonsGUI extends BaseScreen {
         cheatsController = new CheatsTabController(this);
         legitController = new LegitTabController(this);
         aboutController = new AboutTabController(this);
+        soundAlertsController = new SoundAlertsTabController(this);
 
         settingsController.init(tabPanel.addTab("Settings"));
         modHiderController.init(tabPanel.addTab("Mod Hider"));
         payloadsController.init(tabPanel.addTab("Payloads"));
         cheatsController.init(tabPanel.addTab("Cheats"));
         legitController.init(tabPanel.addTab("Legit"));
+        soundAlertsController.init(tabPanel.addTab("Chat Triggers"));
         aboutController.init(tabPanel.addTab("About"));
 
         tabPanel.selectTab(lastTabIndex);

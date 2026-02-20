@@ -23,6 +23,7 @@ import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import org.blackum.blackaddons.gui.screen.PartyFinderScreen;
 import org.blackum.blackaddons.gui.screen.IrcScreen;
 import org.blackum.blackaddons.feature.chat.IrcClient;
+import net.fabricmc.loader.api.FabricLoader;
 
 public class CommandManager {
 
@@ -171,6 +172,27 @@ public class CommandManager {
                                                                                 .addMessage(component);
                                                                 DungeonJoinHandler
                                                                                 .onChatMessage(component);
+                                                                org.blackum.blackaddons.feature.chat.ChatSoundAlertManager
+                                                                                .getInstance()
+                                                                                .onChatMessage(component);
+                                                                return 1;
+                                                        })));
+
+                        testNode.then(ClientCommandManager.literal("testinvite")
+                                        .then(ClientCommandManager
+                                                        .argument(Constants.CMD_ARG_IGN, StringArgumentType.string())
+                                                        .executes(ctx -> {
+                                                                String ign = StringArgumentType.getString(ctx,
+                                                                                Constants.CMD_ARG_IGN);
+                                                                String fakeMessage = "[VIP] " + ign
+                                                                                + " has invited you to join their party!\nYou have 60 seconds to accept. Click here to join!";
+                                                                net.minecraft.network.chat.Component component = net.minecraft.network.chat.Component
+                                                                                .literal(fakeMessage);
+                                                                Minecraft.getInstance().gui.getChat()
+                                                                                .addMessage(component);
+                                                                org.blackum.blackaddons.feature.chat.ChatSoundAlertManager
+                                                                                .getInstance()
+                                                                                .onChatMessage(component);
                                                                 return 1;
                                                         })));
 
@@ -303,9 +325,13 @@ public class CommandManager {
                         CommandUtils.register(dispatcher);
                         for (String alias : new String[] { "ba", "black", "blackaddons" }) {
                                 var cmd = ClientCommandManager.literal(alias).executes(openGui);
-                                cmd.then(testNode);
+
+                                if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                                        cmd.then(testNode);
+                                        cmd.then(dailyNode);
+                                }
+
                                 cmd.then(pvNode);
-                                cmd.then(dailyNode);
                                 cmd.then(ircNode);
                                 cmd.then(ClientCommandManager.literal("pf").executes(ctx -> {
                                         Minecraft.getInstance().execute(() -> {
@@ -314,22 +340,27 @@ public class CommandManager {
                                         });
                                         return 1;
                                 }));
-                                cmd.then(CommandUtils.subcommand);
+                                if (net.fabricmc.loader.api.FabricLoader.getInstance().isDevelopmentEnvironment()) {
+                                        cmd.then(ClientCommandManager.literal("preview")
+                                                        .then(ClientCommandManager
+                                                                        .argument("url", StringArgumentType
+                                                                                        .greedyString())
+                                                                        .executes(ctx -> {
+                                                                                String url = StringArgumentType
+                                                                                                .getString(ctx, "url");
+                                                                                Minecraft.getInstance().execute(() -> {
+                                                                                        Minecraft.getInstance()
+                                                                                                        .setScreen(
+                                                                                                                        new org.blackum.blackaddons.gui.screen.ImagePreviewScreen(
+                                                                                                                                        url,
+                                                                                                                                        Minecraft.getInstance().screen));
+                                                                                });
+                                                                                return 1;
+                                                                        })));
+                                }
+
                                 dispatcher.register(cmd);
                         }
-
-                        dispatcher.register(ClientCommandManager.literal("ba_preview")
-                                        .then(ClientCommandManager.argument("url", StringArgumentType.greedyString())
-                                                        .executes(ctx -> {
-                                                                String url = StringArgumentType.getString(ctx, "url");
-                                                                Minecraft.getInstance().execute(() -> {
-                                                                        Minecraft.getInstance().setScreen(
-                                                                                        new org.blackum.blackaddons.gui.screen.ImagePreviewScreen(
-                                                                                                        url,
-                                                                                                        Minecraft.getInstance().screen));
-                                                                });
-                                                                return 1;
-                                                        })));
                 });
         }
 }

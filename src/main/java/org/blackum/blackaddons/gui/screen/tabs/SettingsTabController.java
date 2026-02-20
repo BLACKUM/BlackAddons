@@ -18,72 +18,66 @@ public class SettingsTabController extends SimpleTabController {
     public void init(TabPanel.Tab settingsTab) {
         int contentX = settingsTab.getParent().getContentX();
         int contentY = settingsTab.getParent().getContentY();
-        int currentY = contentY + Theme.PADDING_MEDIUM;
+        int width = settingsTab.getParent().getContentWidth() - 20;
+        int height = settingsTab.getParent().getContentHeight() - Theme.PADDING_MEDIUM * 2;
 
-        settingsTab.addWidget(new Label(contentX, currentY, "General Settings", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
+        ListView listView = new ListView(contentX, contentY + Theme.PADDING_MEDIUM, width, height);
+        settingsTab.addWidget(listView);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Data Source", Label.Style.BODY));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "General Settings", Label.Style.TITLE));
+        listView.addItem(new Label(0, 0, "Data Source", Label.Style.BODY));
 
         List<String> dataSources = List.of("BOT", "LOCAL");
-        Dropdown dataSourceDropdown = new Dropdown(contentX, currentY, Theme.DROPDOWN_WIDTH, Theme.BUTTON_HEIGHT,
+        Dropdown dataSourceDropdown = new Dropdown(0, 0, width, Theme.BUTTON_HEIGHT,
                 "Data Source",
                 dataSources, (selected) -> {
                     ConfigManager.data.dataSource = ConfigManager.DataSource.valueOf(selected);
                     ConfigManager.save();
                 });
         dataSourceDropdown.setSelectedOption(ConfigManager.data.dataSource.name());
-        settingsTab.addWidget(dataSourceDropdown);
-        currentY += Theme.BUTTON_HEIGHT + Theme.SPACING_NORMAL;
+        listView.addItem(dataSourceDropdown);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Party Finder", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "Party Finder", Label.Style.TITLE));
 
-        ToggleSwitch pfAutoInviteToggle = new ToggleSwitch(contentX, currentY, Theme.DROPDOWN_WIDTH,
+        ToggleSwitch pfAutoInviteToggle = new ToggleSwitch(0, 0, width,
                 "Auto-Invite Join Requests",
                 "Automatically invite players who send a join request",
                 ConfigManager.data.partyFinderAutoInvite, (val) -> {
                     ConfigManager.data.partyFinderAutoInvite = val;
                     ConfigManager.save();
                 });
-        settingsTab.addWidget(pfAutoInviteToggle);
-        currentY += Theme.TOGGLE_HEIGHT + Theme.SPACING_NORMAL;
+        listView.addItem(pfAutoInviteToggle);
 
-        ToggleSwitch pfAutoAcceptToggle = new ToggleSwitch(contentX, currentY, Theme.DROPDOWN_WIDTH,
+        ToggleSwitch pfAutoAcceptToggle = new ToggleSwitch(0, 0, width,
                 "Auto-Accept Party Invites",
                 "Automatically accept party invites from join requests",
                 ConfigManager.data.partyFinderAutoAcceptInvite, (val) -> {
                     ConfigManager.data.partyFinderAutoAcceptInvite = val;
                     ConfigManager.save();
                 });
-        settingsTab.addWidget(pfAutoAcceptToggle);
-        currentY += Theme.TOGGLE_HEIGHT + Theme.SPACING_NORMAL;
+        listView.addItem(pfAutoAcceptToggle);
 
-        ToggleSwitch pfShowStatsJoinToggle = new ToggleSwitch(contentX, currentY, Theme.DROPDOWN_WIDTH,
+        ToggleSwitch pfShowStatsJoinToggle = new ToggleSwitch(0, 0, width,
                 "Show Stats on Join",
                 "Show player stats in chat when they join your dungeon group",
                 ConfigManager.data.partyFinderShowStatsOnJoin, (val) -> {
                     ConfigManager.data.partyFinderShowStatsOnJoin = val;
                     ConfigManager.save();
                 });
-        settingsTab.addWidget(pfShowStatsJoinToggle);
-        currentY += Theme.TOGGLE_HEIGHT + Theme.SPACING_NORMAL;
+        listView.addItem(pfShowStatsJoinToggle);
 
-        ToggleSwitch pfShowStatsReqToggle = new ToggleSwitch(contentX, currentY, Theme.DROPDOWN_WIDTH,
+        ToggleSwitch pfShowStatsReqToggle = new ToggleSwitch(0, 0, width,
                 "Show Stats on Request",
                 "Show player stats in chat when you receive a join request",
                 ConfigManager.data.partyFinderShowStatsOnRequest, (val) -> {
                     ConfigManager.data.partyFinderShowStatsOnRequest = val;
                     ConfigManager.save();
                 });
-        settingsTab.addWidget(pfShowStatsReqToggle);
-        currentY += Theme.TOGGLE_HEIGHT + Theme.SPACING_LARGE;
+        listView.addItem(pfShowStatsReqToggle);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "IRC Chat", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "IRC Chat", Label.Style.TITLE));
 
-        ToggleSwitch ircEnabledToggle = new ToggleSwitch(contentX, currentY, Theme.DROPDOWN_WIDTH,
+        ToggleSwitch ircEnabledToggle = new ToggleSwitch(0, 0, width,
                 "Enable IRC",
                 "Enable the in-game IRC chat client",
                 ConfigManager.data.ircEnabled, (val) -> {
@@ -95,17 +89,13 @@ public class SettingsTabController extends SimpleTabController {
                         org.blackum.blackaddons.feature.chat.IrcClient.getInstance().disconnect();
                     }
                 });
-        settingsTab.addWidget(ircEnabledToggle);
-        currentY += Theme.TOGGLE_HEIGHT + Theme.SPACING_LARGE;
+        listView.addItem(ircEnabledToggle);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Profiles & Cache", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
-
-        settingsTab.addWidget(new Label(contentX, currentY, "Cache Duration", Label.Style.BODY));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "Profiles & Cache", Label.Style.TITLE));
+        listView.addItem(new Label(0, 0, "Cache Duration", Label.Style.BODY));
 
         List<String> cacheOptions = List.of("5 Minutes", "10 Minutes", "30 Minutes", "1 Hour");
-        Dropdown cacheDropdown = new Dropdown(contentX, currentY, Theme.DROPDOWN_WIDTH, Theme.BUTTON_HEIGHT,
+        Dropdown cacheDropdown = new Dropdown(0, 0, width, Theme.BUTTON_HEIGHT,
                 "Cache Duration",
                 cacheOptions, (selected) -> {
                     int minutes = 5;
@@ -125,65 +115,54 @@ public class SettingsTabController extends SimpleTabController {
         if (ConfigManager.data.cacheDurationMinutes == 60)
             currentCache = "1 Hour";
         cacheDropdown.setSelectedOption(currentCache);
-        settingsTab.addWidget(cacheDropdown);
-        currentY += Theme.BUTTON_HEIGHT + Theme.SPACING_LARGE;
+        listView.addItem(cacheDropdown);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Appearance", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "Appearance", Label.Style.TITLE));
+        listView.addItem(new Label(0, 0, "Accent Color", Label.Style.BODY));
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Accent Color", Label.Style.BODY));
-        currentY += Theme.SPACING_NORMAL;
-
-        ColorPicker accentPicker = new ColorPicker(contentX, currentY, (color) -> {
+        ColorPicker accentPicker = new ColorPicker(0, 0, (color) -> {
             ConfigManager.data.accentColor = color;
             Theme.ACCENT = color;
             ConfigManager.save();
         });
-        settingsTab.addWidget(accentPicker);
-        currentY += Theme.COLOR_PICKER_HEIGHT + Theme.SPACING_NORMAL;
+        listView.addItem(accentPicker);
 
-        ToggleSwitch layoutToggle = new ToggleSwitch(contentX, currentY, Theme.DROPDOWN_WIDTH, "Use Card Layout",
+        ToggleSwitch layoutToggle = new ToggleSwitch(0, 0, width, "Use Card Layout",
                 "Enable card-based layout for various mod screens", ConfigManager.data.useCardLayout,
                 (val) -> {
                     ConfigManager.data.useCardLayout = val;
                     ConfigManager.save();
                 });
-        settingsTab.addWidget(layoutToggle);
-        currentY += Theme.TOGGLE_HEIGHT + Theme.SPACING_LARGE;
+        listView.addItem(layoutToggle);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Interface", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "Interface", Label.Style.TITLE));
 
-        Label durationLabel = new Label(contentX, currentY,
+        Label durationLabel = new Label(0, 0,
                 "Notification Duration: " + ConfigManager.data.notificationDuration + "ms", Label.Style.BODY);
-        settingsTab.addWidget(durationLabel);
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(durationLabel);
 
-        Slider durationSlider = new Slider(contentX, currentY, Theme.DROPDOWN_WIDTH, 1000f, 10000f,
+        Slider durationSlider = new Slider(0, 0, width, 1000f, 10000f,
                 ConfigManager.data.notificationDuration, (val) -> {
                     int duration = Math.round(val);
                     ConfigManager.data.notificationDuration = duration;
                     durationLabel.setText("Notification Duration: " + duration + "ms");
                     ConfigManager.save();
                 });
-        settingsTab.addWidget(durationSlider);
-        currentY += Theme.SPACING_LARGE;
+        listView.addItem(durationSlider);
 
-        settingsTab.addWidget(new Label(contentX, currentY, "Developer", Label.Style.TITLE));
-        currentY += Theme.SPACING_NORMAL;
+        listView.addItem(new Label(0, 0, "Developer", Label.Style.TITLE));
 
-        TextField devKeyField = new TextField(contentX, currentY, Theme.DROPDOWN_WIDTH, Theme.TEXTFIELD_HEIGHT,
+        TextField devKeyField = new TextField(0, 0, width, Theme.TEXTFIELD_HEIGHT,
                 "Developer Key");
         devKeyField.setText(ConfigManager.data.developerKey != null ? ConfigManager.data.developerKey : "");
         devKeyField.setMaxLength(128);
-        settingsTab.addWidget(devKeyField);
-        currentY += Theme.TEXTFIELD_HEIGHT + Theme.SPACING_SMALL;
+        listView.addItem(devKeyField);
 
-        Button saveKeyBtn = new Button(contentX, currentY, 100, Theme.BUTTON_HEIGHT, "Save Key", () -> {
+        Button saveKeyBtn = new Button(0, 0, 100, Theme.BUTTON_HEIGHT, "Save Key", () -> {
             ConfigManager.data.developerKey = devKeyField.getText();
             ConfigManager.save();
             NotificationManager.addNotification("Config", "Developer key saved.", NotificationType.SUCCESS);
         });
-        settingsTab.addWidget(saveKeyBtn);
+        listView.addItem(saveKeyBtn);
     }
 }

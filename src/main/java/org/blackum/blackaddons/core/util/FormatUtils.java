@@ -50,4 +50,10 @@ public class FormatUtils {
             return (seconds / 60) + "m " + (seconds % 60) + "s";
         return (seconds / 3600) + "h " + ((seconds % 3600) / 60) + "m " + (seconds % 60) + "s";
     }
+
+    public static String formatColor(String text) {
+        if (text == null)
+            return null;
+        return text.replace('&', '§');
+    }
 }

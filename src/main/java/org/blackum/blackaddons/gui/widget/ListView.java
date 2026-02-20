@@ -28,7 +28,7 @@ public class ListView extends Widget {
             if (item.isVisible()) {
                 item.setX(x);
                 item.setY(currentY);
-                item.setWidth(width - scrollbarWidth - 4);
+                item.setWidth(width - scrollbarWidth - 12);
 
                 if (isMouseOver(mouseX, mouseY) && currentY + item.getHeight() >= y && currentY <= y + height) {
                     item.updateHoverState(mouseX, mouseY);
@@ -51,7 +51,7 @@ public class ListView extends Widget {
         for (Widget item : items) {
             item.setX(x);
             item.setY(currentY);
-            item.setWidth(width - scrollbarWidth - 4);
+            item.setWidth(width - scrollbarWidth - 12);
 
             item.render(graphics, mouseX, mouseY, partialTick);
 
@@ -60,6 +60,23 @@ public class ListView extends Widget {
         graphics.disableScissor();
 
         renderScrollbar(graphics, mouseX, mouseY);
+    }
+
+    @Override
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!visible)
+            return;
+
+        int currentY = y - scrollOffset;
+        for (Widget item : items) {
+            item.setX(x);
+            item.setY(currentY);
+            item.setWidth(width - scrollbarWidth - 12);
+
+            item.renderOverlay(graphics, mouseX, mouseY, partialTick);
+
+            currentY += item.getHeight() + itemSpacing;
+        }
     }
 
     private void renderScrollbar(GuiGraphics graphics, int mouseX, int mouseY) {

@@ -18,19 +18,44 @@ public class GridRow extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void setX(int x) {
+        super.setX(x);
         for (Map.Entry<Widget, Integer> entry : children) {
-            Widget w = entry.getKey();
-            int xOff = entry.getValue();
-            int originalX = w.getX();
-            int originalY = w.getY();
+            entry.getKey().setX(x + entry.getValue());
+        }
+    }
 
-            w.setX(this.x + xOff);
-            w.setY(this.y);
-            w.render(graphics, mouseX, mouseY, partialTick);
+    @Override
+    public void setY(int y) {
+        super.setY(y);
+        for (Map.Entry<Widget, Integer> entry : children) {
+            entry.getKey().setY(y);
+        }
+    }
 
-            w.setX(originalX);
-            w.setY(originalY);
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!visible)
+            return;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            entry.getKey().render(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!visible)
+            return;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            entry.getKey().renderOverlay(graphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    @Override
+    public void updateHoverState(int mouseX, int mouseY) {
+        super.updateHoverState(mouseX, mouseY);
+        for (Map.Entry<Widget, Integer> entry : children) {
+            entry.getKey().updateHoverState(mouseX, mouseY);
         }
     }
 
@@ -39,5 +64,71 @@ public class GridRow extends Widget {
         for (Map.Entry<Widget, Integer> entry : children) {
             entry.getKey().tick();
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!enabled || !visible)
+            return false;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            if (entry.getKey().mouseClicked(mouseX, mouseY, button))
+                return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (!enabled || !visible)
+            return false;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            if (entry.getKey().mouseReleased(mouseX, mouseY, button))
+                return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (!enabled || !visible)
+            return false;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            if (entry.getKey().mouseDragged(mouseX, mouseY, button, dragX, dragY))
+                return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (!visible)
+            return false;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            if (entry.getKey().mouseScrolled(mouseX, mouseY, scrollX, scrollY))
+                return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (!enabled || !visible)
+            return false;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            if (entry.getKey().keyPressed(keyCode, scanCode, modifiers))
+                return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char character, int modifiers) {
+        if (!enabled || !visible)
+            return false;
+        for (Map.Entry<Widget, Integer> entry : children) {
+            if (entry.getKey().charTyped(character, modifiers))
+                return true;
+        }
+        return super.charTyped(character, modifiers);
     }
 }

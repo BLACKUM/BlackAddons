@@ -51,6 +51,34 @@ public class ConfigManager {
         }
     }
 
+    public static class SoundAlert {
+        public String pattern;
+        public boolean isRegex;
+        public String soundId;
+        public float volume = 1.0f;
+        public boolean enabled;
+        public String title = "";
+        public String subtitle = "";
+        public int durationSeconds = 2;
+        public boolean collapsed = true;
+
+        public SoundAlert() {
+        }
+
+        public SoundAlert(String pattern, boolean isRegex, String soundId, float volume, boolean enabled, String title,
+                String subtitle, int durationSeconds) {
+            this.pattern = pattern;
+            this.isRegex = isRegex;
+            this.soundId = soundId;
+            this.volume = volume;
+            this.enabled = enabled;
+            this.title = title;
+            this.subtitle = subtitle;
+            this.durationSeconds = durationSeconds;
+            this.collapsed = true;
+        }
+    }
+
     public static enum DataSource {
         BOT, LOCAL
     }
@@ -107,6 +135,16 @@ public class ConfigManager {
         // Settings
         public int notificationDuration = 4000;
         public int cacheDurationMinutes = 5;
+
+        // Chat triggers defaults
+        public List<SoundAlert> chatSoundAlerts = new ArrayList<>(List.of(
+                new SoundAlert(
+                        "(?s).*?(?:\\[.*?\\] )?([A-Za-z0-9_]+) has invited you to join their party!.*You have 60 seconds to accept.*",
+                        true,
+                        "entity.cat.ambient", 1.0f, true, "&cParty Invite!", "&6From: &e{1}", 2),
+                new SoundAlert("Party Finder > ([A-Za-z0-9_]+) joined the dungeon group! \\((.*)\\)", true,
+                        "entity.experience_orb.pickup",
+                        1.0f, true, "&a{1} Joined!", "&7Class: &b{2}", 3)));
 
         // Command aliases
         public Map<String, String> knownAliases = new HashMap<>();
