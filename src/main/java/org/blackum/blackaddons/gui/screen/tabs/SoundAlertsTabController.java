@@ -2,7 +2,7 @@ package org.blackum.blackaddons.gui.screen.tabs;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
@@ -76,7 +76,7 @@ public class SoundAlertsTabController extends SimpleTabController {
                     Theme.TEXTFIELD_HEIGHT,
                     "e.g., entity.cat.ambient", () -> {
                         List<String> sounds = new ArrayList<>();
-                        for (Identifier id : BuiltInRegistries.SOUND_EVENT.keySet()) {
+                        for (ResourceLocation id : BuiltInRegistries.SOUND_EVENT.keySet()) {
                             sounds.add(id.toString());
                         }
                         return sounds;
@@ -92,9 +92,9 @@ public class SoundAlertsTabController extends SimpleTabController {
             Button testBtn = new Button(0, 0, 50, Theme.TEXTFIELD_HEIGHT,
                     "Test", () -> {
                         try {
-                            Identifier location = Identifier.tryParse(alert.soundId);
+                            ResourceLocation location = ResourceLocation.tryParse(alert.soundId);
                             if (location == null)
-                                location = Identifier.fromNamespaceAndPath("minecraft", alert.soundId);
+                                location = ResourceLocation.fromNamespaceAndPath("minecraft", alert.soundId);
                             SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                             Minecraft client = Minecraft.getInstance();
                             client.getSoundManager().play(SimpleSoundInstance.forUI(event, 1.0F, alert.volume));
