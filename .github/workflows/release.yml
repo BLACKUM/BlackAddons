@@ -6,9 +6,6 @@ permissions:
   issues: read
 
 on:
-  push:
-    branches:
-      - "1.21.10"
   workflow_dispatch:
     inputs:
       release_type:
@@ -74,6 +71,7 @@ jobs:
             !build/libs/*-dev.jar
 
   release:
+    if: github.event_name == 'workflow_dispatch'
     needs: [setup, build]
     runs-on: ubuntu-latest
     steps:
@@ -88,43 +86,8 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      # Nightly Release Logic
-      - name: Fetch Previous Nightly Assets (If Push)
-        if: github.event_name == 'push'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p previous_assets
-          gh release download nightly --dir previous_assets --pattern "*.jar" || echo "No existing nightly release found."
-          
-          echo "Merging artifacts..."
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          echo "Current Pushed Branch: $BRANCH_NAME"
-          
-          # Remove old assets for ALL branches in the matrix from previous_assets
-          echo '${{ needs.setup.outputs.matrix }}' | jq -r '.[]' | while read branch; do
-            find previous_assets -name "*$branch*" -delete
-          done
-          
-          # Move remaining (unrelated branch) assets to artifacts/ folder to be re-uploaded
-          cp -n previous_assets/*.jar artifacts/ || true
-          
-          echo "Final artifacts to publish:"
-          ls -R artifacts/
-
-      - name: Update Nightly Release
-        if: github.event_name == 'push'
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "nightly"
-          prerelease: true
-          title: "Nightly Build"
-          files: artifacts/*.jar
-
       # Stable Release (Manual Dispatch)
       - name: Build Changelog
-        if: github.event_name == 'workflow_dispatch'
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
@@ -134,7 +97,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get Version
-        if: github.event_name == 'workflow_dispatch'
         id: get_version
         run: |
           VERSION=${{ needs.setup.outputs.version }}
@@ -142,7 +104,6 @@ jobs:
           echo "Current version is $VERSION"
 
       - name: Create Stable Release
-        if: github.event_name == 'workflow_dispatch'
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -153,13 +114,12 @@ jobs:
           files: artifacts/*.jar
 
       - name: Bump Version
-        if: github.event_name == 'workflow_dispatch'
         run: |
           python3 scripts/bump_version.py
         
       - name: Commit & Push Version Bump
-        if: github.event_name == 'workflow_dispatch'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: bump version"
           file_pattern: gradle.properties
+
