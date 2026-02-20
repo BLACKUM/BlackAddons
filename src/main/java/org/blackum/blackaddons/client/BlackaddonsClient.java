@@ -25,7 +25,15 @@ import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
 import org.blackum.blackaddons.Blackaddons;
 
+import net.minecraft.client.gui.screens.Screen;
+
 public class BlackaddonsClient implements ClientModInitializer {
+    public static Screen pendingScreen = null;
+
+    public static void openScreen(Screen screen) {
+        pendingScreen = screen;
+    }
+
     @Override
     public void onInitializeClient() {
         Blackaddons.LOGGER.info("Initializing client...");
@@ -36,18 +44,15 @@ public class BlackaddonsClient implements ClientModInitializer {
         IrcClient.getInstance().connect();
 
         Blackaddons.guiOpener = () -> {
-            Minecraft client = Minecraft.getInstance();
-            client.execute(() -> client.setScreen(new DemoScreen()));
+            BlackaddonsClient.openScreen(new DemoScreen());
         };
 
         Blackaddons.testMenuOpener = () -> {
-            Minecraft client = Minecraft.getInstance();
-            client.execute(() -> client.setScreen(new TestMenuScreen()));
+            BlackaddonsClient.openScreen(new TestMenuScreen());
         };
 
         Blackaddons.mainGuiOpener = () -> {
-            Minecraft client = Minecraft.getInstance();
-            client.execute(() -> client.setScreen(new BlackAddonsGUI()));
+            BlackaddonsClient.openScreen(new BlackAddonsGUI());
         };
 
         Blackaddons.notificationTrigger = (message) -> {
@@ -64,7 +69,13 @@ public class BlackaddonsClient implements ClientModInitializer {
             }
         });
 
-        ClientTickEvents.END_CLIENT_TICK.register(client -> NotificationManager.getInstance().tick());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            NotificationManager.getInstance().tick();
+            if (BlackaddonsClient.pendingScreen != null) {
+                client.setScreen(BlackaddonsClient.pendingScreen);
+                BlackaddonsClient.pendingScreen = null;
+            }
+        });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {

@@ -43,7 +43,8 @@ public class ProfileViewerScreen extends BaseScreen {
                         } else {
                             errorMessage = result.getError();
                         }
-                        Minecraft.getInstance().execute(() -> this.init(this.width, this.height));
+                        Minecraft.getInstance()
+                                .execute(() -> this.init(Minecraft.getInstance(), this.width, this.height));
                     });
         }
 
@@ -195,7 +196,7 @@ public class ProfileViewerScreen extends BaseScreen {
                         this.rtcaController = null;
 
                         Minecraft.getInstance().execute(() -> {
-                            this.init(this.width, this.height);
+                            this.init(Minecraft.getInstance(), this.width, this.height);
                         });
                     } else {
                         String err = result.getError() != null ? result.getError() : "Unknown error";

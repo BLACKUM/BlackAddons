@@ -194,7 +194,7 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
             @SuppressWarnings("null")
             String url = uri.toString();
             if (url != null) {
-                net.minecraft.util.Util.getPlatform().openUri(url);
+                net.minecraft.Util.getPlatform().openUri(url);
             }
             return true;
         } else if (event instanceof ClickEvent.RunCommand runCommand) {

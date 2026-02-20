@@ -294,7 +294,8 @@ public class CommandManager {
                                                         }))
                                         .executes(ctx -> {
                                                 Minecraft.getInstance().execute(() -> {
-                                                        Minecraft.getInstance().setScreen(new IrcScreen());
+                                                        org.blackum.blackaddons.client.BlackaddonsClient
+                                                                        .openScreen(new IrcScreen());
                                                 });
                                                 return 1;
                                         });
@@ -308,7 +309,8 @@ public class CommandManager {
                                 cmd.then(ircNode);
                                 cmd.then(ClientCommandManager.literal("pf").executes(ctx -> {
                                         Minecraft.getInstance().execute(() -> {
-                                                Minecraft.getInstance().setScreen(new PartyFinderScreen());
+                                                org.blackum.blackaddons.client.BlackaddonsClient
+                                                                .openScreen(new PartyFinderScreen());
                                         });
                                         return 1;
                                 }));

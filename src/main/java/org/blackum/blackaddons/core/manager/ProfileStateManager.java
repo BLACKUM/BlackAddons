@@ -315,7 +315,7 @@ public class ProfileStateManager {
 
             final JsonObject finalData = data;
             mc.execute(() -> {
-                mc.setScreen(
+                org.blackum.blackaddons.client.BlackaddonsClient.openScreen(
                         new org.blackum.blackaddons.gui.screen.ProfileViewerScreen(null, player, profileName, force,
                                 finalData));
             });

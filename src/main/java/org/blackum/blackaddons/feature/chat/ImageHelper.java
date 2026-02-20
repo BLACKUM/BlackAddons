@@ -4,7 +4,7 @@ import org.blackum.blackaddons.core.util.Constants;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -33,7 +33,7 @@ public class ImageHelper {
     private static final Pattern TENOR_IMAGE_PATTERN = Pattern
             .compile("<meta property=\"og:image\" content=\"(https://media\\.tenor\\.com/[^\"]+)\"");
 
-    public record FrameInfo(Identifier location, int delay) {
+    public record FrameInfo(ResourceLocation location, int delay) {
     }
 
     public record ImageInfo(List<FrameInfo> frames, int width, int height) {
@@ -104,7 +104,7 @@ public class ImageHelper {
                                 if (nativeImage != null) {
                                     width = nativeImage.getWidth();
                                     height = nativeImage.getHeight();
-                                    Identifier location = registerTexture(nativeImage, cleanedUrl, 0);
+                                    ResourceLocation location = registerTexture(nativeImage, cleanedUrl, 0);
                                     frames.add(new FrameInfo(location, 0));
                                 }
                             }
@@ -191,7 +191,7 @@ public class ImageHelper {
                 }
 
                 NativeImage ni = fromBufferedImage(bi);
-                Identifier loc = registerTexture(ni, originalUrl, i);
+                ResourceLocation loc = registerTexture(ni, originalUrl, i);
                 frames.add(new FrameInfo(loc, delay > 0 ? delay : Constants.DEFAULT_GIF_DELAY));
             }
         } catch (Exception ignored) {
@@ -237,9 +237,9 @@ public class ImageHelper {
         return null;
     }
 
-    private static Identifier registerTexture(NativeImage ni, String url, int frame) {
+    private static ResourceLocation registerTexture(NativeImage ni, String url, int frame) {
         String label = "img_" + Math.abs(url.hashCode()) + "_" + frame;
-        Identifier loc = Identifier.fromNamespaceAndPath(Constants.MOD_ID, label.toLowerCase());
+        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, label.toLowerCase());
         DynamicTexture texture = new DynamicTexture(() -> label, ni);
         Minecraft.getInstance().getTextureManager().register(loc, texture);
         return loc;
