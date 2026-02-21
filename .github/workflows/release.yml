@@ -87,15 +87,6 @@ jobs:
           merge-multiple: true
 
       # Stable Release (Manual Dispatch)
-      - name: Build Changelog
-        id: changelog
-        uses: mikepenz/release-changelog-builder-action@v5
-        with:
-          ignorePreReleases: true
-          toTag: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get Version
         id: get_version
         run: |
@@ -104,14 +95,15 @@ jobs:
           echo "Current version is $VERSION"
 
       - name: Create Stable Release
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "v${{ env.VERSION }}"
+          tag_name: "v${{ env.VERSION }}"
+          name: "v${{ env.VERSION }}"
           prerelease: false
-          title: "v${{ env.VERSION }}"
-          body: "${{ steps.changelog.outputs.changelog }}"
+          generate_release_notes: true
           files: artifacts/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bump Version
         run: |
