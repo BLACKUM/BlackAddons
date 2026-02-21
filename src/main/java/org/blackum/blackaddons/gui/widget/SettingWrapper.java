@@ -17,8 +17,13 @@ public class SettingWrapper extends Widget {
     private boolean expanded = false;
     private Animation expandAnimation;
 
+    private String rightLabel;
     private int labelWidth;
     private int descriptionHeight = 0;
+
+    public void setRightLabel(String rightLabel) {
+        this.rightLabel = rightLabel;
+    }
 
     public SettingWrapper(int x, int y, int width, String label, String description, Widget control) {
         super(x, y, width, HEADER_HEIGHT);
@@ -79,6 +84,12 @@ public class SettingWrapper extends Widget {
 
         int textY = y + (HEADER_HEIGHT - 8) / 2;
         graphics.drawString(Minecraft.getInstance().font, label, x, textY, Theme.TEXT_PRIMARY);
+
+        if (rightLabel != null && !rightLabel.isEmpty()) {
+            int rw = Minecraft.getInstance().font.width(rightLabel);
+            graphics.drawString(Minecraft.getInstance().font, rightLabel, x + width - rw - 10, textY,
+                    Theme.TEXT_SECONDARY);
+        }
 
         if (description != null && !description.isEmpty()) {
             int expandX = x + labelWidth + 6;

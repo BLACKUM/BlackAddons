@@ -22,6 +22,15 @@ public class BlackAddonsGUI extends BaseScreen {
     private static int lastTabIndex = 0;
     private String currentTooltip = null;
     private final Map<String, Boolean> collapsedGroups = new HashMap<>();
+    private final Map<String, Widget> modCheckboxWrappers = new HashMap<>();
+    private final Map<String, Checkbox> modCheckboxCache = new HashMap<>();
+    private ModOrganizer.OrganizedMods cachedOrganizedMods = null;
+
+    private void updateCheckboxVisuals() {
+        for (Map.Entry<String, Checkbox> entry : modCheckboxCache.entrySet()) {
+            entry.getValue().setChecked(ConfigManager.data.modHiderAllowedMods.contains(entry.getKey()));
+        }
+    }
 
     private SettingsTabController settingsController;
     private ModHiderTabController modHiderController;
@@ -41,7 +50,8 @@ public class BlackAddonsGUI extends BaseScreen {
 
     @Override
     protected void initWidgets() {
-        tabPanel = new TabPanel(containerX + 10, containerY + 40, containerWidth - 20, containerHeight - 50);
+        tabPanel = new TabPanel(containerX + Theme.PADDING, containerY + 40, containerWidth - (Theme.PADDING * 2),
+                containerHeight - 50);
         tabPanel.setOnTabChange(index -> lastTabIndex = index);
 
         settingsController = new SettingsTabController(this);
@@ -79,7 +89,7 @@ public class BlackAddonsGUI extends BaseScreen {
         List<String> channels = new ArrayList<>(ConfigManager.data.modHiderAllowedCustomPayloadChannels);
         channels.sort(String::compareToIgnoreCase);
         for (String ch : channels) {
-            Button remove = new Button(0, 0, channelsList.getWidth() - 8, "Remove: " + ch, () -> {
+            Button remove = new Button(0, 0, channelsList.getWidth() - Theme.PADDING_SMALL, "Remove: " + ch, () -> {
                 ConfigManager.data.modHiderAllowedCustomPayloadChannels.remove(ch);
                 ConfigManager.save();
                 rebuildChannelsList(channelsList);
@@ -92,7 +102,10 @@ public class BlackAddonsGUI extends BaseScreen {
         allowedModsList.clearItems();
         String query = modSearch.getText() == null ? "" : modSearch.getText().trim().toLowerCase(Locale.ROOT);
 
-        ModOrganizer.OrganizedMods organizedMods = ModOrganizer.organizeMods();
+        if (cachedOrganizedMods == null) {
+            cachedOrganizedMods = ModOrganizer.organizeMods();
+        }
+        ModOrganizer.OrganizedMods organizedMods = cachedOrganizedMods;
 
         Consumer<String> enableDependencies = new Consumer<String>() {
             @Override
@@ -228,7 +241,7 @@ public class BlackAddonsGUI extends BaseScreen {
             list.addItem(groupHeader);
 
             if (!isCollapsed) {
-                Checkbox selectAll = new Checkbox(10, 0, "Select All", allSelected, value -> {
+                Checkbox selectAll = new Checkbox(Theme.PADDING, 0, "Select All", allSelected, value -> {
                     for (ModOrganizer.ModInfo info : matchingMods) {
                         if (value) {
                             ConfigManager.data.modHiderAllowedMods.add(info.id);
@@ -240,7 +253,7 @@ public class BlackAddonsGUI extends BaseScreen {
                         }
                     }
                     ConfigManager.save();
-                    rebuildAllowedModsList(list, searchField);
+                    updateCheckboxVisuals();
                 });
                 list.addItem(selectAll);
 
@@ -262,58 +275,70 @@ public class BlackAddonsGUI extends BaseScreen {
             Consumer<String> disableDependents,
             Consumer<String> disableUnusedDependencies,
             TextField searchField) {
-        boolean checked = ConfigManager.data.modHiderAllowedMods.contains(info.id);
-        String displayName = info.name + " (" + info.id + ")";
-        if (!info.dependents.isEmpty())
-            displayName += " " + ChatFormatting.GRAY + "[Used by: " + info.dependents.size() + "]";
 
-        Checkbox cb = new Checkbox(0, 0, displayName, checked, value -> {
-            if (value) {
-                ConfigManager.data.modHiderAllowedMods.add(info.id);
-                enableDependencies.accept(info.id);
-            } else {
-                ConfigManager.data.modHiderAllowedMods.remove(info.id);
-                disableDependents.accept(info.id);
-                disableUnusedDependencies.accept(info.id);
-            }
-            ConfigManager.save();
-            rebuildAllowedModsList(list, searchField);
-        });
+        Checkbox cb = modCheckboxCache.get(info.id);
+        Widget wrapper = modCheckboxWrappers.get(info.id);
 
-        Widget wrapper = new Widget(0, 0, 0, 0) {
-            @Override
-            public void render(GuiGraphics g, int mx, int my, float p) {
-                cb.setX(getX());
-                cb.setY(getY());
-                cb.setWidth(getWidth());
-                cb.render(g, mx, my, p);
-                if (cb.isHovered() && !info.dependencies.isEmpty()) {
-                    currentTooltip = "Dependencies: " + String.join(", ", info.dependencies);
+        if (cb == null || wrapper == null) {
+            String displayName = info.name + " (" + info.id + ")";
+            if (!info.dependents.isEmpty())
+                displayName += " " + ChatFormatting.GRAY + "[Used by: " + info.dependents.size() + "]";
+
+            boolean checked = ConfigManager.data.modHiderAllowedMods.contains(info.id);
+
+            cb = new Checkbox(0, 0, displayName, checked, value -> {
+                if (value) {
+                    ConfigManager.data.modHiderAllowedMods.add(info.id);
+                    enableDependencies.accept(info.id);
+                } else {
+                    ConfigManager.data.modHiderAllowedMods.remove(info.id);
+                    disableDependents.accept(info.id);
+                    disableUnusedDependencies.accept(info.id);
                 }
-            }
+                ConfigManager.save();
+                updateCheckboxVisuals();
+            });
+            modCheckboxCache.put(info.id, cb);
 
-            @Override
-            public void updateHoverState(int mx, int my) {
-                cb.setX(getX());
-                cb.setY(getY());
-                cb.setWidth(getWidth());
-                cb.updateHoverState(mx, my);
-                super.updateHoverState(mx, my);
-                if (!cb.isHovered())
-                    currentTooltip = null;
-            }
+            final Checkbox finalCb = cb;
+            wrapper = new Widget(0, 0, 0, 0) {
+                @Override
+                public void render(GuiGraphics g, int mx, int my, float p) {
+                    finalCb.setX(getX());
+                    finalCb.setY(getY());
+                    finalCb.setWidth(getWidth());
+                    finalCb.render(g, mx, my, p);
+                    if (finalCb.isHovered() && !info.dependencies.isEmpty()) {
+                        currentTooltip = "Dependencies: " + String.join(", ", info.dependencies);
+                    }
+                }
 
-            @Override
-            public boolean mouseClicked(double mx, double my, int b) {
-                return cb.mouseClicked(mx, my, b);
-            }
+                @Override
+                public void updateHoverState(int mx, int my) {
+                    finalCb.setX(getX());
+                    finalCb.setY(getY());
+                    finalCb.setWidth(getWidth());
+                    finalCb.updateHoverState(mx, my);
+                    super.updateHoverState(mx, my);
+                    if (!finalCb.isHovered())
+                        currentTooltip = null;
+                }
 
-            @Override
-            public void tick() {
-                cb.tick();
-            }
-        };
-        wrapper.setHeight(cb.getHeight());
+                @Override
+                public boolean mouseClicked(double mx, double my, int b) {
+                    return finalCb.mouseClicked(mx, my, b);
+                }
+
+                @Override
+                public void tick() {
+                    finalCb.tick();
+                }
+            };
+            wrapper.setHeight(cb.getHeight());
+            modCheckboxWrappers.put(info.id, wrapper);
+        }
+
+        cb.setChecked(ConfigManager.data.modHiderAllowedMods.contains(info.id));
         list.addItem(wrapper);
     }
 
@@ -331,22 +356,25 @@ public class BlackAddonsGUI extends BaseScreen {
     protected void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
         String tooltip = currentTooltip;
         if (tooltip != null && !tooltip.isEmpty()) {
-            int tooltipWidth = font.width(tooltip) + 8;
-            int tooltipXPos = mouseX + 10;
-            int tooltipYPos = mouseY - 20;
+            int tooltipWidth = font.width(tooltip) + Theme.PADDING_SMALL;
+            int tooltipXPos = mouseX + Theme.PADDING;
+            int tooltipYPos = mouseY - Theme.SPACING_NORMAL;
             if (tooltipXPos + tooltipWidth > width)
-                tooltipXPos = mouseX - tooltipWidth - 10;
+                tooltipXPos = mouseX - tooltipWidth - Theme.PADDING;
             if (tooltipYPos < 0)
-                tooltipYPos = mouseY + 10;
-            graphics.fill(tooltipXPos - 2, tooltipYPos - 2, tooltipXPos + tooltipWidth + 2, tooltipYPos + 10 + 2,
+                tooltipYPos = mouseY + Theme.PADDING;
+            graphics.fill(tooltipXPos - 2, tooltipYPos - 2, tooltipXPos + tooltipWidth + 2,
+                    tooltipYPos + Theme.PADDING + 2,
                     Theme.TOOLTIP_BG);
             graphics.fill(tooltipXPos - 2, tooltipYPos - 2, tooltipXPos + tooltipWidth + 2, tooltipYPos - 1,
                     Theme.ACCENT);
-            graphics.fill(tooltipXPos - 2, tooltipYPos + 11, tooltipXPos + tooltipWidth + 2, tooltipYPos + 12,
+            graphics.fill(tooltipXPos - 2, tooltipYPos + Theme.PADDING + 1, tooltipXPos + tooltipWidth + 2,
+                    tooltipYPos + Theme.PADDING + 2,
                     Theme.ACCENT);
-            graphics.fill(tooltipXPos - 2, tooltipYPos - 2, tooltipXPos - 1, tooltipYPos + 12, Theme.ACCENT);
+            graphics.fill(tooltipXPos - 2, tooltipYPos - 2, tooltipXPos - 1, tooltipYPos + Theme.PADDING + 2,
+                    Theme.ACCENT);
             graphics.fill(tooltipXPos + tooltipWidth + 1, tooltipYPos - 2, tooltipXPos + tooltipWidth + 2,
-                    tooltipYPos + 12, Theme.ACCENT);
+                    tooltipYPos + Theme.PADDING + 2, Theme.ACCENT);
             graphics.drawString(font, tooltip, tooltipXPos, tooltipYPos, Theme.TEXT_PRIMARY);
         }
     }

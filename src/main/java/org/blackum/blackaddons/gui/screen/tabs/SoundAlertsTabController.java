@@ -97,7 +97,7 @@ public class SoundAlertsTabController extends SimpleTabController {
                                 location = ResourceLocation.fromNamespaceAndPath("minecraft", alert.soundId);
                             SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                             Minecraft client = Minecraft.getInstance();
-                            client.getSoundManager().play(SimpleSoundInstance.forUI(event, 1.0F, alert.volume));
+                            client.getSoundManager().play(SimpleSoundInstance.forUI(event, alert.pitch, alert.volume));
 
                             if (alert.title != null && !alert.title.isEmpty() && client.gui != null) {
                                 client.gui.setTimes(10, alert.durationSeconds * 20, 20);
@@ -118,12 +118,29 @@ public class SoundAlertsTabController extends SimpleTabController {
             alertWidgets.add(
                     new SettingWrapper(0, 0, itemWidth, "Sound ID", "The Minecraft sound to play when triggered", row));
 
+            SettingWrapper[] volWrap = new SettingWrapper[1];
             Slider volumeSlider = new Slider(0, 0, itemWidth, 0.0f, 1.0f, alert.volume, val -> {
                 alert.volume = val;
+                if (volWrap[0] != null)
+                    volWrap[0].setRightLabel(String.format("%.2f", val));
                 ConfigManager.save();
             });
-            alertWidgets.add(
-                    new SettingWrapper(0, 0, itemWidth, "Volume", "Sets the volume of the sound effect", volumeSlider));
+            volWrap[0] = new SettingWrapper(0, 0, itemWidth, "Volume", "Sets the volume of the sound effect",
+                    volumeSlider);
+            volWrap[0].setRightLabel(String.format("%.2f", alert.volume));
+            alertWidgets.add(volWrap[0]);
+
+            SettingWrapper[] pitchWrap = new SettingWrapper[1];
+            Slider pitchSlider = new Slider(0, 0, itemWidth, 0.1f, 2.0f, alert.pitch, val -> {
+                alert.pitch = val;
+                if (pitchWrap[0] != null)
+                    pitchWrap[0].setRightLabel(String.format("%.2fx", val));
+                ConfigManager.save();
+            });
+            pitchWrap[0] = new SettingWrapper(0, 0, itemWidth, "Pitch", "Sets the pitch of the sound effect",
+                    pitchSlider);
+            pitchWrap[0].setRightLabel(String.format("%.2fx", alert.pitch));
+            alertWidgets.add(pitchWrap[0]);
 
             TextField titleField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Title...");
             titleField.setText(alert.title != null ? alert.title : "");
@@ -145,12 +162,17 @@ public class SoundAlertsTabController extends SimpleTabController {
             alertWidgets.add(new SettingWrapper(0, 0, itemWidth, "Subtitle",
                     "Optional. Smaller text to show below title. Supports & colors.", subtitleField));
 
+            SettingWrapper[] durWrap = new SettingWrapper[1];
             Slider durationSlider = new Slider(0, 0, itemWidth, 0.0f, 10.0f, alert.durationSeconds, val -> {
                 alert.durationSeconds = Math.round(val);
+                if (durWrap[0] != null)
+                    durWrap[0].setRightLabel(alert.durationSeconds + "s");
                 ConfigManager.save();
             });
-            alertWidgets.add(new SettingWrapper(0, 0, itemWidth, "Display Duration",
-                    "How long the title and subtitle stay on screen", durationSlider));
+            durWrap[0] = new SettingWrapper(0, 0, itemWidth, "Display Duration",
+                    "How long the title and subtitle stay on screen", durationSlider);
+            durWrap[0].setRightLabel(alert.durationSeconds + "s");
+            alertWidgets.add(durWrap[0]);
 
             ToggleSwitch regexToggle = new ToggleSwitch(0, 0, itemWidth, "Is Regex",
                     "Evaluate pattern as regular expression", alert.isRegex, val -> {
@@ -182,7 +204,8 @@ public class SoundAlertsTabController extends SimpleTabController {
         Button addBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Add New Alert",
                 () -> {
                     ConfigManager.data.chatSoundAlerts
-                            .add(new ConfigManager.SoundAlert("", true, "entity.experience_orb.pickup", 1.0f, true, "",
+                            .add(new ConfigManager.SoundAlert("", true, "entity.experience_orb.pickup", 1.0f, 1.0f,
+                                    true, "",
                                     "", 2));
                     ConfigManager.save();
                     screen.init();

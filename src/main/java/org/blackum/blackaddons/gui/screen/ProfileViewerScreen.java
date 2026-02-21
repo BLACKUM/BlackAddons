@@ -11,7 +11,7 @@ import org.blackum.blackaddons.gui.widget.TabPanel;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.ConfettiEffect;
 import org.blackum.blackaddons.core.manager.ProfileStateManager;
-import org.blackum.blackaddons.core.config.ConfigManager;
+
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
 import org.blackum.blackaddons.gui.screen.tabs.*;
@@ -217,9 +217,6 @@ public class ProfileViewerScreen extends BaseScreen {
             graphics.drawString(Minecraft.getInstance().font, label, x, y,
                     Theme.TEXT_SECONDARY);
 
-            String source = "Source: " + ConfigManager.data.dataSource.name();
-            graphics.drawString(Minecraft.getInstance().font, source, x, y + 10,
-                    Theme.TEXT_SECONDARY);
         }
     }
 

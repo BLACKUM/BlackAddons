@@ -5,6 +5,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import org.blackum.blackaddons.core.manager.CustomNameManager;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,9 +14,11 @@ public class ChatImageHandler {
     public static final Pattern DISCORD_IMAGE_PATTERN = Pattern.compile(Constants.DISCORD_IMAGE_REGEX);
 
     public static Component handleMessage(Component message) {
-        String text = message.getString();
+        Component customNamedMessage = CustomNameManager.getInstance().replaceNames(message);
+
+        String text = customNamedMessage.getString();
         if (text.contains(Constants.PREVIEW_LABEL.trim())) {
-            return message;
+            return customNamedMessage;
         }
 
         Matcher matcher = DISCORD_IMAGE_PATTERN.matcher(text);
@@ -23,7 +26,7 @@ public class ChatImageHandler {
 
         while (matcher.find()) {
             if (mutableMessage == null) {
-                mutableMessage = message.copy();
+                mutableMessage = customNamedMessage.copy();
             }
 
             String url = matcher.group();
@@ -35,6 +38,6 @@ public class ChatImageHandler {
             mutableMessage.append(previewComponent);
         }
 
-        return mutableMessage != null ? mutableMessage : message;
+        return mutableMessage != null ? mutableMessage : customNamedMessage;
     }
 }

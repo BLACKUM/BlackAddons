@@ -2,7 +2,6 @@ package org.blackum.blackaddons.gui.screen.tabs;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
 import org.blackum.blackaddons.gui.widget.*;
 
@@ -76,6 +75,9 @@ public class DungeonsTabController extends ProfileTabController {
 
         double secretsPerRun = totalRuns > 0 ? (double) secretCount / totalRuns : 0;
 
+        JsonObject maxwell = JsonUtils.getObject(profileData, "accessory_bag_storage");
+        int magicalPower = JsonUtils.getInt(maxwell, "highest_magical_power");
+
         final int finalTotalRuns = totalRuns;
         int effectiveW = w - 8;
 
@@ -91,9 +93,10 @@ public class DungeonsTabController extends ProfileTabController {
         list.addItem(row1);
 
         GridRow row2 = new GridRow(effectiveW, 55);
-        int boxW2 = (effectiveW - 5) / 2;
+        int boxW2 = (effectiveW - 10) / 3;
         row2.addChild(new StatBox(0, 0, boxW2, "Secrets", String.format("%,d", secretCount)), 0);
         row2.addChild(new StatBox(0, 0, boxW2, "Secrets/Run", String.format("%.2f", secretsPerRun)), boxW2 + 5);
+        row2.addChild(new StatBox(0, 0, boxW2, "Magical Power", String.format("%,d", magicalPower)), (boxW2 + 5) * 2);
         list.addItem(row2);
 
         if (profileData.has("classes")) {

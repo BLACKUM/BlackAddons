@@ -54,6 +54,7 @@ public final class Constants {
         public static final String BOT_API_PARTY_UNQUEUE = "/v1/party/unqueue";
         public static final String BOT_API_PARTY_UPDATE = "/v1/party/update";
         public static final String BOT_API_PARTY_LIST = "/v1/party/list";
+        public static final String BOT_API_NAMES = "/v1/names";
 
         // API Headers
         public static final String HEADER_ENCRYPTED_IDENTITY = "X-Encrypted-Identity";

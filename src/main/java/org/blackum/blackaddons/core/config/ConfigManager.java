@@ -56,6 +56,7 @@ public class ConfigManager {
         public boolean isRegex;
         public String soundId;
         public float volume = 1.0f;
+        public float pitch = 1.0f;
         public boolean enabled;
         public String title = "";
         public String subtitle = "";
@@ -65,12 +66,14 @@ public class ConfigManager {
         public SoundAlert() {
         }
 
-        public SoundAlert(String pattern, boolean isRegex, String soundId, float volume, boolean enabled, String title,
+        public SoundAlert(String pattern, boolean isRegex, String soundId, float volume, float pitch, boolean enabled,
+                String title,
                 String subtitle, int durationSeconds) {
             this.pattern = pattern;
             this.isRegex = isRegex;
             this.soundId = soundId;
             this.volume = volume;
+            this.pitch = pitch;
             this.enabled = enabled;
             this.title = title;
             this.subtitle = subtitle;
@@ -141,10 +144,10 @@ public class ConfigManager {
                 new SoundAlert(
                         "(?s).*?(?:\\[.*?\\] )?([A-Za-z0-9_]+) has invited you to join their party!.*You have 60 seconds to accept.*",
                         true,
-                        "entity.cat.ambient", 1.0f, true, "&cParty Invite!", "&6From: &e{1}", 2),
+                        "entity.cat.ambient", 1.0f, 1.0f, true, "&cParty Invite!", "&6From: &e{1}", 2),
                 new SoundAlert("Party Finder > ([A-Za-z0-9_]+) joined the dungeon group! \\((.*)\\)", true,
                         "entity.experience_orb.pickup",
-                        1.0f, true, "&a{1} Joined!", "&7Class: &b{2}", 3)));
+                        1.0f, 1.0f, true, "&a{1} Joined!", "&7Class: &b{2}", 3)));
 
         // Command aliases
         public Map<String, String> knownAliases = new HashMap<>();

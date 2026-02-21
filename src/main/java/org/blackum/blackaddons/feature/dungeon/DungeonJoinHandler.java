@@ -13,7 +13,6 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -99,7 +98,15 @@ public class DungeonJoinHandler {
                         .withHoverEvent(new HoverEvent.ShowText(
                                 Component.literal("Click to open full profile viewer for " + nickname))));
 
-        response.append(openPv);
+        MutableComponent kickBtn = Component.literal(" [Kick]")
+                .withStyle(style -> style
+                        .withColor(ChatFormatting.RED)
+                        .withBold(true)
+                        .withClickEvent(new ClickEvent.RunCommand("/party kick " + nickname))
+                        .withHoverEvent(new HoverEvent.ShowText(
+                                Component.literal("Click to kick " + nickname + " from the party"))));
+
+        response.append(openPv).append(kickBtn);
 
         mc.gui.getChat().addMessage(response);
     }

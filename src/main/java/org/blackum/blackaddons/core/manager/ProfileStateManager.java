@@ -3,15 +3,14 @@ package org.blackum.blackaddons.core.manager;
 import org.blackum.blackaddons.core.model.BotResult;
 import org.blackum.blackaddons.feature.chat.ChatUtils;
 import org.blackum.blackaddons.integration.BotIntegration;
-import org.blackum.blackaddons.integration.LocalIntegration;
+import org.blackum.blackaddons.integration.ProfileService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
-import org.blackum.blackaddons.core.manager.LocalTeammateManager;
-import org.blackum.blackaddons.core.manager.LocalRngManager;
+
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
 import java.util.HashMap;
@@ -22,7 +21,6 @@ public class ProfileStateManager {
     private static ProfileStateManager instance;
     private final Map<String, CacheEntry<JsonObject>> profileCache = new HashMap<>();
     private final Map<String, CacheEntry<JsonObject>> rngCache = new HashMap<>();
-    private final Map<String, LeaderboardCache> leaderboardCache = new HashMap<>();
 
     private ProfileStateManager() {
     }
@@ -46,39 +44,17 @@ public class ProfileStateManager {
             }
         }
 
-        CompletableFuture<JsonObject> future;
+        CompletableFuture<JsonObject> localFuture = ProfileService.getProfileStats(player, profileName, force);
+        CompletableFuture<JsonObject> botFuture = getSafeBotProfile(player, profileName, force);
 
-        if (ConfigManager.data.dataSource == ConfigManager.DataSource.LOCAL) {
-            CompletableFuture<JsonObject> localFuture = LocalIntegration.getProfileStats(player, profileName, force);
-            CompletableFuture<JsonObject> botFuture = getSafeBotProfile(player, profileName, force);
-
-            future = localFuture.thenCombine(botFuture, (local, bot) -> {
-                if (local == null)
-                    return bot;
-                if (bot != null && !bot.has("error")) {
-                    mergeBotDataIntoLocal(local, bot);
-                }
-                return local;
-            });
-        } else {
-            future = getSafeBotProfile(player, profileName, force).thenCompose(bot -> {
-                if (bot != null && !bot.has("error")) {
-                    return CompletableFuture.completedFuture(bot);
-                }
-
-                String currentUser = Minecraft.getInstance().getUser().getName();
-                if (player.equalsIgnoreCase(currentUser)) {
-                    return LocalIntegration.getProfileStats(player, profileName, force).thenApply(local -> {
-                        if (local != null) {
-                            return local;
-                        }
-                        return bot;
-                    });
-                }
-
-                return CompletableFuture.completedFuture(bot);
-            });
-        }
+        CompletableFuture<JsonObject> future = localFuture.thenCombine(botFuture, (local, bot) -> {
+            if (local == null)
+                return bot;
+            if (bot != null && !bot.has("error")) {
+                mergeBotDataIntoLocal(local, bot);
+            }
+            return local;
+        });
 
         return future.thenApply(json -> {
             if (json == null)
@@ -339,10 +315,5 @@ public class ProfileStateManager {
             long durationMs = ConfigManager.data.cacheDurationMinutes * 60 * 1000L;
             return System.currentTimeMillis() - timestamp > durationMs;
         }
-    }
-
-    private static class LeaderboardCache {
-        Map<Integer, JsonObject> pages = new HashMap<>();
-        long lastUpdated = 0;
     }
 }

@@ -70,7 +70,7 @@ public class ChatSoundAlertManager {
                     SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                     final String[] finalGroups = groups;
                     client.execute(() -> {
-                        client.getSoundManager().play(SimpleSoundInstance.forUI(event, 1.0F, alert.volume));
+                        client.getSoundManager().play(SimpleSoundInstance.forUI(event, alert.pitch, alert.volume));
                         if (alert.title != null && !alert.title.isEmpty() && client.gui != null) {
                             String fTitle = alert.title;
                             String fSubtitle = alert.subtitle != null ? alert.subtitle : "";

@@ -24,7 +24,9 @@ import org.blackum.blackaddons.feature.chat.ChatImageHandler;
 import org.blackum.blackaddons.feature.chat.ChatSoundAlertManager;
 import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
+import org.blackum.blackaddons.core.manager.CustomNameManager;
 import org.blackum.blackaddons.Blackaddons;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 
 import net.minecraft.client.gui.screens.Screen;
 
@@ -42,7 +44,15 @@ public class BlackaddonsClient implements ClientModInitializer {
 
         ConfigManager.load();
         BotIntegration.fetchVerificationKey();
-        IrcClient.getInstance().connect();
+        CustomNameManager.getInstance().fetch();
+
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            IrcClient.getInstance().connect();
+        });
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            IrcClient.getInstance().disconnect();
+        });
 
         Blackaddons.guiOpener = () -> {
             BlackaddonsClient.openScreen(new DemoScreen());

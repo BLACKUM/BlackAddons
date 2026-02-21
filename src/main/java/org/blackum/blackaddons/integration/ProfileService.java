@@ -1,58 +1,19 @@
 package org.blackum.blackaddons.integration;
 
-import org.blackum.blackaddons.core.util.Constants;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.manager.LocalTeammateManager;
-import net.fabricmc.loader.api.FabricLoader;
+import org.blackum.blackaddons.core.util.Constants;
+import org.blackum.blackaddons.core.util.HttpUtils;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.util.concurrent.CompletableFuture;
-import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.nio.file.Path;
 
-public class LocalIntegration {
-    private static final HttpClient client = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_1_1)
-            .connectTimeout(Duration.ofSeconds(Constants.HTTP_TIMEOUT_SECONDS))
-            .build();
-
-    private static Map<String, Double> priceCache = new HashMap<>();
-    private static long priceCacheExpiry = 0;
-    private static volatile boolean isRefreshing = false;
-
-    private static final Path CONFIG_DIR = FabricLoader.getInstance()
-            .getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
-    private static final File PRICES_FILE = CONFIG_DIR.resolve(Constants.PRICES_FILE_NAME).toFile();
-
-    private static class PricesData {
-        long timestamp;
-        Map<String, Double> prices;
-    }
-
-    public static Double getPrice(String itemId) {
-        if (System.currentTimeMillis() > priceCacheExpiry) {
-            checkAndRefreshPrices();
-        }
-        return priceCache.getOrDefault(itemId, 0.0);
-    }
+public class ProfileService {
 
     public static CompletableFuture<JsonObject> getProfileStats(String player, String profileName, boolean force) {
-        checkAndRefreshPrices();
         return getUuid(player)
                 .thenCompose(uuid -> {
                     if (uuid == null) {
@@ -66,125 +27,9 @@ public class LocalIntegration {
                 });
     }
 
-    private static void checkAndRefreshPrices() {
-        if (priceCache.isEmpty()) {
-            loadPrices();
-        }
-        if (!isRefreshing && System.currentTimeMillis() > priceCacheExpiry) {
-            refreshPrices();
-        }
-    }
-
-    private static void refreshPrices() {
-        isRefreshing = true;
-        Blackaddons.LOGGER.info("Refreshing local prices...");
-        CompletableFuture<Map<String, Double>> bzFuture = getBazaarPrices();
-        CompletableFuture<Map<String, Double>> ahFuture = getAhPrices();
-        CompletableFuture<Map<String, Double>> specialFuture = getSpecialPrices();
-
-        CompletableFuture.allOf(bzFuture, ahFuture, specialFuture).thenRun(() -> {
-            Map<String, Double> newPrices = new HashMap<>();
-            try {
-                newPrices.putAll(bzFuture.get());
-                newPrices.putAll(ahFuture.get());
-                newPrices.putAll(specialFuture.get());
-
-                if (newPrices.containsKey("SKELETON_MASTER_CHESTPLATE")) {
-                    newPrices.put("SKELETON_MASTER_CHESTPLATE_50", newPrices.get("SKELETON_MASTER_CHESTPLATE"));
-                }
-
-                priceCache = newPrices;
-                priceCacheExpiry = System.currentTimeMillis() + Constants.PRICE_CACHE_DURATION_MS;
-                savePrices(newPrices);
-                Blackaddons.LOGGER.info("Local prices refreshed. Total items: " + newPrices.size());
-            } catch (Exception e) {
-                Blackaddons.LOGGER.error("Failed to merge prices: " + e.getMessage());
-            } finally {
-                isRefreshing = false;
-            }
-        });
-    }
-
-    private static CompletableFuture<Map<String, Double>> getBazaarPrices() {
-        return sendGetRequest(Constants.HYPIXEL_BAZAAR_API).thenApply(res -> {
-            Map<String, Double> prices = new HashMap<>();
-            if (res != null && res.statusCode() == 200) {
-                try {
-                    JsonObject json = JsonParser.parseString(res.body()).getAsJsonObject();
-                    JsonObject products = json.getAsJsonObject("products");
-                    for (String key : products.keySet()) {
-                        JsonObject product = products.getAsJsonObject(key);
-                        double sellPrice = product.getAsJsonObject("quick_status").get("sellPrice").getAsDouble();
-                        prices.put(key, sellPrice);
-                    }
-                } catch (Exception e) {
-                    Blackaddons.LOGGER.error("Error parsing Bazaar prices: " + e.getMessage());
-                }
-            }
-            return prices;
-        });
-    }
-
-    private static CompletableFuture<Map<String, Double>> getAhPrices() {
-        return sendGetRequest(Constants.MOULBERRY_AH_API).thenApply(res -> {
-            Map<String, Double> prices = new HashMap<>();
-            if (res != null && res.statusCode() == 200) {
-                try {
-                    JsonObject json = JsonParser.parseString(res.body()).getAsJsonObject();
-                    for (String key : json.keySet()) {
-                        prices.put(key, json.get(key).getAsDouble());
-                    }
-                } catch (Exception e) {
-                    Blackaddons.LOGGER.error("Error parsing AH prices: " + e.getMessage());
-                }
-            }
-            return prices;
-        });
-    }
-
-    private static CompletableFuture<Map<String, Double>> getSpecialPrices() {
-        Map<String, String[]> specials = new HashMap<>();
-        specials.put("SHINY_NECRON_HANDLE", new String[] { Constants.COFL_SHINY_NECRON_HANDLE });
-        specials.put("SKELETON_MASTER_CHESTPLATE", new String[] {
-                Constants.COFL_SKELETON_MASTER_CHESTPLATE_MAX,
-                Constants.COFL_SKELETON_MASTER_CHESTPLATE_BASE // Fallback
-        });
-
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        Map<String, Double> results = new ConcurrentHashMap<>();
-
-        for (Map.Entry<String, String[]> entry : specials.entrySet()) {
-            CompletableFuture<Void> itemFuture = CompletableFuture.completedFuture(null);
-
-            for (String url : entry.getValue()) {
-                itemFuture = itemFuture.thenCompose(v -> {
-                    if (results.containsKey(entry.getKey()) && results.get(entry.getKey()) > 0) {
-                        return CompletableFuture.completedFuture(null);
-                    }
-                    return sendGetRequest(url).thenAccept(res -> {
-                        if (res != null && res.statusCode() == 200) {
-                            try {
-                                JsonObject json = JsonParser.parseString(res.body()).getAsJsonObject();
-                                double price = json.has("median") ? json.get("median").getAsDouble()
-                                        : (json.has("min") ? json.get("min").getAsDouble() : 0);
-                                if (price > 0)
-                                    results.put(entry.getKey(), price);
-                            } catch (Exception e) {
-                            }
-                        }
-                    });
-                });
-            }
-            futures.add(itemFuture);
-        }
-
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> new HashMap<>(results));
-    }
-
     private static CompletableFuture<String> getUuid(String name) {
         String url = Constants.PLAYER_DB_API + name;
-        return sendGetRequest(url).thenApply(res -> {
+        return HttpUtils.sendGetRequest(url).thenApply(res -> {
             if (res != null && res.statusCode() == 200) {
                 try {
                     JsonObject json = JsonParser.parseString(res.body()).getAsJsonObject();
@@ -200,7 +45,7 @@ public class LocalIntegration {
 
     private static CompletableFuture<JsonObject> getProfileData(String uuid) {
         String url = Constants.ADJECTILS_PROFILE_API + uuid;
-        return sendGetRequest(url).thenApply(res -> {
+        return HttpUtils.sendGetRequest(url).thenApply(res -> {
             if (res != null && res.statusCode() == 200) {
                 try {
                     return JsonParser.parseString(res.body()).getAsJsonObject();
@@ -248,6 +93,9 @@ public class LocalIntegration {
             result.addProperty("secrets", extractSecrets(dungeons, member));
             result.addProperty("blood_mob_kills", extractBloodMobKills(member));
             result.add("classes", extractClassXp(dungeons));
+            result.add("accessory_bag_storage",
+                    member.has("accessory_bag_storage") ? member.getAsJsonObject("accessory_bag_storage")
+                            : new JsonObject());
             result.add("floors", extractFloorStats(dungeons));
 
             JsonArray recentRuns = extractRecentRuns(dungeons, uuid);
@@ -410,70 +258,6 @@ public class LocalIntegration {
             floorObj.addProperty("fastest_s", fastS);
 
             floors.add(floorName, floorObj);
-        }
-    }
-
-    private static CompletableFuture<HttpResponse<String>> sendGetRequest(String url) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(Constants.HTTP_TIMEOUT_SECONDS))
-                .header("User-Agent", Constants.BROWSER_USER_AGENT)
-                .header("Accept",
-                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-                .header("Accept-Language", "en-US,en;q=0.5")
-                .GET()
-                .build();
-
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(res -> {
-                    if (res.statusCode() >= 200 && res.statusCode() < 300) {
-                        Blackaddons.LOGGER.info("Successfully fetched: " + url);
-                    } else {
-                        Blackaddons.LOGGER.warn("Fetch failed. Status: " + res.statusCode() + " URL: " + url);
-                    }
-                    return res;
-                })
-                .exceptionally(e -> {
-                    Blackaddons.LOGGER.error("Error fetching " + url + ": " + e.getMessage());
-                    return null;
-                });
-    }
-
-    private static void savePrices(Map<String, Double> prices) {
-        if (!CONFIG_DIR.toFile().exists()) {
-            CONFIG_DIR.toFile().mkdirs();
-        }
-
-        PricesData data = new PricesData();
-        data.timestamp = System.currentTimeMillis();
-        data.prices = prices;
-
-        try (FileWriter writer = new FileWriter(PRICES_FILE)) {
-            Constants.GSON.toJson(data, writer);
-        } catch (Exception e) {
-            Blackaddons.LOGGER.error("Failed to save prices: " + e.getMessage());
-        }
-    }
-
-    private static void loadPrices() {
-        if (!PRICES_FILE.exists()) {
-            return;
-        }
-
-        try (FileReader reader = new FileReader(PRICES_FILE)) {
-            PricesData data = Constants.GSON.fromJson(reader, PricesData.class);
-            if (data != null && data.prices != null) {
-                long age = System.currentTimeMillis() - data.timestamp;
-                if (age < Constants.PRICE_CACHE_DURATION_MS) {
-                    priceCache = data.prices;
-                    priceCacheExpiry = data.timestamp + Constants.PRICE_CACHE_DURATION_MS;
-                    Blackaddons.LOGGER.info("Loaded prices from local cache. Age: " + (age / 1000 / 60) + "m");
-                } else {
-                    Blackaddons.LOGGER.info("Local price cache expired.");
-                }
-            }
-        } catch (Exception e) {
-            Blackaddons.LOGGER.error("Failed to load prices: " + e.getMessage());
         }
     }
 }

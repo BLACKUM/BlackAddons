@@ -10,11 +10,10 @@ import com.google.gson.JsonObject;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import org.blackum.blackaddons.core.config.ConfigManager;
+
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
-
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -295,20 +294,20 @@ public class RtcaTabController extends ProfileTabController {
         double[] mayorVals = { 1.0, 1.5, 1.55 };
         bonuses.put("mayor", mayorVals[simMayorIndex]);
 
-        if (ConfigManager.data.dataSource == ConfigManager.DataSource.LOCAL) {
+        String profileName = screen.getProfileName();
 
-            Map<String, Double> currentClassXp = new HashMap<>();
-            try {
-                JsonObject classesObj = JsonUtils.getObject(profileData, "classes");
-                for (String cls : classesObj.keySet()) {
-                    currentClassXp.put(cls, classesObj.get(cls).getAsDouble());
-                }
-            } catch (Exception e) {
-                if (simResultsList != null)
-                    addInfoRow(simResultsList, "Error:", "Could not read profile class data.");
-                return;
+        Map<String, Double> currentClassXp = new HashMap<>();
+        boolean canDoLocal = true;
+        try {
+            JsonObject classesObj = JsonUtils.getObject(profileData, "classes");
+            for (String cls : classesObj.keySet()) {
+                currentClassXp.put(cls, classesObj.get(cls).getAsDouble());
             }
+        } catch (Exception e) {
+            canDoLocal = false;
+        }
 
+        if (canDoLocal) {
             LocalRtcaService.simulate(rtcaFloor, currentClassXp, bonuses)
                     .thenAccept(json -> {
                         Minecraft.getInstance().execute(() -> {
@@ -321,32 +320,29 @@ public class RtcaTabController extends ProfileTabController {
                             processRtcaResults(json);
                         });
                     });
-            return;
-        }
+        } else {
+            BotIntegration.getRtcaStats(playerName, profileName, rtcaFloor, bonuses).thenAccept(json -> {
+                Minecraft.getInstance().execute(() -> {
+                    if (simResultsList == null)
+                        return;
 
-        String profileName = screen.getProfileName();
+                    simResultsList.clearItems();
+                    renderCalculatorResults();
 
-        BotIntegration.getRtcaStats(playerName, profileName, rtcaFloor, bonuses).thenAccept(json -> {
-            Minecraft.getInstance().execute(() -> {
-                if (simResultsList == null)
-                    return;
+                    if (json == null) {
+                        addInfoRow(simResultsList, "Error:", "API Unavailable or Failed.");
+                        return;
+                    }
 
-                simResultsList.clearItems();
-                renderCalculatorResults();
+                    if (json.has("error")) {
+                        addInfoRow(simResultsList, "Error:", JsonUtils.getString(json, "error", "Unknown error"));
+                        return;
+                    }
 
-                if (json == null) {
-                    addInfoRow(simResultsList, "Error:", "API Unavailable or Failed.");
-                    return;
-                }
-
-                if (json.has("error")) {
-                    addInfoRow(simResultsList, "Error:", JsonUtils.getString(json, "error", "Unknown error"));
-                    return;
-                }
-
-                processRtcaResults(json);
+                    processRtcaResults(json);
+                });
             });
-        });
+        }
     }
 
     private void processRtcaResults(JsonObject json) {

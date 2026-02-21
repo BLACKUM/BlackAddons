@@ -25,17 +25,6 @@ public class SettingsTabController extends SimpleTabController {
         settingsTab.addWidget(listView);
 
         listView.addItem(new Label(0, 0, "General Settings", Label.Style.TITLE));
-        listView.addItem(new Label(0, 0, "Data Source", Label.Style.BODY));
-
-        List<String> dataSources = List.of("BOT", "LOCAL");
-        Dropdown dataSourceDropdown = new Dropdown(0, 0, width, Theme.BUTTON_HEIGHT,
-                "Data Source",
-                dataSources, (selected) -> {
-                    ConfigManager.data.dataSource = ConfigManager.DataSource.valueOf(selected);
-                    ConfigManager.save();
-                });
-        dataSourceDropdown.setSelectedOption(ConfigManager.data.dataSource.name());
-        listView.addItem(dataSourceDropdown);
 
         listView.addItem(new Label(0, 0, "Party Finder", Label.Style.TITLE));
 

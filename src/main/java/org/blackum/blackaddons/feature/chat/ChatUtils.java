@@ -11,7 +11,7 @@ import static org.blackum.blackaddons.core.util.MinecraftInstance.mc;
 
 public class ChatUtils {
 
-    static MutableComponent BuildGradient(String text, int startRgb, int endRgb) {
+    public static MutableComponent BuildGradient(String text, int startRgb, int endRgb) {
         MutableComponent result = Component.empty();
         int length = text.length();
 
@@ -35,6 +35,69 @@ public class ChatUtils {
             int b = Math.round(sb + ratio * (eb - sb));
 
             int rgb = (r << 16) | (g << 8) | b;
+
+            MutableComponent charText = Component.literal(String.valueOf(text.charAt(i)))
+                    .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb)));
+
+            result.append(charText);
+        }
+
+        return result;
+    }
+
+    public record ColorStop(int rgb, float fraction) {
+    }
+
+    public static MutableComponent BuildMultiGradient(String text, java.util.List<ColorStop> stops) {
+        if (stops == null || stops.isEmpty()) {
+            return Component.literal(text);
+        }
+
+        if (stops.size() == 1) {
+            return Component.literal(text).setStyle(Style.EMPTY.withColor(TextColor.fromRgb(stops.get(0).rgb())));
+        }
+
+        MutableComponent result = Component.empty();
+        int length = text.length();
+
+        if (length <= 1) {
+            return Component.literal(text).setStyle(Style.EMPTY.withColor(TextColor.fromRgb(stops.get(0).rgb())));
+        }
+
+        for (int i = 0; i < length; ++i) {
+            float ratio = (float) i / (length - 1);
+
+            ColorStop startStop = stops.get(0);
+            ColorStop endStop = stops.get(stops.size() - 1);
+
+            for (int j = 0; j < stops.size() - 1; j++) {
+                if (ratio >= stops.get(j).fraction() && ratio <= stops.get(j + 1).fraction()) {
+                    startStop = stops.get(j);
+                    endStop = stops.get(j + 1);
+                    break;
+                }
+            }
+
+            int rgb;
+            if (startStop.fraction() == endStop.fraction()) {
+                rgb = startStop.rgb();
+            } else {
+                float localRatio = (ratio - startStop.fraction()) / (endStop.fraction() - startStop.fraction());
+
+                int sr = (startStop.rgb() >> 16) & 0xFF;
+                int sg = (startStop.rgb() >> 8) & 0xFF;
+                int sb = startStop.rgb() & 0xFF;
+
+                int er = (endStop.rgb() >> 16) & 0xFF;
+                int eg = (endStop.rgb() >> 8) & 0xFF;
+                int eb = endStop.rgb() & 0xFF;
+
+                int r = Math.round(sr + localRatio * (er - sr));
+                int g = Math.round(sg + localRatio * (eg - sg));
+                int b = Math.round(sb + localRatio * (eb - sb));
+
+                rgb = (r << 16) | (g << 8) | b;
+            }
 
             MutableComponent charText = Component.literal(String.valueOf(text.charAt(i)))
                     .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb)));

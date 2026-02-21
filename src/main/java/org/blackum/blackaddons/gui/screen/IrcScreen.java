@@ -263,31 +263,51 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
                     .withStyle(Style.EMPTY.withColor(COLORS[colorIndex])));
 
             String text = msg.message();
-            Matcher matcher = URL_PATTERN.matcher(text);
-            int lastEnd = 0;
-            while (matcher.find()) {
-                if (matcher.start() > lastEnd) {
-                    fullComp.append(Component.literal(text.substring(lastEnd, matcher.start()))
-                            .withStyle(ChatFormatting.WHITE));
+            if (text.length() > 500) {
+                StringBuilder spacedText = new StringBuilder();
+                int currentWordLength = 0;
+                for (int i = 0; i < text.length(); i++) {
+                    char c = text.charAt(i);
+                    spacedText.append(c);
+                    if (c == ' ') {
+                        currentWordLength = 0;
+                    } else {
+                        currentWordLength++;
+                        if (currentWordLength >= 60) {
+                            spacedText.append(" ");
+                            currentWordLength = 0;
+                        }
+                    }
                 }
-                String url = matcher.group(1);
-                fullComp.append(Component.literal(url)
-                        .withStyle(style -> style.withColor(Theme.ACCENT)
-                                .withUnderlined(true)
-                                .withClickEvent(new ClickEvent.OpenUrl(URI.create(url)))));
+                text = spacedText.toString();
+                fullComp.append(Component.literal(text).withStyle(ChatFormatting.WHITE));
+            } else {
+                Matcher matcher = URL_PATTERN.matcher(text);
+                int lastEnd = 0;
+                while (matcher.find()) {
+                    if (matcher.start() > lastEnd) {
+                        fullComp.append(Component.literal(text.substring(lastEnd, matcher.start()))
+                                .withStyle(ChatFormatting.WHITE));
+                    }
+                    String url = matcher.group(1);
+                    fullComp.append(Component.literal(url)
+                            .withStyle(style -> style.withColor(Theme.ACCENT)
+                                    .withUnderlined(true)
+                                    .withClickEvent(new ClickEvent.OpenUrl(URI.create(url)))));
 
-                if (ChatImageHandler.DISCORD_IMAGE_PATTERN.matcher(url).find()) {
-                    fullComp.append(Component.literal(Constants.PREVIEW_LABEL)
-                            .withStyle(style -> style
-                                    .withClickEvent(new ClickEvent.RunCommand("/ba preview " + url))
-                                    .withHoverEvent(new HoverEvent.ShowText(
-                                            Component.literal(Constants.PREVIEW_HOVER)))));
+                    if (ChatImageHandler.DISCORD_IMAGE_PATTERN.matcher(url).find()) {
+                        fullComp.append(Component.literal(Constants.PREVIEW_LABEL)
+                                .withStyle(style -> style
+                                        .withClickEvent(new ClickEvent.RunCommand("/ba preview " + url))
+                                        .withHoverEvent(new HoverEvent.ShowText(
+                                                Component.literal(Constants.PREVIEW_HOVER)))));
+                    }
+
+                    lastEnd = matcher.end();
                 }
-
-                lastEnd = matcher.end();
-            }
-            if (lastEnd < text.length()) {
-                fullComp.append(Component.literal(text.substring(lastEnd)).withStyle(ChatFormatting.WHITE));
+                if (lastEnd < text.length()) {
+                    fullComp.append(Component.literal(text.substring(lastEnd)).withStyle(ChatFormatting.WHITE));
+                }
             }
 
             this.lines = MinecraftInstance.mc.font.split(fullComp, width - 20);
