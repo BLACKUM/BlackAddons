@@ -94,13 +94,26 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Current version is $VERSION"
 
+      - name: Generate Changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "## Changes" > changelog.md
+          if [ -z "$PREV_TAG" ]; then
+            git log --no-merges --pretty=format:"* %s (%h)" >> changelog.md
+          else
+            git log ${PREV_TAG}..HEAD --no-merges --pretty=format:"* %s (%h)" >> changelog.md
+            echo "" >> changelog.md
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ env.VERSION }}" >> changelog.md
+          fi
+          cat changelog.md
+
       - name: Create Stable Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "v${{ env.VERSION }}"
           name: "v${{ env.VERSION }}"
           prerelease: false
-          generate_release_notes: true
+          body_path: changelog.md
           files: artifacts/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
