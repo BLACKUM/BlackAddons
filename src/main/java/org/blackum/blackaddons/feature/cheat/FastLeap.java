@@ -1,6 +1,5 @@
 package org.blackum.blackaddons.feature.cheat;
 
-import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
@@ -17,7 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FastLeap {
-    private static final String PREFIX = ChatFormatting.GRAY + "[" + ChatFormatting.GOLD + "FastLeap" + ChatFormatting.GRAY + "] ";
     private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(?:\\[.*?\\] )?([A-Za-z0-9_]+) opened a (?:Wither )?door!");
     private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)You are on a leap cooldown!");
     
@@ -29,7 +27,6 @@ public class FastLeap {
     private static boolean wasAttackDown = false;
 
     public static void register() {
-        Blackaddons.LOGGER.info("Registering FastLeap (Stability Mode)...");
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> onChatMessage(message));
         ClientTickEvents.END_CLIENT_TICK.register(FastLeap::onTick);
@@ -96,7 +93,6 @@ public class FastLeap {
                         if (name.startsWith(lastOpener.toLowerCase())) {
                             clickedLeap = true;
                             client.gameMode.handleInventoryMouseClick(containerScreen.getMenu().containerId, slot.index, 0, ClickType.PICKUP, client.player);
-                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + lastOpener), false);
                             finishLeap(client);
                             break;
                         }
