@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 public class FastLeap {
     private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] ";
-    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(\\w+)\\s+opened\\s+a\\s+.*WITHER.*\\s+door!");
+    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i).*?\\b([a-zA-Z0-9_]{3,16})\\s+opened\\s+a\\s+.*WITHER.*\\s+door!");
     private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)This\\s+ability\\s+is\\s+on\\s+cooldown\\s+for\\s+(\\d+)s\\.");
 
     private static String lastOpener = null;
@@ -43,8 +43,11 @@ public class FastLeap {
     private static void onChatMessage(Component message) {
         if (!ConfigManager.data.FastLeapEnabled) return;
 
-        // Strip ALL color codes including custom ones, and normalize spaces
-        String text = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "").replaceAll("\\s+", " ").trim();
+        // Strip ALL color codes, remove non-ASCII, and normalize spaces
+        String text = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "")
+                .replaceAll("[^\\x20-\\x7E]", "")
+                .replaceAll("\\s+", " ")
+                .trim();
         Minecraft mc = Minecraft.getInstance();
 
         mc.execute(() -> {
