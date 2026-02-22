@@ -27,6 +27,8 @@ public class FastLeap {
     private static boolean menuOpened = false;
     private static boolean inProgress = false;
     private static boolean clickedLeap = false;
+    private static boolean wasAttackDown = false;
+    private static boolean wasUseDown = false;
 
     public static void register() {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
@@ -57,6 +59,31 @@ public class FastLeap {
 
     private static void onTick(Minecraft client) {
         if (!ConfigManager.data.FastLeapEnabled || client.player == null) return;
+
+        if (client.screen == null) {
+            boolean attackDown = client.options.keyAttack.isDown();
+            boolean useDown = client.options.keyUse.isDown();
+
+            ItemStack mainHand = client.player.getMainHandItem();
+            boolean holdingLeap = "INFINITE_SPIRIT_LEAP".equals(getHeldItemID(mainHand));
+
+            if (useDown && !wasUseDown && holdingLeap) {
+                clearQueue();
+            }
+
+            if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
+                inProgress = true;
+                client.gameMode.useItem(client.player, net.minecraft.world.InteractionHand.MAIN_HAND);
+
+                String leapTo = getLeap(client);
+                if (leapTo != null && !leapTo.isEmpty()) {
+                    queueLeap(leapTo);
+                }
+            }
+
+            wasAttackDown = attackDown;
+            wasUseDown = useDown;
+        }
 
         if (client.screen instanceof ContainerScreen containerScreen) {
             String title = containerScreen.getTitle().getString();
@@ -140,32 +167,6 @@ public class FastLeap {
         AABB box = new AABB(Math.min(x1, x2), Math.min(y1, y2), Math.min(z1, z2), 
                             Math.max(x1, x2), Math.max(y1, y2), Math.max(z1, z2));
         return box.contains(player.position());
-    }
-
-    public static boolean handleMouseClick(Minecraft client, int button) {
-        if (!ConfigManager.data.FastLeapEnabled || client.player == null) return false;
-
-        ItemStack mainHand = client.player.getMainHandItem();
-        boolean holdingLeap = "INFINITE_SPIRIT_LEAP".equals(getHeldItemID(mainHand));
-
-        if (button == 1) {
-            if (holdingLeap) {
-                clearQueue();
-                return true;
-            }
-        } else if (button == 0) {
-            if (holdingLeap && !inProgress) {
-                inProgress = true;
-                client.gameMode.useItem(client.player, net.minecraft.world.InteractionHand.MAIN_HAND);
-
-                String leapTo = getLeap(client);
-                if (leapTo != null && !leapTo.isEmpty()) {
-                    queueLeap(leapTo);
-                }
-                return true;
-            }
-        }
-        return false;
     }
 
     private static String getHeldItemID(ItemStack stack) {

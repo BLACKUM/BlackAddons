@@ -21,8 +21,7 @@
     "core.PlayerTeamMixin",
     "gui.PlayerTabListMixin",
     "core.TextColorMixin",
-    "core.TextColorAccessor",
-    "feature.MouseHandlerMixin"
+    "core.TextColorAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
