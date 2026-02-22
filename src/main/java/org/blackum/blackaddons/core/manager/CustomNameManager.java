@@ -171,8 +171,12 @@ public class CustomNameManager {
                 }
             }
 
-            customNames.put(entry.getKey().toLowerCase(),
-                    new CustomName(displayName, color, gradientStops, animated, chroma, speed));
+            CustomName customName = new CustomName(displayName, color, gradientStops, animated, chroma, speed);
+            customNames.put(entry.getKey().toLowerCase(), customName);
+            String displayKey = displayName.toLowerCase();
+            if (!customNames.containsKey(displayKey)) {
+                customNames.put(displayKey, customName);
+            }
         }
         Blackaddons.LOGGER.info("Successfully fetched " + customNames.size() + " custom names.");
     }
