@@ -13,4 +13,8 @@ public interface AnimatedTextColorAccessor {
     void ba$setOffset(float offset);
 
     boolean ba$isAnimated();
+
+    void ba$setChroma(boolean chroma);
+
+    boolean ba$isChroma();
 }

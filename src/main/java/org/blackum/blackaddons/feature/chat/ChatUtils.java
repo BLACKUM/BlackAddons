@@ -5,6 +5,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import org.blackum.blackaddons.core.util.AnimatedTextColorAccessor;
+import org.blackum.blackaddons.mixin.core.TextColorAccessor;
 import static org.blackum.blackaddons.core.util.MinecraftInstance.mc;
 
 public class ChatUtils {
@@ -70,6 +72,29 @@ public class ChatUtils {
                     .setStyle(Style.EMPTY.withColor(color));
 
             result.append(charText);
+        }
+
+        return result;
+    }
+
+    private static final float CHROMA_HUE_SPREAD = 0.3f;
+
+    public static MutableComponent BuildChroma(String text, float speed) {
+        MutableComponent result = Component.empty();
+        int length = text.length();
+
+        for (int i = 0; i < length; ++i) {
+            float charOffset = length > 1 ? ((float) (length - 1 - i) / (length - 1)) * CHROMA_HUE_SPREAD : 0.0f;
+            TextColor color = TextColorAccessor.ba$create(0xFFFFFF);
+
+            if ((Object) color instanceof AnimatedTextColorAccessor accessor) {
+                accessor.ba$setChroma(true);
+                accessor.ba$setSpeed(speed);
+                accessor.ba$setOffset(charOffset);
+            }
+
+            result.append(Component.literal(String.valueOf(text.charAt(i)))
+                    .setStyle(Style.EMPTY.withColor(color)));
         }
 
         return result;

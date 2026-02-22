@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.awt.Color;
 import java.util.List;
 
 @Mixin(TextColor.class)
@@ -23,6 +24,8 @@ public abstract class TextColorMixin implements AnimatedTextColorAccessor {
     @Unique
     private boolean ba$isAnimated = false;
     @Unique
+    private boolean ba$isChroma = false;
+    @Unique
     private List<ChatUtils.ColorStop> ba$stops;
     @Unique
     private float ba$speed = 1.0f;
@@ -31,7 +34,9 @@ public abstract class TextColorMixin implements AnimatedTextColorAccessor {
 
     @Inject(method = "getValue", at = @At("HEAD"), cancellable = true)
     private void onGetValue(CallbackInfoReturnable<Integer> cir) {
-        if (ba$isAnimated && ba$stops != null && !ba$stops.isEmpty()) {
+        if (ba$isChroma) {
+            cir.setReturnValue(ba$calculateChromaColor());
+        } else if (ba$isAnimated && ba$stops != null && !ba$stops.isEmpty()) {
             cir.setReturnValue(ba$calculateAnimatedColor());
         }
     }
@@ -107,6 +112,15 @@ public abstract class TextColorMixin implements AnimatedTextColorAccessor {
         return (r << 16) | (g << 8) | b;
     }
 
+    @Unique
+    private int ba$calculateChromaColor() {
+        double time = (System.currentTimeMillis() / 1000.0) * ba$speed / 5.0;
+        float hue = (float) ((time + ba$offset) % 1.0);
+        if (hue < 0)
+            hue += 1.0f;
+        return Color.HSBtoRGB(hue, 1.0f, 1.0f) & 0xFFFFFF;
+    }
+
     @Override
     public void ba$setAnimated(boolean animated) {
         this.ba$isAnimated = animated;
@@ -130,5 +144,15 @@ public abstract class TextColorMixin implements AnimatedTextColorAccessor {
     @Override
     public boolean ba$isAnimated() {
         return this.ba$isAnimated;
+    }
+
+    @Override
+    public void ba$setChroma(boolean chroma) {
+        this.ba$isChroma = chroma;
+    }
+
+    @Override
+    public boolean ba$isChroma() {
+        return this.ba$isChroma;
     }
 }

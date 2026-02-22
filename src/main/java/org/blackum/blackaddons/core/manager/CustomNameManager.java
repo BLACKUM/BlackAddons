@@ -116,6 +116,7 @@ public class CustomNameManager {
             String displayName = data.has("display") ? data.get("display").getAsString() : entry.getKey();
             String color = data.has("color") ? data.get("color").getAsString() : "";
             boolean animated = data.has("animated") && data.get("animated").getAsBoolean();
+            boolean chroma = data.has("chroma") && data.get("chroma").getAsBoolean();
             float speed = data.has("speed") ? data.get("speed").getAsFloat() : 1.0f;
 
             List<ChatUtils.ColorStop> gradientStops = new ArrayList<>();
@@ -171,7 +172,7 @@ public class CustomNameManager {
             }
 
             customNames.put(entry.getKey().toLowerCase(),
-                    new CustomName(displayName, color, gradientStops, animated, speed));
+                    new CustomName(displayName, color, gradientStops, animated, chroma, speed));
         }
         Blackaddons.LOGGER.info("Successfully fetched " + customNames.size() + " custom names.");
     }
@@ -265,6 +266,10 @@ public class CustomNameManager {
             return originalComponent;
         }
 
+        if (custom.chroma()) {
+            return ChatUtils.BuildChroma(custom.display(), custom.speed());
+        }
+
         if (custom.gradientStops() != null && !custom.gradientStops().isEmpty()) {
             try {
                 if (custom.animated()) {
@@ -296,6 +301,6 @@ public class CustomNameManager {
     }
 
     public record CustomName(String display, String color, List<ChatUtils.ColorStop> gradientStops, boolean animated,
-            float speed) {
+            boolean chroma, float speed) {
     }
 }
