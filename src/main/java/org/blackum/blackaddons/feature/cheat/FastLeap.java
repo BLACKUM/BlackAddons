@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 public class FastLeap {
     private static final String PREFIX = ChatFormatting.GRAY + "[" + ChatFormatting.GOLD + "FastLeap" + ChatFormatting.GRAY + "] ";
     private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(?:\\[.*?\\] )?([A-Za-z0-9_]+) opened a (?:Wither )?door!");
+    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)You are on a leap cooldown!");
     
     private static String lastOpener = null;
     private static boolean inProgress = false;
@@ -49,13 +50,17 @@ public class FastLeap {
         mc.execute(() -> {
             if (mc.player == null) return;
 
-            // Strip colors just for the matcher to be safe, but keep raw for debug
             String cleanText = rawText.replaceAll("(?i)§[0-9A-FK-ORX]", "").trim();
 
             Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(cleanText);
             if (doorMatcher.find()) {
                 lastOpener = doorMatcher.group(1);
+                System.out.println("[FastLeap] DOOR OPENER DETECTED: " + lastOpener);
                 mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GOLD + "DOOR OPENER: " + ChatFormatting.WHITE + lastOpener), false);
+            }
+
+            if (COOLDOWN_PATTERN.matcher(cleanText).find()) {
+                resetState();
             }
         });
     }
@@ -65,14 +70,20 @@ public class FastLeap {
 
         if (client.screen == null) {
             boolean attackDown = client.options.keyAttack.isDown();
+            boolean useDown = client.options.keyUse.isDown();
+
+            // Right-click always cancels auto-leap intent
+            if (useDown) {
+                inProgress = false;
+            }
 
             // Trigger on left-click if we have a target
-            if (attackDown && !wasAttackDown && lastOpener != null && !inProgress) {
+            if (attackDown && !wasAttackDown && lastOpener != null) {
+                System.out.println("[FastLeap] Left-click trigger for: " + lastOpener);
                 inProgress = true;
                 clickedLeap = false;
                 
                 if (client.gameMode != null) {
-                    // Try to use whatever is in main hand (usually Infinileap)
                     client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
                 }
             }
@@ -83,7 +94,7 @@ public class FastLeap {
             String title = containerScreen.getTitle().getString();
             if ("Spirit Leap".equals(title)) {
                 menuOpened = true;
-                if (lastOpener != null && !clickedLeap) {
+                if (inProgress && lastOpener != null && !clickedLeap) {
                     int invStart = containerScreen.getMenu().slots.size() - 36;
                     
                     for (Slot slot : containerScreen.getMenu().slots) {
