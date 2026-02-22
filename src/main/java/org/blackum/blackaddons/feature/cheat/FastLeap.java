@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FastLeap {
-    private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] ";
+    private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] " + ChatFormatting.RESET;
     private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i).*?\\b([a-zA-Z0-9_]{3,16})\\s+opened\\s+a\\s+.*WITHER.*\\s+door!");
     private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)This\\s+ability\\s+is\\s+on\\s+cooldown\\s+for\\s+(\\d+)s\\.");
 
@@ -51,10 +51,15 @@ public class FastLeap {
         mc.execute(() -> {
             if (mc.player == null) return;
 
+            // Debug prints to find out why detection fails
+            if (text.toLowerCase().contains("door")) {
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GRAY + "Detected 'door' in: " + ChatFormatting.WHITE + text), false);
+            }
+
             Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
             if (doorMatcher.find()) {
                 lastOpener = doorMatcher.group(1);
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Door opener: " + ChatFormatting.WHITE + lastOpener), false);
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GOLD + "TARGET SET: " + ChatFormatting.WHITE + lastOpener), false);
             }
 
             Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
