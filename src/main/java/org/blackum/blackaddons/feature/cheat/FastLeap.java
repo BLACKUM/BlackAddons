@@ -176,4 +176,26 @@ public class FastLeap {
         }
         return "";
     }
+
+    public static List<String> getDebugInfo() {
+        List<String> info = new ArrayList<>();
+        if (!ConfigManager.data.FastLeapEnabled) return info;
+
+        info.add("");
+        info.add(ChatFormatting.AQUA + "[FastLeap Debug]");
+        info.add("InProgress: " + inProgress);
+        info.add("ClickedLeap: " + clickedLeap);
+        info.add("MenuOpened: " + menuOpened);
+        info.add("Queue: " + leapQueue);
+        info.add("LastOpener: " + lastOpener);
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            String held = getHeldItemID(client.player.getMainHandItem());
+            info.add("HeldID: " + (held.isEmpty() ? "none" : held));
+            info.add("Screen: " + (client.screen != null ? client.screen.getClass().getSimpleName() : "none"));
+        }
+
+        return info;
+    }
 }
