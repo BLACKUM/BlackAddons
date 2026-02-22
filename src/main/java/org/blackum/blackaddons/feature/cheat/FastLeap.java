@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 
 public class FastLeap {
     private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] ";
-    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(\\w+) opened a WITHER door!");
-    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)This ability is on cooldown for (\\d+)s\\.");
+    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(\\w+)\\s+opened\\s+a\\s+.*WITHER.*\\s+door!");
+    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)This\\s+ability\\s+is\\s+on\\s+cooldown\\s+for\\s+(\\d+)s\\.");
 
     private static String lastOpener = null;
     private static final List<String> leapQueue = Collections.synchronizedList(new ArrayList<>());
@@ -43,30 +43,31 @@ public class FastLeap {
     private static void onChatMessage(Component message) {
         if (!ConfigManager.data.FastLeapEnabled) return;
 
-        String text = message.getString().replaceAll("(?i)§[0-9A-FK-OR]", "").replaceAll("[^\\x20-\\x7E]", "").trim();
+        // Strip ALL color codes including custom ones, and normalize spaces
+        String text = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "").replaceAll("\\s+", " ").trim();
         Minecraft mc = Minecraft.getInstance();
 
         mc.execute(() -> {
+            if (mc.player == null) return;
+
             if (text.toLowerCase().contains("door")) {
-                if (mc.player != null) {
-                    mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.LIGHT_PURPLE + "RAW: " + ChatFormatting.WHITE + text), false);
-                }
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.LIGHT_PURPLE + "RAW: " + ChatFormatting.WHITE + text), false);
             }
 
             Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
             if (doorMatcher.find()) {
                 lastOpener = doorMatcher.group(1);
-                if (mc.player != null) {
-                    mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Door opener: " + ChatFormatting.WHITE + lastOpener), false);
-                }
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Door opener: " + ChatFormatting.WHITE + lastOpener), false);
             }
 
             Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
             if (cooldownMatcher.find()) {
                 clickedLeap = false;
                 inProgress = false;
-                if (!leapQueue.isEmpty()) {
-                    leapQueue.remove(leapQueue.size() - 1);
+                synchronized(leapQueue) {
+                    if (!leapQueue.isEmpty()) {
+                        leapQueue.remove(leapQueue.size() - 1);
+                    }
                 }
             }
         });
@@ -90,9 +91,13 @@ public class FastLeap {
                 String leapTo = getLeap(client);
                 client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (leapTo.isEmpty() ? "EMPTY" : leapTo) + ChatFormatting.GRAY + " [DoorOpener=" + ConfigManager.data.FastLeapDoorOpener + ", lastOpener=" + lastOpener + "]"), false);
                 if (leapTo != null && !leapTo.isEmpty()) {
-                    inProgress = true;
                     queueLeap(leapTo);
-                    client.execute(() -> client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND));
+                    inProgress = true;
+                    client.execute(() -> {
+                        if (client.player != null && client.screen == null) {
+                            client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
+                        }
+                    });
                 }
             }
 
@@ -123,12 +128,16 @@ public class FastLeap {
                             if (itemName.equals(targetLeap.toLowerCase())) {
                                 int windowId = containerScreen.getMenu().containerId;
 
-                                client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
-                                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
-
-                                matched = true;
-                                clickedLeap = true;
-                                reloadGUI(client);
+                                client.execute(() -> {
+                                    if (!clickedLeap && client.player != null && client.screen instanceof ContainerScreen currentScreen) {
+                                        if (currentScreen.getMenu().containerId == windowId) {
+                                            clickedLeap = true;
+                                            client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
+                                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
+                                            reloadGUI(client);
+                                        }
+                                    }
+                                });
                                 break;
                             }
                         }
@@ -147,12 +156,18 @@ public class FastLeap {
 
     private static void reloadGUI(Minecraft client) {
         menuOpened = false;
-        if (!leapQueue.isEmpty()) {
-            leapQueue.remove(0);
+        synchronized(leapQueue) {
+            if (!leapQueue.isEmpty()) {
+                leapQueue.remove(0);
+            }
         }
         inProgress = false;
         clickedLeap = false;
-        client.execute(() -> client.setScreen(null));
+        client.execute(() -> {
+            if (client.screen instanceof ContainerScreen cs && "Spirit Leap".equals(cs.getTitle().getString())) {
+                client.setScreen(null);
+            }
+        });
     }
 
     public static void clearQueue() {
