@@ -88,6 +88,7 @@ public final class Constants {
         public static final String MAGIC_FIND_LABEL = "✯ Magic Find";
 
         // Command Constants
+        public static final String BASE_COMMAND = "b";
         public static final String CMD_ARG_TYPE = "type";
         public static final String CMD_ARG_MAGIC_FIND = "magic_find";
         public static final String CMD_ARG_ITEM = "item";

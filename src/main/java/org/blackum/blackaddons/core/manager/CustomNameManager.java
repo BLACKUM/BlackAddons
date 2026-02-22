@@ -134,7 +134,10 @@ public class CustomNameManager {
                     }
                 } else if (gradientElement.isJsonPrimitive()) {
                     String gradientStr = gradientElement.getAsString();
-                    if (gradientStr.startsWith("linear-gradient")) {
+                    boolean isLinear = gradientStr.startsWith("linear-gradient");
+                    boolean isRadial = gradientStr.startsWith("radial-gradient");
+
+                    if (isLinear || isRadial) {
                         Matcher m = Pattern.compile(
                                 "rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*[^)]*\\)\\s*(\\d+)%")
                                 .matcher(gradientStr);
@@ -145,7 +148,18 @@ public class CustomNameManager {
                             float fraction = Float.parseFloat(m.group(4)) / 100.0f;
 
                             int rgb = (r << 16) | (g << 8) | b;
-                            gradientStops.add(new ChatUtils.ColorStop(rgb, fraction));
+
+                            if (isRadial) {
+                                float leftFraction = 0.5f - (fraction / 2.0f);
+                                float rightFraction = 0.5f + (fraction / 2.0f);
+
+                                gradientStops.add(new ChatUtils.ColorStop(rgb, leftFraction));
+                                if (leftFraction != rightFraction) {
+                                    gradientStops.add(new ChatUtils.ColorStop(rgb, rightFraction));
+                                }
+                            } else {
+                                gradientStops.add(new ChatUtils.ColorStop(rgb, fraction));
+                            }
                         }
                         Collections.sort(gradientStops,
                                 (a, b) -> Float.compare(a.fraction(), b.fraction()));

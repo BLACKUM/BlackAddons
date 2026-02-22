@@ -298,7 +298,8 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
                     if (ChatImageHandler.DISCORD_IMAGE_PATTERN.matcher(url).find()) {
                         fullComp.append(Component.literal(Constants.PREVIEW_LABEL)
                                 .withStyle(style -> style
-                                        .withClickEvent(new ClickEvent.RunCommand("/b preview " + url))
+                                        .withClickEvent(new ClickEvent.RunCommand(
+                                                "/" + Constants.BASE_COMMAND + " preview " + url))
                                         .withHoverEvent(new HoverEvent.ShowText(
                                                 Component.literal(Constants.PREVIEW_HOVER)))));
                     }

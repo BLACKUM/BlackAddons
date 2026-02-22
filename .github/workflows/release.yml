@@ -109,7 +109,7 @@ jobs:
           extract_commits() {
             local prefix=$1
             local title=$2
-            local commits=$($LOG_CMD --no-merges -i --grep="^${prefix}" --pretty=format:"* %s (%h)")
+            local commits=$($LOG_CMD --no-merges -i --grep="^${prefix}" --pretty=format:"* %s (%h)" | sed -E "s/^\* ${prefix}(\([^)]+\))?:[[:space:]]*/* /i")
             if [ -n "$commits" ]; then
               echo "### $title" >> changelog.md
               echo "$commits" >> changelog.md

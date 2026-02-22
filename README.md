@@ -36,14 +36,14 @@ BlackAddons is a utility and quality-of-life mod for Minecraft, designed to enha
 
 ## Commands
 
-- `/ba`, `/black`, or `/blackaddons`: Open the main settings menu.
-- `/ba pf`: Open the Dungeon Party Finder.
-- `/ba irc`: Open the IRC chat interface.
-- `/ba pv [player] [force]`: Open the Profile Viewer for a specific player. Use the force argument to refresh cached data.
-- `/ba preview [url]`: Open a full-screen preview for a direct image or Discord media link.
-- `/ba commandaliases add [alias] [original command]`: Create a custom command alias.
-- `/ba commandaliases del [alias]`: Remove a command alias.
-- `/ba commandaliases list`: List all currently configured aliases.
+- `/b`, `/black`, or `/blackaddons`: Open the main settings menu.
+- `/b pf`: Open the Dungeon Party Finder.
+- `/b irc`: Open the IRC chat interface.
+- `/b pv [player] [force]`: Open the Profile Viewer for a specific player. Use the force argument to refresh cached data.
+- `/b preview [url]`: Open a full-screen preview for a direct image or Discord media link.
+- `/b commandaliases add [alias] [original command]`: Create a custom command alias.
+- `/b commandaliases del [alias]`: Remove a command alias.
+- `/b commandaliases list`: List all currently configured aliases.
 
 ## Credits
 

@@ -3,6 +3,7 @@ package org.blackum.blackaddons.feature.dungeon;
 import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import org.blackum.blackaddons.core.util.JsonUtils;
 import org.blackum.blackaddons.core.util.FormatUtils;
+import org.blackum.blackaddons.core.util.Constants;
 import org.blackum.blackaddons.core.util.DungeonUtils;
 import org.blackum.blackaddons.feature.chat.ChatUtils;
 import com.google.gson.JsonObject;
@@ -94,7 +95,7 @@ public class DungeonJoinHandler {
                 .withStyle(style -> style
                         .withColor(ChatFormatting.GREEN)
                         .withBold(true)
-                        .withClickEvent(new ClickEvent.RunCommand("/ba pv " + nickname))
+                        .withClickEvent(new ClickEvent.RunCommand("/" + Constants.BASE_COMMAND + " pv " + nickname))
                         .withHoverEvent(new HoverEvent.ShowText(
                                 Component.literal("Click to open full profile viewer for " + nickname))));
 

@@ -7,6 +7,7 @@ import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.core.model.Teammate;
+import org.blackum.blackaddons.core.util.Constants;
 import org.blackum.blackaddons.core.util.FormatUtils;
 
 public class TeammateRow extends Widget {
@@ -94,7 +95,7 @@ public class TeammateRow extends Widget {
 
         if (isMouseOver(mouseX, mouseY) && button == 0) {
             if (Minecraft.getInstance().player != null) {
-                Minecraft.getInstance().player.connection.sendCommand("ba pv " + tm.ign);
+                Minecraft.getInstance().player.connection.sendCommand(Constants.BASE_COMMAND + " pv " + tm.ign);
                 return true;
             }
         }
