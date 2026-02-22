@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
@@ -73,12 +74,11 @@ public class FastLeap {
             }
 
             if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
-                inProgress = true;
-                client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
-
                 String leapTo = getLeap(client);
                 if (leapTo != null && !leapTo.isEmpty()) {
+                    inProgress = true;
                     queueLeap(leapTo);
+                    client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
                 }
             }
 
@@ -88,31 +88,35 @@ public class FastLeap {
 
         if (client.screen instanceof ContainerScreen containerScreen) {
             String title = containerScreen.getTitle().getString();
-            if ("Spirit Leap".equals(title) && !leapQueue.isEmpty() && !clickedLeap) {
+            if ("Spirit Leap".equals(title)) {
                 menuOpened = true;
 
-                String targetLeap = leapQueue.get(0);
+                if (leapQueue.isEmpty()) {
+                    inProgress = false;
+                } else if (!clickedLeap) {
+                    String targetLeap = leapQueue.get(0);
+                    int playerInvStart = containerScreen.getMenu().slots.size() - 36;
 
-                for (Slot slot : containerScreen.getMenu().slots) {
-                    if (slot.getContainerSlot() > 35) continue;
+                    for (Slot slot : containerScreen.getMenu().slots) {
+                        if (slot.index >= playerInvStart) continue;
 
-                    ItemStack stack = slot.getItem();
-                    if (!stack.isEmpty()) {
-                        String itemName = stack.getHoverName().getString().replaceAll("(?i)§[0-9A-FK-OR]", "").toLowerCase();
-                        if (itemName.equals(targetLeap.toLowerCase())) {
-                            int slotId = slot.index;
-                            int windowId = containerScreen.getMenu().containerId;
+                        ItemStack stack = slot.getItem();
+                        if (!stack.isEmpty()) {
+                            String itemName = stack.getHoverName().getString().replaceAll("(?i)§[0-9A-FK-OR]", "").toLowerCase();
+                            if (itemName.equals(targetLeap.toLowerCase())) {
+                                int windowId = containerScreen.getMenu().containerId;
 
-                            client.gameMode.handleInventoryMouseClick(windowId, slotId, 0, net.minecraft.world.inventory.ClickType.PICKUP, client.player);
-                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
+                                client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
+                                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
 
-                            clickedLeap = true;
-                            reloadGUI(client);
-                            break;
+                                clickedLeap = true;
+                                reloadGUI(client);
+                                break;
+                            }
                         }
                     }
                 }
-            } else if (!"Spirit Leap".equals(title)) {
+            } else {
                 menuOpened = false;
             }
         } else {
