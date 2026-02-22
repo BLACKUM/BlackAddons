@@ -56,6 +56,9 @@ public final class Constants {
         public static final String BOT_API_PARTY_LIST = "/v1/party/list";
         public static final String BOT_API_NAMES = "/v1/names";
 
+        // External URLs
+        public static final String GITHUB_NAMES_URL = "https://raw.githubusercontent.com/BLACKUM/rtca-bot-hypixel/refs/heads/main/data/custom_names.json";
+
         // API Headers
         public static final String HEADER_ENCRYPTED_IDENTITY = "X-Encrypted-Identity";
         public static final String HEADER_DEVELOPER_KEY = "X-Developer-Key";

@@ -45,7 +45,39 @@ public class CustomNameManager {
     }
 
     public void fetch() {
-        if (ConfigManager.data.botUrl.isEmpty()) {
+        HttpRequest githubRequest = HttpRequest.newBuilder()
+                .uri(URI.create(Constants.GITHUB_NAMES_URL))
+                .header("User-Agent", Constants.BOT_USER_AGENT)
+                .timeout(Duration.ofSeconds(Constants.HTTP_TIMEOUT_SECONDS))
+                .GET()
+                .build();
+
+        httpClient.sendAsync(githubRequest, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    if (response.statusCode() == 200 && response.body() != null) {
+                        try {
+                            JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+                            parseAndApplyNames(json);
+                            return;
+                        } catch (Exception e) {
+                            Blackaddons.LOGGER.warn("Failed to parse GitHub custom names, falling back to bot.", e);
+                        }
+                    } else {
+                        Blackaddons.LOGGER.warn("GitHub custom names returned status " + response.statusCode()
+                                + ", falling back to bot.");
+                    }
+
+                    fetchFromBotFallback();
+                })
+                .exceptionally(ex -> {
+                    Blackaddons.LOGGER.warn("Error fetching GitHub custom names, falling back to bot.", ex);
+                    fetchFromBotFallback();
+                    return null;
+                });
+    }
+
+    private void fetchFromBotFallback() {
+        if (ConfigManager.data == null || ConfigManager.data.botUrl == null || ConfigManager.data.botUrl.isEmpty()) {
             return;
         }
 
@@ -58,77 +90,73 @@ public class CustomNameManager {
                 .build();
 
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    if (response.statusCode() == 200) {
-                        return response.body();
-                    }
-                    return null;
-                })
-                .thenAccept(body -> {
-                    if (body != null) {
+                .thenAccept(response -> {
+                    if (response.statusCode() == 200 && response.body() != null) {
                         try {
-                            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                            JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
                             if (json.has("names")) {
-                                JsonObject namesObj = json.getAsJsonObject("names");
-                                customNames.clear();
-                                for (Map.Entry<String, JsonElement> entry : namesObj.entrySet()) {
-                                    JsonObject data = entry.getValue().getAsJsonObject();
-                                    String displayName = data.get("display").getAsString();
-                                    String color = data.has("color") ? data.get("color").getAsString() : "";
-
-                                    List<ChatUtils.ColorStop> gradientStops = new ArrayList<>();
-                                    if (data.has("gradient")) {
-                                        JsonElement gradientElement = data.get("gradient");
-
-                                        if (gradientElement.isJsonArray()) {
-                                            JsonArray gradient = gradientElement.getAsJsonArray();
-                                            if (gradient.size() >= 2) {
-                                                try {
-                                                    int start = Integer.parseInt(
-                                                            gradient.get(0).getAsString().replace("#", ""), 16);
-                                                    int end = Integer.parseInt(
-                                                            gradient.get(1).getAsString().replace("#", ""), 16);
-                                                    gradientStops.add(new ChatUtils.ColorStop(start, 0.0f));
-                                                    gradientStops.add(new ChatUtils.ColorStop(end, 1.0f));
-                                                } catch (NumberFormatException ignored) {
-                                                }
-                                            }
-                                        } else if (gradientElement.isJsonPrimitive()) {
-                                            String gradientStr = gradientElement.getAsString();
-                                            if (gradientStr.startsWith("linear-gradient")) {
-                                                Matcher m = Pattern.compile(
-                                                        "rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*[^)]*\\)\\s*(\\d+)%")
-                                                        .matcher(gradientStr);
-                                                while (m.find()) {
-                                                    int r = Integer.parseInt(m.group(1));
-                                                    int g = Integer.parseInt(m.group(2));
-                                                    int b = Integer.parseInt(m.group(3));
-                                                    float fraction = Float.parseFloat(m.group(4)) / 100.0f;
-
-                                                    int rgb = (r << 16) | (g << 8) | b;
-                                                    gradientStops.add(new ChatUtils.ColorStop(rgb, fraction));
-                                                }
-                                                Collections.sort(gradientStops,
-                                                        (a, b) -> Float.compare(a.fraction(), b.fraction()));
-                                            }
-                                        }
-                                    }
-
-                                    customNames.put(entry.getKey().toLowerCase(),
-                                            new CustomName(displayName, color, gradientStops));
-                                }
-                                Blackaddons.LOGGER
-                                        .info("Successfully fetched " + customNames.size() + " custom names.");
+                                parseAndApplyNames(json.getAsJsonObject("names"));
                             }
                         } catch (Exception e) {
-                            Blackaddons.LOGGER.error("Failed to parse custom names: " + e.getMessage());
+                            Blackaddons.LOGGER.error("Failed to parse bot custom names.", e);
                         }
                     }
                 })
                 .exceptionally(ex -> {
-                    Blackaddons.LOGGER.error("Error fetching custom names: " + ex.getMessage());
+                    Blackaddons.LOGGER.error("Error fetching bot custom names.", ex);
                     return null;
                 });
+    }
+
+    private void parseAndApplyNames(JsonObject namesObj) {
+        customNames.clear();
+        for (Map.Entry<String, JsonElement> entry : namesObj.entrySet()) {
+            JsonObject data = entry.getValue().getAsJsonObject();
+            String displayName = data.has("display") ? data.get("display").getAsString() : entry.getKey();
+            String color = data.has("color") ? data.get("color").getAsString() : "";
+
+            List<ChatUtils.ColorStop> gradientStops = new ArrayList<>();
+            if (data.has("gradient")) {
+                JsonElement gradientElement = data.get("gradient");
+
+                if (gradientElement.isJsonArray()) {
+                    JsonArray gradient = gradientElement.getAsJsonArray();
+                    if (gradient.size() >= 2) {
+                        try {
+                            int start = Integer.parseInt(
+                                    gradient.get(0).getAsString().replace("#", ""), 16);
+                            int end = Integer.parseInt(
+                                    gradient.get(1).getAsString().replace("#", ""), 16);
+                            gradientStops.add(new ChatUtils.ColorStop(start, 0.0f));
+                            gradientStops.add(new ChatUtils.ColorStop(end, 1.0f));
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                } else if (gradientElement.isJsonPrimitive()) {
+                    String gradientStr = gradientElement.getAsString();
+                    if (gradientStr.startsWith("linear-gradient")) {
+                        Matcher m = Pattern.compile(
+                                "rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*[^)]*\\)\\s*(\\d+)%")
+                                .matcher(gradientStr);
+                        while (m.find()) {
+                            int r = Integer.parseInt(m.group(1));
+                            int g = Integer.parseInt(m.group(2));
+                            int b = Integer.parseInt(m.group(3));
+                            float fraction = Float.parseFloat(m.group(4)) / 100.0f;
+
+                            int rgb = (r << 16) | (g << 8) | b;
+                            gradientStops.add(new ChatUtils.ColorStop(rgb, fraction));
+                        }
+                        Collections.sort(gradientStops,
+                                (a, b) -> Float.compare(a.fraction(), b.fraction()));
+                    }
+                }
+            }
+
+            customNames.put(entry.getKey().toLowerCase(),
+                    new CustomName(displayName, color, gradientStops));
+        }
+        Blackaddons.LOGGER.info("Successfully fetched " + customNames.size() + " custom names.");
     }
 
     public Component replaceNames(Component component) {

@@ -98,13 +98,42 @@ jobs:
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           echo "## Changes" > changelog.md
+          echo "" >> changelog.md
+          
           if [ -z "$PREV_TAG" ]; then
-            git log --no-merges --pretty=format:"* %s (%h)" >> changelog.md
+            LOG_CMD="git log"
           else
-            git log ${PREV_TAG}..HEAD --no-merges --pretty=format:"* %s (%h)" >> changelog.md
+            LOG_CMD="git log ${PREV_TAG}..HEAD"
+          fi
+          
+          extract_commits() {
+            local prefix=$1
+            local title=$2
+            local commits=$($LOG_CMD --no-merges -i --grep="^${prefix}" --pretty=format:"* %s (%h)")
+            if [ -n "$commits" ]; then
+              echo "### $title" >> changelog.md
+              echo "$commits" >> changelog.md
+              echo "" >> changelog.md
+            fi
+          }
+          
+          extract_commits "feat" "Features"
+          extract_commits "fix" "Bug Fixes"
+          extract_commits "chore" "Chores"
+          extract_commits "refactor" "Refactoring"
+          extract_commits "docs" "Documentation"
+          
+          OTHER_COMMITS=$($LOG_CMD --no-merges --invert-grep -i --grep="^feat" --grep="^fix" --grep="^chore" --grep="^refactor" --grep="^docs" --pretty=format:"* %s (%h)")
+          if [ -n "$OTHER_COMMITS" ]; then
+            echo "### Other Changes" >> changelog.md
+            echo "$OTHER_COMMITS" >> changelog.md
             echo "" >> changelog.md
+          fi
+          
+          if [ -n "$PREV_TAG" ]; then
             echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ env.VERSION }}" >> changelog.md
           fi
+          
           cat changelog.md
 
       - name: Create Stable Release

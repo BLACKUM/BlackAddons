@@ -324,7 +324,7 @@ public class CommandManager {
                                         });
 
                         CommandUtils.register(dispatcher);
-                        for (String alias : new String[] { "ba", "black", "blackaddons" }) {
+                        for (String alias : new String[] { "b", "black", "blackaddons" }) {
                                 var cmd = ClientCommandManager.literal(alias).executes(openGui);
 
                                 if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
