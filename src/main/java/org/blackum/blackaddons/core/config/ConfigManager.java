@@ -126,11 +126,6 @@ public class ConfigManager {
 
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;
-        public boolean FastLeapPositional = false;
-        public String FastLeapS1 = "Mage";
-        public String FastLeapS2 = "Berserk";
-        public String FastLeapS3 = "Healer";
-        public String FastLeapS4 = "Archer";
 
         public boolean hideMods() {
             return switch (modHiderSpoofMode) {

@@ -11,7 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -37,26 +36,18 @@ public class FastLeap {
     }
 
     private static void onChatMessage(Component message) {
-        String rawText = message.getString();
-        
-        // Super Raw Debug
-        if (rawText.toLowerCase().contains("door")) {
-            System.out.println("[FastLeap RAW] " + rawText);
-        }
-
         if (!ConfigManager.data.FastLeapEnabled) return;
 
         Minecraft mc = Minecraft.getInstance();
         mc.execute(() -> {
             if (mc.player == null) return;
-
+            
+            String rawText = message.getString();
             String cleanText = rawText.replaceAll("(?i)§[0-9A-FK-ORX]", "").trim();
 
             Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(cleanText);
             if (doorMatcher.find()) {
                 lastOpener = doorMatcher.group(1);
-                System.out.println("[FastLeap] DOOR OPENER DETECTED: " + lastOpener);
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GOLD + "DOOR OPENER: " + ChatFormatting.WHITE + lastOpener), false);
             }
 
             if (COOLDOWN_PATTERN.matcher(cleanText).find()) {
@@ -79,7 +70,6 @@ public class FastLeap {
 
             // Trigger on left-click if we have a target
             if (attackDown && !wasAttackDown && lastOpener != null) {
-                System.out.println("[FastLeap] Left-click trigger for: " + lastOpener);
                 inProgress = true;
                 clickedLeap = false;
                 
@@ -134,13 +124,6 @@ public class FastLeap {
     }
 
     public static List<String> getDebugInfo() {
-        List<String> info = new ArrayList<>();
-        info.add("");
-        info.add(ChatFormatting.AQUA + "[FastLeap Debug]");
-        info.add("Status: " + (ConfigManager.data.FastLeapEnabled ? ChatFormatting.GREEN + "ENABLED" : ChatFormatting.RED + "DISABLED"));
-        info.add("Target: " + (lastOpener != null ? lastOpener : "None"));
-        info.add("InProgress: " + inProgress);
-        info.add("MenuOpened: " + menuOpened);
-        return info;
+        return new ArrayList<>();
     }
 }
