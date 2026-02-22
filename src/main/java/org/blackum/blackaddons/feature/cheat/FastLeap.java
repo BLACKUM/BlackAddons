@@ -92,12 +92,14 @@ public class FastLeap {
 
             if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
                 String leapTo = getLeap(client);
-                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (leapTo.isEmpty() ? "EMPTY" : leapTo) + ChatFormatting.GRAY + " [DoorOpener=" + ConfigManager.data.FastLeapDoorOpener + ", lastOpener=" + lastOpener + "]"), false);
-                if (leapTo != null && !leapTo.isEmpty()) {
-                    queueLeap(leapTo);
+                String safeLeapTo = (leapTo != null) ? leapTo : "";
+                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (safeLeapTo.isEmpty() ? "EMPTY" : safeLeapTo) + ChatFormatting.GRAY + " [DoorOpener=" + ConfigManager.data.FastLeapDoorOpener + ", lastOpener=" + lastOpener + "]"), false);
+                
+                if (!safeLeapTo.isEmpty()) {
+                    queueLeap(safeLeapTo);
                     inProgress = true;
                     client.execute(() -> {
-                        if (client.player != null && client.screen == null) {
+                        if (client.player != null && client.screen == null && client.gameMode != null) {
                             client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
                         }
                     });
@@ -193,14 +195,19 @@ public class FastLeap {
         }
 
         if (ConfigManager.data.FastLeapPositional && client.player != null) {
+            String s1 = ConfigManager.data.FastLeapS1;
+            String s2 = ConfigManager.data.FastLeapS2;
+            String s3 = ConfigManager.data.FastLeapS3;
+            String s4 = ConfigManager.data.FastLeapS4;
+
             if (isPlayerInBox(client.player, 113, 160, 48, 89, 100, 122)) {
-                leapString = ConfigManager.data.FastLeapS1;
+                leapString = (s1 != null) ? s1 : "";
             } else if (isPlayerInBox(client.player, 91, 160, 145, 19, 100, 121)) {
-                leapString = ConfigManager.data.FastLeapS2;
+                leapString = (s2 != null) ? s2 : "";
             } else if (isPlayerInBox(client.player, -6, 160, 123, 19, 100, 50)) {
-                leapString = ConfigManager.data.FastLeapS3;
+                leapString = (s3 != null) ? s3 : "";
             } else if (isPlayerInBox(client.player, 17, 160, 27, 90, 100, 50)) {
-                leapString = ConfigManager.data.FastLeapS4;
+                leapString = (s4 != null) ? s4 : "";
             }
         }
 
