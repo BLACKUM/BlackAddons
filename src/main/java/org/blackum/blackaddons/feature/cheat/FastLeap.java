@@ -41,16 +41,20 @@ public class FastLeap {
 
     private static void onChatMessage(Component message) {
         if (!ConfigManager.data.FastLeapEnabled) return;
-        
+
         String text = message.getString().replaceAll("(?i)§[0-9A-FK-OR]", "");
-        
+
         Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
-        if (doorMatcher.matches()) {
+        if (doorMatcher.find()) {
             lastOpener = doorMatcher.group(1);
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Door opener: " + ChatFormatting.WHITE + lastOpener), false);
+            }
         }
 
         Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
-        if (cooldownMatcher.matches()) {
+        if (cooldownMatcher.find()) {
             clickedLeap = false;
             inProgress = false;
             if (!leapQueue.isEmpty()) {
@@ -75,6 +79,7 @@ public class FastLeap {
 
             if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
                 String leapTo = getLeap(client);
+                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (leapTo.isEmpty() ? "EMPTY" : leapTo)), false);
                 if (leapTo != null && !leapTo.isEmpty()) {
                     inProgress = true;
                     queueLeap(leapTo);
@@ -96,24 +101,31 @@ public class FastLeap {
                 } else if (!clickedLeap) {
                     String targetLeap = leapQueue.get(0);
                     int playerInvStart = containerScreen.getMenu().slots.size() - 36;
+                    client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Scanning GUI for: " + ChatFormatting.WHITE + targetLeap + ChatFormatting.GRAY + " (slots 0-" + (playerInvStart - 1) + ")"), false);
 
+                    boolean matched = false;
                     for (Slot slot : containerScreen.getMenu().slots) {
                         if (slot.index >= playerInvStart) continue;
 
                         ItemStack stack = slot.getItem();
                         if (!stack.isEmpty()) {
                             String itemName = stack.getHoverName().getString().replaceAll("(?i)§[0-9A-FK-OR]", "").toLowerCase();
+                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GRAY + "  slot " + slot.index + ": " + itemName), false);
                             if (itemName.equals(targetLeap.toLowerCase())) {
                                 int windowId = containerScreen.getMenu().containerId;
 
                                 client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
                                 client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
 
+                                matched = true;
                                 clickedLeap = true;
                                 reloadGUI(client);
                                 break;
                             }
                         }
+                    }
+                    if (!matched) {
+                        client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.RED + "No match found for: " + targetLeap), false);
                     }
                 }
             } else {
