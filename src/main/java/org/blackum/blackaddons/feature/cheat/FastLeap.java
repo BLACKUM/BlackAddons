@@ -27,7 +27,6 @@ public class FastLeap {
     private static boolean menuOpened = false;
     private static boolean inProgress = false;
     private static boolean clickedLeap = false;
-    private static int clickDelay = 0;
 
     public static void register() {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
@@ -59,46 +58,33 @@ public class FastLeap {
     private static void onTick(Minecraft client) {
         if (!ConfigManager.data.FastLeapEnabled || client.player == null) return;
 
-        if (inProgress && clickedLeap) {
-            if (clickDelay > 0) {
-                clickDelay--;
-            } else {
-                clickedLeap = false;
-            }
-        }
-
         if (client.screen instanceof ContainerScreen containerScreen) {
             String title = containerScreen.getTitle().getString();
-            if ("Spirit Leap".equals(title) && !leapQueue.isEmpty()) {
+            if ("Spirit Leap".equals(title) && !leapQueue.isEmpty() && !clickedLeap) {
                 menuOpened = true;
-                clickedLeap = false;
-                
+
                 String targetLeap = leapQueue.get(0);
-                boolean found = false;
 
                 for (Slot slot : containerScreen.getMenu().slots) {
                     if (slot.getContainerSlot() > 35) continue;
-                    
+
                     ItemStack stack = slot.getItem();
                     if (!stack.isEmpty()) {
                         String itemName = stack.getHoverName().getString().replaceAll("(?i)§[0-9A-FK-OR]", "").toLowerCase();
                         if (itemName.equals(targetLeap.toLowerCase())) {
                             int slotId = slot.index;
                             int windowId = containerScreen.getMenu().containerId;
-                            
+
                             client.gameMode.handleInventoryMouseClick(windowId, slotId, 0, net.minecraft.world.inventory.ClickType.PICKUP, client.player);
                             client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
-                            
-                            found = true;
+
+                            clickedLeap = true;
                             reloadGUI(client);
                             break;
                         }
                     }
                 }
-
-                if (!found && containerScreen.getMenu().slots.size() > 0) {
-                }
-            } else {
+            } else if (!"Spirit Leap".equals(title)) {
                 menuOpened = false;
             }
         } else {
@@ -112,6 +98,7 @@ public class FastLeap {
             leapQueue.remove(0);
         }
         inProgress = false;
+        clickedLeap = false;
         client.execute(() -> client.setScreen(null));
     }
 
@@ -167,9 +154,10 @@ public class FastLeap {
                 return true;
             }
         } else if (button == 0) {
-            if (holdingLeap) {
+            if (holdingLeap && !inProgress) {
+                inProgress = true;
                 client.gameMode.useItem(client.player, net.minecraft.world.InteractionHand.MAIN_HAND);
-                
+
                 String leapTo = getLeap(client);
                 if (leapTo != null && !leapTo.isEmpty()) {
                     queueLeap(leapTo);
