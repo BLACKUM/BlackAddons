@@ -6,6 +6,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -73,7 +74,7 @@ public class FastLeap {
 
             if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
                 inProgress = true;
-                client.gameMode.useItem(client.player, net.minecraft.world.InteractionHand.MAIN_HAND);
+                client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
 
                 String leapTo = getLeap(client);
                 if (leapTo != null && !leapTo.isEmpty()) {
