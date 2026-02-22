@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
 
 public class FastLeap {
     private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] ";
-    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("^(\\w+) opened a WITHER door!$");
-    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("^This ability is on cooldown for (\\d+)s\\.$");
+    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(\\w+) opened a WITHER door!");
+    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("This ability is on cooldown for (\\d+)s\\.");
 
     private static String lastOpener = null;
     private static final List<String> leapQueue = new ArrayList<>();
@@ -42,7 +42,14 @@ public class FastLeap {
     private static void onChatMessage(Component message) {
         if (!ConfigManager.data.FastLeapEnabled) return;
 
-        String text = message.getString().replaceAll("(?i)§[0-9A-FK-OR]", "");
+        String text = message.getString().replaceAll("(?i)§[0-9A-FK-OR]", "").replaceAll("[^\\x20-\\x7E]", "").trim();
+
+        if (text.toLowerCase().contains("door")) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.LIGHT_PURPLE + "RAW: " + ChatFormatting.WHITE + text), false);
+            }
+        }
 
         Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
         if (doorMatcher.find()) {
