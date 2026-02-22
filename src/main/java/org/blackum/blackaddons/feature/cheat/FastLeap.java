@@ -1,7 +1,7 @@
 package org.blackum.blackaddons.feature.cheat;
 
 import org.blackum.blackaddons.Blackaddons;
-
+import org.blackum.blackaddons.core.config.ConfigManager;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.ChatFormatting;
@@ -11,68 +11,51 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import org.blackum.blackaddons.core.config.ConfigManager;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FastLeap {
-    private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] " + ChatFormatting.RESET;
-    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i).*?\\b([a-zA-Z0-9_]{3,16})\\s+opened\\s+a\\s+.*WITHER.*\\s+door!");
-    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)This\\s+ability\\s+is\\s+on\\s+cooldown\\s+for\\s+(\\d+)s\\.");
-
-    private static String lastOpener = null;
-    private static final List<String> leapQueue = Collections.synchronizedList(new ArrayList<>());
+    private static final String PREFIX = ChatFormatting.GRAY + "[" + ChatFormatting.GOLD + "FastLeap" + ChatFormatting.GRAY + "] ";
+    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(?:\\[.*?\\] )?([A-Za-z0-9_]+) opened a (?:Wither )?door!");
     
+    private static String lastOpener = null;
     private static boolean inProgress = false;
     private static boolean clickedLeap = false;
     private static boolean menuOpened = false;
-    
+
     private static boolean wasAttackDown = false;
-    private static boolean wasUseDown = false;
 
     public static void register() {
-        Blackaddons.LOGGER.info("Registering FastLeap...");
+        Blackaddons.LOGGER.info("Registering FastLeap (Stability Mode)...");
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> onChatMessage(message));
         ClientTickEvents.END_CLIENT_TICK.register(FastLeap::onTick);
     }
 
     private static void onChatMessage(Component message) {
-        String text = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "")
-                .replaceAll("[^\\x20-\\x7E]", "")
-                .replaceAll("\\s+", " ")
-                .trim();
-
-        if (text.toLowerCase().contains("door")) {
-            System.out.println("[FastLeap] Saw door message: " + text);
+        String rawText = message.getString();
+        
+        // Super Raw Debug
+        if (rawText.toLowerCase().contains("door")) {
+            System.out.println("[FastLeap RAW] " + rawText);
         }
 
         if (!ConfigManager.data.FastLeapEnabled) return;
 
         Minecraft mc = Minecraft.getInstance();
-
         mc.execute(() -> {
             if (mc.player == null) return;
 
-            // Debug prints to find out why detection fails
-            if (text.toLowerCase().contains("door")) {
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GRAY + "Seen 'door' in: " + ChatFormatting.WHITE + text), false);
-            }
+            // Strip colors just for the matcher to be safe, but keep raw for debug
+            String cleanText = rawText.replaceAll("(?i)§[0-9A-FK-ORX]", "").trim();
 
-            Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
+            Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(cleanText);
             if (doorMatcher.find()) {
                 lastOpener = doorMatcher.group(1);
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GOLD + "TARGET SET: " + ChatFormatting.WHITE + lastOpener), false);
-            }
-
-            Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
-            if (cooldownMatcher.find()) {
-                clearQueue();
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GOLD + "DOOR OPENER: " + ChatFormatting.WHITE + lastOpener), false);
             }
         });
     }
@@ -82,117 +65,71 @@ public class FastLeap {
 
         if (client.screen == null) {
             boolean attackDown = client.options.keyAttack.isDown();
-            boolean useDown = client.options.keyUse.isDown();
 
-            ItemStack mainHand = client.player.getMainHandItem();
-            boolean holdingLeap = isHoldingLeap(mainHand);
-
-            if (useDown && !wasUseDown && holdingLeap) {
-                clearQueue();
-            }
-
-            if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
-                if (ConfigManager.data.FastLeapDoorOpener && lastOpener != null) {
-                    inProgress = true;
-                    leapQueue.clear();
-                    leapQueue.add(lastOpener);
-                    
-                    if (client.gameMode != null) {
-                        client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
-                    }
+            // Trigger on left-click if we have a target
+            if (attackDown && !wasAttackDown && lastOpener != null && !inProgress) {
+                inProgress = true;
+                clickedLeap = false;
+                
+                if (client.gameMode != null) {
+                    // Try to use whatever is in main hand (usually Infinileap)
+                    client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
                 }
             }
-
             wasAttackDown = attackDown;
-            wasUseDown = useDown;
         }
 
         if (client.screen instanceof ContainerScreen containerScreen) {
             String title = containerScreen.getTitle().getString();
             if ("Spirit Leap".equals(title)) {
                 menuOpened = true;
-                if (!leapQueue.isEmpty() && !clickedLeap) {
-                    String target = leapQueue.get(0);
+                if (lastOpener != null && !clickedLeap) {
                     int invStart = containerScreen.getMenu().slots.size() - 36;
                     
                     for (Slot slot : containerScreen.getMenu().slots) {
                         if (slot.index >= invStart) continue;
                         
-                        ItemStack stack = slot.getItem();
-                        if (!stack.isEmpty()) {
-                            String name = stack.getHoverName().getString()
-                                    .replaceAll("(?i)§[0-9A-FK-OR]", "")
-                                    .toLowerCase();
-                            
-                            if (name.startsWith(target.toLowerCase())) {
-                                clickedLeap = true;
-                                int windowId = containerScreen.getMenu().containerId;
-                                
-                                client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
-                                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + target), false);
-                                
-                                finishLeap(client);
-                                break;
-                            }
+                        Component nameComp = slot.getItem().getHoverName();
+                        String name = nameComp.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "").toLowerCase();
+                        
+                        if (name.startsWith(lastOpener.toLowerCase())) {
+                            clickedLeap = true;
+                            client.gameMode.handleInventoryMouseClick(containerScreen.getMenu().containerId, slot.index, 0, ClickType.PICKUP, client.player);
+                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + lastOpener), false);
+                            finishLeap(client);
+                            break;
                         }
                     }
                 }
             } else if (menuOpened) {
-                clearQueue();
-                menuOpened = false;
+                resetState();
             }
         } else if (menuOpened) {
-            clearQueue();
-            menuOpened = false;
+            resetState();
         }
     }
 
     private static void finishLeap(Minecraft client) {
-        leapQueue.clear();
+        if (client.player != null) {
+            client.player.closeContainer();
+        }
+        resetState();
+    }
+
+    private static void resetState() {
         inProgress = false;
         clickedLeap = false;
         menuOpened = false;
-        client.setScreen(null);
-    }
-
-    public static void clearQueue() {
-        leapQueue.clear();
-        inProgress = false;
-        clickedLeap = false;
-    }
-
-    private static boolean isHoldingLeap(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        String name = stack.getHoverName().getString()
-                .replaceAll("(?i)§[0-9A-FK-ORX]", "")
-                .trim()
-                .toLowerCase();
-        return name.contains("infinileap") || name.contains("infinite spirit leap");
     }
 
     public static List<String> getDebugInfo() {
         List<String> info = new ArrayList<>();
         info.add("");
         info.add(ChatFormatting.AQUA + "[FastLeap Debug]");
-        
-        if (!ConfigManager.data.FastLeapEnabled) {
-            info.add(ChatFormatting.RED + "STATUS: DISABLED");
-            return info;
-        }
-
-        info.add(ChatFormatting.GREEN + "STATUS: ENABLED");
+        info.add("Status: " + (ConfigManager.data.FastLeapEnabled ? ChatFormatting.GREEN + "ENABLED" : ChatFormatting.RED + "DISABLED"));
+        info.add("Target: " + (lastOpener != null ? lastOpener : "None"));
         info.add("InProgress: " + inProgress);
-        info.add("ClickedLeap: " + clickedLeap);
         info.add("MenuOpened: " + menuOpened);
-        info.add("Queue: " + leapQueue);
-        info.add("LastOpener: " + lastOpener);
-
-        Minecraft client = Minecraft.getInstance();
-        if (client.player != null) {
-            info.add("Holding Leap: " + isHoldingLeap(client.player.getMainHandItem()));
-            info.add("Screen: " + (client.screen != null ? client.screen.getClass().getSimpleName() : "none"));
-        }
-
         return info;
     }
 }
