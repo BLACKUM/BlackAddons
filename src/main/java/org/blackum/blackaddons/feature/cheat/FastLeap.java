@@ -15,17 +15,18 @@ import net.minecraft.world.phys.AABB;
 import org.blackum.blackaddons.core.config.ConfigManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FastLeap {
     private static final String PREFIX = ChatFormatting.DARK_GREEN + "[" + ChatFormatting.GREEN + "FastLeap" + ChatFormatting.DARK_GREEN + "] ";
-    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(\\w+) opened a WITHER door!");
-    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("This ability is on cooldown for (\\d+)s\\.");
+    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(\\w+) opened a WITHER door!");
+    private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)This ability is on cooldown for (\\d+)s\\.");
 
     private static String lastOpener = null;
-    private static final List<String> leapQueue = new ArrayList<>();
+    private static final List<String> leapQueue = Collections.synchronizedList(new ArrayList<>());
     private static boolean menuOpened = false;
     private static boolean inProgress = false;
     private static boolean clickedLeap = false;
@@ -43,31 +44,32 @@ public class FastLeap {
         if (!ConfigManager.data.FastLeapEnabled) return;
 
         String text = message.getString().replaceAll("(?i)§[0-9A-FK-OR]", "").replaceAll("[^\\x20-\\x7E]", "").trim();
+        Minecraft mc = Minecraft.getInstance();
 
-        if (text.toLowerCase().contains("door")) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.LIGHT_PURPLE + "RAW: " + ChatFormatting.WHITE + text), false);
+        mc.execute(() -> {
+            if (text.toLowerCase().contains("door")) {
+                if (mc.player != null) {
+                    mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.LIGHT_PURPLE + "RAW: " + ChatFormatting.WHITE + text), false);
+                }
             }
-        }
 
-        Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
-        if (doorMatcher.find()) {
-            lastOpener = doorMatcher.group(1);
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Door opener: " + ChatFormatting.WHITE + lastOpener), false);
+            Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
+            if (doorMatcher.find()) {
+                lastOpener = doorMatcher.group(1);
+                if (mc.player != null) {
+                    mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Door opener: " + ChatFormatting.WHITE + lastOpener), false);
+                }
             }
-        }
 
-        Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
-        if (cooldownMatcher.find()) {
-            clickedLeap = false;
-            inProgress = false;
-            if (!leapQueue.isEmpty()) {
-                leapQueue.remove(leapQueue.size() - 1);
+            Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
+            if (cooldownMatcher.find()) {
+                clickedLeap = false;
+                inProgress = false;
+                if (!leapQueue.isEmpty()) {
+                    leapQueue.remove(leapQueue.size() - 1);
+                }
             }
-        }
+        });
     }
 
     private static void onTick(Minecraft client) {
@@ -90,7 +92,7 @@ public class FastLeap {
                 if (leapTo != null && !leapTo.isEmpty()) {
                     inProgress = true;
                     queueLeap(leapTo);
-                    client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
+                    client.execute(() -> client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND));
                 }
             }
 
