@@ -126,6 +126,7 @@ public class ConfigManager {
 
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;
+        public boolean BloodBlinkEnabled = false;
 
         public boolean hideMods() {
             return switch (modHiderSpoofMode) {

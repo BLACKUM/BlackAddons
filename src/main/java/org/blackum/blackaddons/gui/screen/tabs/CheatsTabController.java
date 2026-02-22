@@ -61,6 +61,9 @@ public class CheatsTabController extends SimpleTabController {
 
         fastLeapCard = createFastLeapCard(contentX + 340, currentY);
         cheatsCardContainer.addCard(fastLeapCard);
+
+        ResizableCard bloodBlinkCard = createBloodBlinkCard(contentX + 340, currentY + 140);
+        cheatsCardContainer.addCard(bloodBlinkCard);
     }
 
     private ResizableCard createAutoTntCard(int x, int y) {
@@ -147,5 +150,24 @@ public class CheatsTabController extends SimpleTabController {
 
         fastLeapCard.updateLayout();
         return fastLeapCard;
+    }
+
+    private ResizableCard createBloodBlinkCard(int x, int y) {
+        ResizableCard bloodBlinkCard = screen.createResizableCard("bloodBlink", x, y, 300, 100, "BloodBlink");
+
+        int contentX = bloodBlinkCard.getContentX();
+        int contentY = bloodBlinkCard.getContentY();
+
+        ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
+                "Enable BloodBlink",
+                "AOTV (48.9/-29.3) -> Pearls (-90 Yaw) x7",
+                ConfigManager.data.BloodBlinkEnabled, value -> {
+                    ConfigManager.data.BloodBlinkEnabled = value;
+                    ConfigManager.save();
+                });
+        bloodBlinkCard.addChild(enableToggle);
+
+        bloodBlinkCard.updateLayout();
+        return bloodBlinkCard;
     }
 }
