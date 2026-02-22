@@ -1,5 +1,7 @@
 package org.blackum.blackaddons.feature.cheat;
 
+import org.blackum.blackaddons.Blackaddons;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.ChatFormatting;
@@ -34,18 +36,24 @@ public class FastLeap {
     private static boolean wasUseDown = false;
 
     public static void register() {
+        Blackaddons.LOGGER.info("Registering FastLeap...");
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> onChatMessage(message));
         ClientTickEvents.END_CLIENT_TICK.register(FastLeap::onTick);
     }
 
     private static void onChatMessage(Component message) {
-        if (!ConfigManager.data.FastLeapEnabled) return;
-
         String text = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "")
                 .replaceAll("[^\\x20-\\x7E]", "")
                 .replaceAll("\\s+", " ")
                 .trim();
+
+        if (text.toLowerCase().contains("door")) {
+            System.out.println("[FastLeap] Saw door message: " + text);
+        }
+
+        if (!ConfigManager.data.FastLeapEnabled) return;
+
         Minecraft mc = Minecraft.getInstance();
 
         mc.execute(() -> {
@@ -53,7 +61,7 @@ public class FastLeap {
 
             // Debug prints to find out why detection fails
             if (text.toLowerCase().contains("door")) {
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GRAY + "Detected 'door' in: " + ChatFormatting.WHITE + text), false);
+                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GRAY + "Seen 'door' in: " + ChatFormatting.WHITE + text), false);
             }
 
             Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
@@ -164,10 +172,15 @@ public class FastLeap {
 
     public static List<String> getDebugInfo() {
         List<String> info = new ArrayList<>();
-        if (!ConfigManager.data.FastLeapEnabled) return info;
-
         info.add("");
         info.add(ChatFormatting.AQUA + "[FastLeap Debug]");
+        
+        if (!ConfigManager.data.FastLeapEnabled) {
+            info.add(ChatFormatting.RED + "STATUS: DISABLED");
+            return info;
+        }
+
+        info.add(ChatFormatting.GREEN + "STATUS: ENABLED");
         info.add("InProgress: " + inProgress);
         info.add("ClickedLeap: " + clickedLeap);
         info.add("MenuOpened: " + menuOpened);
