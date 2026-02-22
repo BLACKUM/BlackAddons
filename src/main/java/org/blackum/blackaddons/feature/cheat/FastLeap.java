@@ -68,8 +68,8 @@ public class FastLeap {
                 inProgress = false;
             }
 
-            // Trigger on left-click if we have a target
-            if (attackDown && !wasAttackDown && lastOpener != null) {
+            // Trigger on left-click if we have a target and door opener logic is enabled
+            if (attackDown && !wasAttackDown && lastOpener != null && ConfigManager.data.FastLeapDoorOpener) {
                 inProgress = true;
                 clickedLeap = false;
                 
