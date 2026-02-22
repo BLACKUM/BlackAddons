@@ -7,11 +7,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.ContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.AABB;
 import org.blackum.blackaddons.core.config.ConfigManager;
 
 import java.util.ArrayList;
@@ -27,23 +25,23 @@ public class FastLeap {
 
     private static String lastOpener = null;
     private static final List<String> leapQueue = Collections.synchronizedList(new ArrayList<>());
-    private static boolean menuOpened = false;
+    
     private static boolean inProgress = false;
     private static boolean clickedLeap = false;
+    private static boolean menuOpened = false;
+    
     private static boolean wasAttackDown = false;
     private static boolean wasUseDown = false;
 
     public static void register() {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> onChatMessage(message));
-        
         ClientTickEvents.END_CLIENT_TICK.register(FastLeap::onTick);
     }
 
     private static void onChatMessage(Component message) {
         if (!ConfigManager.data.FastLeapEnabled) return;
 
-        // Strip ALL color codes, remove non-ASCII, and normalize spaces
         String text = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "")
                 .replaceAll("[^\\x20-\\x7E]", "")
                 .replaceAll("\\s+", " ")
@@ -53,10 +51,6 @@ public class FastLeap {
         mc.execute(() -> {
             if (mc.player == null) return;
 
-            if (text.toLowerCase().contains("door")) {
-                mc.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.LIGHT_PURPLE + "RAW: " + ChatFormatting.WHITE + text), false);
-            }
-
             Matcher doorMatcher = WITHER_DOOR_PATTERN.matcher(text);
             if (doorMatcher.find()) {
                 lastOpener = doorMatcher.group(1);
@@ -65,13 +59,7 @@ public class FastLeap {
 
             Matcher cooldownMatcher = COOLDOWN_PATTERN.matcher(text);
             if (cooldownMatcher.find()) {
-                clickedLeap = false;
-                inProgress = false;
-                synchronized(leapQueue) {
-                    if (!leapQueue.isEmpty()) {
-                        leapQueue.remove(leapQueue.size() - 1);
-                    }
-                }
+                clearQueue();
             }
         });
     }
@@ -84,25 +72,21 @@ public class FastLeap {
             boolean useDown = client.options.keyUse.isDown();
 
             ItemStack mainHand = client.player.getMainHandItem();
-            boolean holdingLeap = "INFINITE_SPIRIT_LEAP".equals(getHeldItemID(mainHand));
+            boolean holdingLeap = isHoldingLeap(mainHand);
 
             if (useDown && !wasUseDown && holdingLeap) {
                 clearQueue();
             }
 
             if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
-                String leapTo = getLeap(client);
-                String safeLeapTo = (leapTo != null) ? leapTo : "";
-                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (safeLeapTo.isEmpty() ? "EMPTY" : safeLeapTo) + ChatFormatting.GRAY + " [DoorOpener=" + ConfigManager.data.FastLeapDoorOpener + ", lastOpener=" + lastOpener + "]"), false);
-                
-                if (!safeLeapTo.isEmpty()) {
-                    queueLeap(safeLeapTo);
+                if (ConfigManager.data.FastLeapDoorOpener && lastOpener != null) {
                     inProgress = true;
-                    client.execute(() -> {
-                        if (client.player != null && client.screen == null && client.gameMode != null) {
-                            client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
-                        }
-                    });
+                    leapQueue.clear();
+                    leapQueue.add(lastOpener);
+                    
+                    if (client.gameMode != null) {
+                        client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
+                    }
                 }
             }
 
@@ -114,65 +98,48 @@ public class FastLeap {
             String title = containerScreen.getTitle().getString();
             if ("Spirit Leap".equals(title)) {
                 menuOpened = true;
-
-                if (leapQueue.isEmpty()) {
-                    inProgress = false;
-                } else if (!clickedLeap) {
-                    String targetLeap = leapQueue.get(0);
-                    int playerInvStart = containerScreen.getMenu().slots.size() - 36;
-                    client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Scanning GUI for: " + ChatFormatting.WHITE + targetLeap + ChatFormatting.GRAY + " (slots 0-" + (playerInvStart - 1) + ")"), false);
-
-                    boolean matched = false;
+                if (!leapQueue.isEmpty() && !clickedLeap) {
+                    String target = leapQueue.get(0);
+                    int invStart = containerScreen.getMenu().slots.size() - 36;
+                    
                     for (Slot slot : containerScreen.getMenu().slots) {
-                        if (slot.index >= playerInvStart) continue;
-
+                        if (slot.index >= invStart) continue;
+                        
                         ItemStack stack = slot.getItem();
                         if (!stack.isEmpty()) {
-                            String itemName = stack.getHoverName().getString().replaceAll("(?i)§[0-9A-FK-OR]", "").toLowerCase();
-                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GRAY + "  slot " + slot.index + ": " + itemName), false);
-                            if (itemName.equals(targetLeap.toLowerCase())) {
+                            String name = stack.getHoverName().getString()
+                                    .replaceAll("(?i)§[0-9A-FK-OR]", "")
+                                    .toLowerCase();
+                            
+                            if (name.startsWith(target.toLowerCase())) {
+                                clickedLeap = true;
                                 int windowId = containerScreen.getMenu().containerId;
-
-                                client.execute(() -> {
-                                    if (!clickedLeap && client.player != null && client.screen instanceof ContainerScreen currentScreen) {
-                                        if (currentScreen.getMenu().containerId == windowId) {
-                                            clickedLeap = true;
-                                            client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
-                                            client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + targetLeap), false);
-                                            reloadGUI(client);
-                                        }
-                                    }
-                                });
+                                
+                                client.gameMode.handleInventoryMouseClick(windowId, slot.index, 0, ClickType.PICKUP, client.player);
+                                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.GREEN + "Leaping to " + ChatFormatting.RED + target), false);
+                                
+                                finishLeap(client);
                                 break;
                             }
                         }
                     }
-                    if (!matched) {
-                        client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.RED + "No match found for: " + targetLeap), false);
-                    }
                 }
-            } else {
+            } else if (menuOpened) {
+                clearQueue();
                 menuOpened = false;
             }
-        } else {
+        } else if (menuOpened) {
+            clearQueue();
             menuOpened = false;
         }
     }
 
-    private static void reloadGUI(Minecraft client) {
-        menuOpened = false;
-        synchronized(leapQueue) {
-            if (!leapQueue.isEmpty()) {
-                leapQueue.remove(0);
-            }
-        }
+    private static void finishLeap(Minecraft client) {
+        leapQueue.clear();
         inProgress = false;
         clickedLeap = false;
-        client.execute(() -> {
-            if (client.screen instanceof ContainerScreen cs && "Spirit Leap".equals(cs.getTitle().getString())) {
-                client.setScreen(null);
-            }
-        });
+        menuOpened = false;
+        client.setScreen(null);
     }
 
     public static void clearQueue() {
@@ -181,52 +148,13 @@ public class FastLeap {
         clickedLeap = false;
     }
 
-    public static void queueLeap(String name) {
-        if (name != null && !name.isEmpty()) {
-            leapQueue.add(name);
-        }
-    }
-
-    private static String getLeap(Minecraft client) {
-        String leapString = "";
-
-        if (ConfigManager.data.FastLeapDoorOpener && lastOpener != null) {
-            leapString = lastOpener;
-        }
-
-        if (ConfigManager.data.FastLeapPositional && client.player != null) {
-            String s1 = ConfigManager.data.FastLeapS1;
-            String s2 = ConfigManager.data.FastLeapS2;
-            String s3 = ConfigManager.data.FastLeapS3;
-            String s4 = ConfigManager.data.FastLeapS4;
-
-            if (isPlayerInBox(client.player, 113, 160, 48, 89, 100, 122)) {
-                leapString = (s1 != null) ? s1 : "";
-            } else if (isPlayerInBox(client.player, 91, 160, 145, 19, 100, 121)) {
-                leapString = (s2 != null) ? s2 : "";
-            } else if (isPlayerInBox(client.player, -6, 160, 123, 19, 100, 50)) {
-                leapString = (s3 != null) ? s3 : "";
-            } else if (isPlayerInBox(client.player, 17, 160, 27, 90, 100, 50)) {
-                leapString = (s4 != null) ? s4 : "";
-            }
-        }
-
-        return leapString;
-    }
-
-    private static boolean isPlayerInBox(Player player, double x1, double y1, double z1, double x2, double y2, double z2) {
-        AABB box = new AABB(Math.min(x1, x2), Math.min(y1, y2), Math.min(z1, z2), 
-                            Math.max(x1, x2), Math.max(y1, y2), Math.max(z1, z2));
-        return box.contains(player.position());
-    }
-
-    private static String getHeldItemID(ItemStack stack) {
-        if (stack.isEmpty()) return "";
-        String name = stack.getHoverName().getString().replaceAll("(?i)§[0-9A-FK-OR]", "");
-        if (name.contains("Infinileap") || name.contains("Infinite Spirit Leap")) {
-            return "INFINITE_SPIRIT_LEAP";
-        }
-        return "";
+    private static boolean isHoldingLeap(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        String name = stack.getHoverName().getString()
+                .replaceAll("(?i)§[0-9A-FK-ORX]", "")
+                .trim()
+                .toLowerCase();
+        return name.contains("infinileap") || name.contains("infinite spirit leap");
     }
 
     public static List<String> getDebugInfo() {
@@ -243,8 +171,7 @@ public class FastLeap {
 
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            String held = getHeldItemID(client.player.getMainHandItem());
-            info.add("HeldID: " + (held.isEmpty() ? "none" : held));
+            info.add("Holding Leap: " + isHoldingLeap(client.player.getMainHandItem()));
             info.add("Screen: " + (client.screen != null ? client.screen.getClass().getSimpleName() : "none"));
         }
 
