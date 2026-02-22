@@ -79,7 +79,7 @@ public class FastLeap {
 
             if (attackDown && !wasAttackDown && holdingLeap && !inProgress) {
                 String leapTo = getLeap(client);
-                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (leapTo.isEmpty() ? "EMPTY" : leapTo)), false);
+                client.player.displayClientMessage(Component.literal(PREFIX + ChatFormatting.YELLOW + "Click detected. LeapTo=" + ChatFormatting.WHITE + (leapTo.isEmpty() ? "EMPTY" : leapTo) + ChatFormatting.GRAY + " [DoorOpener=" + ConfigManager.data.FastLeapDoorOpener + ", lastOpener=" + lastOpener + "]"), false);
                 if (leapTo != null && !leapTo.isEmpty()) {
                     inProgress = true;
                     queueLeap(leapTo);
