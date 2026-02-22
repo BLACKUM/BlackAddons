@@ -176,6 +176,7 @@ public class IrcClient implements WebSocket.Listener {
             for (IrcMessageListener listener : listeners) {
                 listener.onMessageReceived(ircMsg);
             }
+            displayMessage(username, processedMessage, channel);
 
             JsonObject json = new JsonObject();
             json.addProperty("user", username);

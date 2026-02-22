@@ -5,8 +5,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import org.spongepowered.asm.mixin.Mutable;
-
 import static org.blackum.blackaddons.core.util.MinecraftInstance.mc;
 
 public class ChatUtils {
@@ -46,6 +44,35 @@ public class ChatUtils {
     }
 
     public record ColorStop(int rgb, float fraction) {
+    }
+
+    public static MutableComponent BuildAnimatedMultiGradient(String text, java.util.List<ColorStop> stops,
+            float speed) {
+        if (stops == null || stops.isEmpty()) {
+            return Component.literal(text);
+        }
+
+        MutableComponent result = Component.empty();
+        int length = text.length();
+
+        for (int i = 0; i < length; ++i) {
+            float charOffset = (float) i / Math.max(1, length - 1);
+            TextColor color = org.blackum.blackaddons.mixin.core.TextColorAccessor.ba$create(stops.get(0).rgb());
+
+            if ((Object) color instanceof org.blackum.blackaddons.core.util.AnimatedTextColorAccessor accessor) {
+                accessor.ba$setAnimated(true);
+                accessor.ba$setStops(stops);
+                accessor.ba$setSpeed(speed);
+                accessor.ba$setOffset(charOffset);
+            }
+
+            MutableComponent charText = Component.literal(String.valueOf(text.charAt(i)))
+                    .setStyle(Style.EMPTY.withColor(color));
+
+            result.append(charText);
+        }
+
+        return result;
     }
 
     public static MutableComponent BuildMultiGradient(String text, java.util.List<ColorStop> stops) {
@@ -110,7 +137,9 @@ public class ChatUtils {
 
     private static final MutableComponent PREFIX = Component.empty()
             .append(ChatFormatting.BLACK + "[")
-            .append(BuildGradient("BlackAddons", 0x332640, 0x623d94))
+            .append(BuildAnimatedMultiGradient("BlackAddons", java.util.List.of(
+                    new ColorStop(0x332640, 0.0f),
+                    new ColorStop(0x623d94, 1.0f)), 0.8f))
             .append(ChatFormatting.BLACK + "] ");
 
     public static MutableComponent getPrefix() {

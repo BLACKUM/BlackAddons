@@ -120,7 +120,7 @@ public class ConfigManager {
         public boolean AutoTNTEnabled = false;
         public int AutoTNTDelay = 5;
         public int UnequipDelay = 8;
-        public boolean SwapBack = false;
+        public boolean SwapBack = true;
 
         public AutoTNT.FeatureConfig autoTntConfig = new AutoTNT.FeatureConfig();
 
@@ -138,6 +138,7 @@ public class ConfigManager {
         // Settings
         public int notificationDuration = 4000;
         public int cacheDurationMinutes = 5;
+        public boolean disableCommandConfirmation = true;
 
         // Chat triggers defaults
         public List<SoundAlert> chatSoundAlerts = new ArrayList<>(List.of(

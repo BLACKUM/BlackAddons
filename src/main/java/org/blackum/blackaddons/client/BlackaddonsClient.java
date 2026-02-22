@@ -4,6 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
@@ -88,6 +89,14 @@ public class BlackaddonsClient implements ClientModInitializer {
             }
         });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
+
+        ClientSendMessageEvents.ALLOW_CHAT.register(message -> {
+            if (message.startsWith("#")) {
+                IrcClient.getInstance().sendMessage(message.substring(1).trim());
+                return false;
+            }
+            return true;
+        });
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             Component handled = ChatImageHandler

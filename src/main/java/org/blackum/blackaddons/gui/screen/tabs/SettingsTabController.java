@@ -26,6 +26,15 @@ public class SettingsTabController extends SimpleTabController {
 
         listView.addItem(new Label(0, 0, "General Settings", Label.Style.TITLE));
 
+        ToggleSwitch disableCmdConfirmToggle = new ToggleSwitch(0, 0, width,
+                "Disable Command Confirmation",
+                "Disables the 'Confirm Command Execution' warning screen for chat links",
+                ConfigManager.data.disableCommandConfirmation, (val) -> {
+                    ConfigManager.data.disableCommandConfirmation = val;
+                    ConfigManager.save();
+                });
+        listView.addItem(disableCmdConfirmToggle);
+
         listView.addItem(new Label(0, 0, "Party Finder", Label.Style.TITLE));
 
         ToggleSwitch pfAutoInviteToggle = new ToggleSwitch(0, 0, width,

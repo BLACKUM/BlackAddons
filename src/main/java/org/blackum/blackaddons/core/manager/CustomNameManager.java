@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.util.Constants;
@@ -114,6 +115,8 @@ public class CustomNameManager {
             JsonObject data = entry.getValue().getAsJsonObject();
             String displayName = data.has("display") ? data.get("display").getAsString() : entry.getKey();
             String color = data.has("color") ? data.get("color").getAsString() : "";
+            boolean animated = data.has("animated") && data.get("animated").getAsBoolean();
+            float speed = data.has("speed") ? data.get("speed").getAsFloat() : 1.0f;
 
             List<ChatUtils.ColorStop> gradientStops = new ArrayList<>();
             if (data.has("gradient")) {
@@ -168,7 +171,7 @@ public class CustomNameManager {
             }
 
             customNames.put(entry.getKey().toLowerCase(),
-                    new CustomName(displayName, color, gradientStops));
+                    new CustomName(displayName, color, gradientStops, animated, speed));
         }
         Blackaddons.LOGGER.info("Successfully fetched " + customNames.size() + " custom names.");
     }
@@ -185,7 +188,24 @@ public class CustomNameManager {
         MutableComponent newComponent = Component.empty();
         newComponent.setStyle(component.getStyle());
 
-        if (component.getContents() instanceof net.minecraft.network.chat.contents.PlainTextContents literal) {
+        if (component.getContents() instanceof TranslatableContents translatable) {
+            Object[] args = translatable.getArgs();
+            Object[] newArgs = new Object[args.length];
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof Component argComponent) {
+                    newArgs[i] = processComponent(argComponent);
+                } else {
+                    newArgs[i] = args[i];
+                }
+            }
+            MutableComponent rebuilt = MutableComponent.create(
+                    new TranslatableContents(translatable.getKey(), translatable.getFallback(), newArgs));
+            rebuilt.setStyle(component.getStyle());
+            for (Component sibling : component.getSiblings()) {
+                rebuilt.append(processComponent(sibling));
+            }
+            return rebuilt;
+        } else if (component.getContents() instanceof net.minecraft.network.chat.contents.PlainTextContents literal) {
             String text = literal.text();
             String lowerText = text.toLowerCase();
             boolean found = false;
@@ -247,6 +267,10 @@ public class CustomNameManager {
 
         if (custom.gradientStops() != null && !custom.gradientStops().isEmpty()) {
             try {
+                if (custom.animated()) {
+                    return ChatUtils.BuildAnimatedMultiGradient(custom.display(), custom.gradientStops(),
+                            custom.speed());
+                }
                 return ChatUtils.BuildMultiGradient(custom.display(), custom.gradientStops());
             } catch (Exception e) {
             }
@@ -271,6 +295,7 @@ public class CustomNameManager {
         return customNames.get(username.toLowerCase());
     }
 
-    public record CustomName(String display, String color, List<ChatUtils.ColorStop> gradientStops) {
+    public record CustomName(String display, String color, List<ChatUtils.ColorStop> gradientStops, boolean animated,
+            float speed) {
     }
 }

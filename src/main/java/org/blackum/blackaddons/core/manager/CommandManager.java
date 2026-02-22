@@ -23,8 +23,10 @@ import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import org.blackum.blackaddons.gui.screen.PartyFinderScreen;
 import org.blackum.blackaddons.gui.screen.IrcScreen;
 import org.blackum.blackaddons.gui.screen.ImagePreviewScreen;
+import org.blackum.blackaddons.feature.chat.ChatSoundAlertManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import net.fabricmc.loader.api.FabricLoader;
+import java.util.UUID;
 
 public class CommandManager {
 
@@ -159,6 +161,45 @@ public class CommandManager {
                                                 return 1;
                                         }));
 
+                        testNode.then(ClientCommandManager.literal("allnames")
+                                        .executes(ctx -> {
+                                                Minecraft client = Minecraft.getInstance();
+                                                if (client.level != null && client.getConnection() != null) {
+                                                        client.execute(() -> {
+                                                                net.minecraft.world.scores.Scoreboard scoreboard = client.level
+                                                                                .getScoreboard();
+                                                                net.minecraft.world.scores.Objective obj = scoreboard
+                                                                                .getObjective("allNamesObj");
+                                                                if (obj == null) {
+                                                                        obj = scoreboard.addObjective(
+                                                                                        "allNamesObj",
+                                                                                        net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY,
+                                                                                        Component.literal(
+                                                                                                        "Test"),
+                                                                                        net.minecraft.world.scores.criteria.ObjectiveCriteria.RenderType.INTEGER,
+                                                                                        true, null);
+                                                                }
+                                                                scoreboard.setDisplayObjective(
+                                                                                net.minecraft.world.scores.DisplaySlot.SIDEBAR,
+                                                                                obj);
+
+                                                                int score = 0;
+                                                                for (net.minecraft.client.multiplayer.PlayerInfo info : client
+                                                                                .getConnection().getOnlinePlayers()) {
+                                                                        String name = info.getProfile().name();
+                                                                        scoreboard.getOrCreatePlayerScore(() -> name,
+                                                                                        obj).set(score++);
+                                                                }
+
+                                                                NotificationManager.addNotification(
+                                                                                "Test",
+                                                                                "Created scoreboard with all online players.",
+                                                                                NotificationType.SUCCESS);
+                                                        });
+                                                }
+                                                return 1;
+                                        }));
+
                         testNode.then(ClientCommandManager.literal("dungeonjoin")
                                         .then(ClientCommandManager
                                                         .argument(Constants.CMD_ARG_IGN, StringArgumentType.string())
@@ -173,7 +214,7 @@ public class CommandManager {
                                                                                 .addMessage(component);
                                                                 DungeonJoinHandler
                                                                                 .onChatMessage(component);
-                                                                org.blackum.blackaddons.feature.chat.ChatSoundAlertManager
+                                                                ChatSoundAlertManager
                                                                                 .getInstance()
                                                                                 .onChatMessage(component);
                                                                 return 1;
@@ -191,8 +232,7 @@ public class CommandManager {
                                                                                 .literal(fakeMessage);
                                                                 Minecraft.getInstance().gui.getChat()
                                                                                 .addMessage(component);
-                                                                org.blackum.blackaddons.feature.chat.ChatSoundAlertManager
-                                                                                .getInstance()
+                                                                ChatSoundAlertManager.getInstance()
                                                                                 .onChatMessage(component);
                                                                 return 1;
                                                         })));
@@ -331,7 +371,6 @@ public class CommandManager {
                                         cmd.then(testNode);
                                         cmd.then(dailyNode);
                                 }
-
                                 cmd.then(pvNode);
                                 cmd.then(ircNode);
                                 cmd.then(CommandUtils.subcommand);

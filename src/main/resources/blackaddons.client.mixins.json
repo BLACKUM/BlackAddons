@@ -12,9 +12,16 @@
     "core.LanguageManagerAccessor",
     "core.KeyBindingAccessor",
     "core.InventoryAccessor",
+    "core.ClientPacketListenerAccessor",
     "render.FullbrightMixin",
     "render.GameRendererMixin",
-    "gui.ChatComponentMixin"
+    "gui.ChatComponentMixin",
+    "gui.ScreenMixin",
+    "core.PlayerNameMixin",
+    "core.PlayerTeamMixin",
+    "gui.PlayerTabListMixin",
+    "core.TextColorMixin",
+    "core.TextColorAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
