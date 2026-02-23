@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.feature.cheat;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
@@ -7,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.core.util.LocationUtils;
 import org.blackum.blackaddons.mixin.core.InventoryAccessor;
 import org.lwjgl.glfw.GLFW;
 
@@ -22,6 +24,7 @@ public class BloodBlink {
     public static void register() {
         blinkKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.blackaddons.bloodblink",
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_V,
                 "category.blackaddons.cheats"
         ));
@@ -30,7 +33,7 @@ public class BloodBlink {
     }
 
     private static void onTick(Minecraft client) {
-        if (client.player == null || client.gameMode == null) return;
+        if (client.player == null || client.gameMode == null || !LocationUtils.inDungeons()) return;
 
         // Shift Key Handling
         if (resetTicks > 0) {
