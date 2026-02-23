@@ -113,6 +113,39 @@ public class BloodBlink {
     }
 
     public static List<String> getDebugInfo() {
-        return new ArrayList<>();
+        List<String> info = new ArrayList<>();
+        if (!ConfigManager.data.BloodBlinkEnabled) return info;
+
+        info.add("");
+        info.add(net.minecraft.ChatFormatting.DARK_RED + "[BloodBlink Debug]");
+        info.add("Dungeon: " + (LocationUtils.inDungeons() ? net.minecraft.ChatFormatting.GREEN + "YES" : net.minecraft.ChatFormatting.RED + "NO"));
+        
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            boolean hasAOTV = findItemSlot(client, "aspect of the void") != -1;
+            boolean hasPearls = findItemSlot(client, "ender pearl") != -1;
+            info.add("Items: " + (hasAOTV ? net.minecraft.ChatFormatting.GREEN + "AOTV" : net.minecraft.ChatFormatting.RED + "NO AOTV") + 
+                     net.minecraft.ChatFormatting.RESET + " / " + 
+                     (hasPearls ? net.minecraft.ChatFormatting.GREEN + "Pearls" : net.minecraft.ChatFormatting.RED + "NO Pearls"));
+        }
+
+        String phaseStr = switch (macroPhase) {
+            case 1 -> net.minecraft.ChatFormatting.GOLD + "AOTV PHASE";
+            case 2 -> net.minecraft.ChatFormatting.LIGHT_PURPLE + "PEARL PHASE";
+            default -> "Idle";
+        };
+        info.add("Phase: " + phaseStr);
+        
+        if (macroPhase == 0) {
+            info.add("Target: 48.9 / -29.3 -> -90.0");
+        } else if (macroPhase == 2) {
+            info.add("Pearl Clicks: " + pearlClicksRemaining);
+        }
+        
+        if (resetTicks > 0) {
+            info.add("Sneak Ticks: " + resetTicks);
+        }
+
+        return info;
     }
 }
