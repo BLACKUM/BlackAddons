@@ -4,7 +4,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BloodBlink {
-    private static final KeyMapping.Category CHEATS_CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("blackumaddons", "cheats"));
+    private static final KeyMapping.Category CHEATS_CATEGORY = KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath("blackumaddons", "cheats"));
 
     private static KeyMapping blinkKey;
     private static int macroPhase = 0; // 0: Idle, 1: AOTV, 2: Pearls
