@@ -51,7 +51,7 @@ public class ScoreboardUtils {
     private static String cleanScoreboard(String text) {
         if (text == null)
             return "";
-        String clean = text.replaceAll("§[0-9a-fk-or]", "");
+        String clean = text.replaceAll("(?i)§[0-9a-fk-or]", "");
         return clean.trim();
     }
 }

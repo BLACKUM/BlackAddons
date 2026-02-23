@@ -35,7 +35,7 @@ public class BloodBlink {
     }
 
     private static void onTick(Minecraft client) {
-        if (client.player == null || client.gameMode == null || !LocationUtils.inDungeons()) return;
+        if (client.player == null || client.gameMode == null || client.screen != null || !LocationUtils.inDungeons()) return;
 
         // Shift Key Handling
         if (resetTicks > 0) {
@@ -131,6 +131,7 @@ public class BloodBlink {
 
         info.add("");
         info.add(net.minecraft.ChatFormatting.DARK_RED + "[BloodBlink Debug]");
+        info.add("Location: " + LocationUtils.getLocation());
         info.add("Dungeon: " + (LocationUtils.inDungeons() ? net.minecraft.ChatFormatting.GREEN + "YES" : net.minecraft.ChatFormatting.RED + "NO"));
         
         Minecraft client = Minecraft.getInstance();
