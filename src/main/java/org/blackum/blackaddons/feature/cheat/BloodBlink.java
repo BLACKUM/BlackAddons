@@ -6,8 +6,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.mixin.core.InventoryAccessor;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ public class BloodBlink {
 
         // Macro Logic
         if (macroPhase == 1) {
-            executeAOTVPase(client);
+            executeAOTVPhase(client);
             macroPhase = 2;
             pearlClicksRemaining = 7;
         } else if (macroPhase == 2) {
@@ -56,7 +56,7 @@ public class BloodBlink {
         }
     }
 
-    private static void executeAOTVPase(Minecraft client) {
+    private static void executeAOTVPhase(Minecraft client) {
         // 1. Look at coordinates
         client.player.setXRot(48.9f); // Pitch
         client.player.setYRot(-29.3f); // Yaw
@@ -64,7 +64,7 @@ public class BloodBlink {
         // 2. Switch to AOTV
         int slot = findItemSlot(client, "aspect of the void");
         if (slot != -1) {
-            client.player.getInventory().selectedSlot = slot;
+            ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(slot);
         }
 
         // 3. Sneak
@@ -82,15 +82,10 @@ public class BloodBlink {
         // 2. Switch to Pearls
         int slot = findItemSlot(client, "ender pearl");
         if (slot != -1) {
-            client.player.getInventory().selectedSlot = slot;
+            ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(slot);
         }
 
-        // 3. Click 7 times (we do them as fast as possible, but we can spread them if needed)
-        // Spreading them over ticks is safer for registration
-        if (pearlClicksRemaining == 0) {
-            pearlClicksRemaining = 7;
-        }
-
+        // 3. Click 7 times
         if (pearlClicksRemaining > 0) {
             client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
             pearlClicksRemaining--;
