@@ -1,6 +1,5 @@
 package org.blackum.blackaddons.feature.cheat;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
@@ -24,7 +23,6 @@ public class BloodBlink {
     public static void register() {
         blinkKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.blackaddons.bloodblink",
-                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_V,
                 "category.blackaddons.cheats"
         ));
