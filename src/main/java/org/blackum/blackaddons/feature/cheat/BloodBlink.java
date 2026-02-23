@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.util.LocationUtils;
+import org.blackum.blackaddons.feature.chat.ChatUtils;
 import org.blackum.blackaddons.mixin.core.InventoryAccessor;
 import org.lwjgl.glfw.GLFW;
 
@@ -47,6 +48,7 @@ public class BloodBlink {
         // Key Listen
         while (blinkKey.consumeClick()) {
             if (!ConfigManager.data.BloodBlinkEnabled) continue;
+            ChatUtils.send_debug("BloodBlink Triggered!");
             macroPhase = 1;
         }
 
@@ -61,6 +63,7 @@ public class BloodBlink {
     }
 
     private static void executeAOTVPhase(Minecraft client) {
+        ChatUtils.send_debug("Starting AOTV Phase...");
         // 1. Look at coordinates
         client.player.setXRot(48.9f); // Pitch
         client.player.setYRot(-29.3f); // Yaw
@@ -69,6 +72,8 @@ public class BloodBlink {
         int slot = findItemSlot(client, "aspect of the void");
         if (slot != -1) {
             ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(slot);
+        } else {
+            ChatUtils.send_debug("AOTV Error: Item not found!");
         }
 
         // 3. Sneak
@@ -80,6 +85,9 @@ public class BloodBlink {
     }
 
     private static void executePearlPhase(Minecraft client) {
+        if (pearlClicksRemaining == 7) {
+            ChatUtils.send_debug("Starting Pearl Phase...");
+        }
         // 1. Change Yaw
         client.player.setYRot(-90f);
 
@@ -87,6 +95,10 @@ public class BloodBlink {
         int slot = findItemSlot(client, "ender pearl");
         if (slot != -1) {
             ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(slot);
+        } else {
+            ChatUtils.send_debug("Pearl Error: Item not found!");
+            macroPhase = 0;
+            return;
         }
 
         // 3. Click 7 times
@@ -96,6 +108,7 @@ public class BloodBlink {
         }
 
         if (pearlClicksRemaining == 0) {
+            ChatUtils.send_debug("Macro Complete!");
             macroPhase = 0;
             resetTicks = 2; // Short buffer to release shift
         }
