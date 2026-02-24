@@ -18,7 +18,7 @@ public final class Constants {
         // Cloudflare bypass
         public static final String BROWSER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; WOW64; x64; rv:136.0) Gecko/20100101 Firefox/136.0";
         public static final String BOT_USER_AGENT = "BlackAddons/1.0";
-        public static final int HTTP_TIMEOUT_SECONDS = 30;
+        public static final int HTTP_TIMEOUT_SECONDS = 60;
 
         // Notifications
         public static final String MOD_DETECTION_TITLE = "BlackAddons";
@@ -39,6 +39,9 @@ public final class Constants {
         public static final String MOULBERRY_AH_API = "https://moulberry.codes/auction_averages_lbin/3day.json";
         public static final String PLAYER_DB_API = "https://playerdb.co/api/player/minecraft/";
         public static final String ADJECTILS_PROFILE_API = "https://adjectilsbackend.adjectivenoun3215.workers.dev/v2/skyblock/profiles?uuid=";
+        public static final String SOOPY_PROFILE_API = "https://soopy.dev/api/v2/player_skyblock/";
+        public static final String SKYCRYPT_BASE_URL = "https://sky.shiiyu.moe";
+        public static final String SKYCRYPT_STATS_API = "https://sky.shiiyu.moe/api/stats/";
         public static final String COFL_SHINY_NECRON_HANDLE = "https://sky.coflnet.com/api/item/price/NECRON_HANDLE?IsShiny=true";
         public static final String COFL_SKELETON_MASTER_CHESTPLATE_MAX = "https://sky.coflnet.com/api/item/price/SKELETON_MASTER_CHESTPLATE?ItemTier=10-10&NoOtherValuableEnchants=true&BaseStatBoost=50";
         public static final String COFL_SKELETON_MASTER_CHESTPLATE_BASE = "https://sky.coflnet.com/api/item/price/SKELETON_MASTER_CHESTPLATE?BaseStatBoost=50";

@@ -2,9 +2,10 @@ package org.blackum.blackaddons.feature.cheat;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -17,27 +18,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BloodBlink {
-    private static final KeyMapping.Category CHEATS_CATEGORY = KeyMapping.Category.register(ResourceLocation.fromNamespaceAndPath("blackumaddons", "cheats"));
+    private static final KeyMapping.Category CHEATS_CATEGORY = KeyMapping.Category
+            .register(Identifier.fromNamespaceAndPath("blackaddons", "main"));
 
     private static KeyMapping blinkKey;
-    private static int macroPhase = 0; // 0: Idle, 1: AOTV, 2: Pearls
+    private static int macroPhase = 0;
     private static int pearlClicksRemaining = 0;
     private static int resetTicks = -1;
 
     public static void register() {
         blinkKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.blackaddons.bloodblink",
-                GLFW.GLFW_KEY_V,
-                CHEATS_CATEGORY
-        ));
+                GLFW.GLFW_KEY_UNKNOWN,
+                CHEATS_CATEGORY));
 
         ClientTickEvents.END_CLIENT_TICK.register(BloodBlink::onTick);
     }
 
     private static void onTick(Minecraft client) {
-        if (client.player == null || client.gameMode == null || client.screen != null || !LocationUtils.inDungeons()) return;
+        if (client.player == null || client.gameMode == null || client.screen != null || !LocationUtils.inDungeons())
+            return;
 
-        // Shift Key Handling
         if (resetTicks > 0) {
             resetTicks--;
             if (resetTicks == 0) {
@@ -45,14 +46,13 @@ public class BloodBlink {
             }
         }
 
-        // Key Listen
         while (blinkKey.consumeClick()) {
-            if (!ConfigManager.data.BloodBlinkEnabled) continue;
+            if (!ConfigManager.data.BloodBlinkEnabled)
+                continue;
             ChatUtils.send_debug("BloodBlink Triggered!");
             macroPhase = 1;
         }
 
-        // Macro Logic
         if (macroPhase == 1) {
             executeAOTVPhase(client);
             macroPhase = 2;
@@ -64,11 +64,9 @@ public class BloodBlink {
 
     private static void executeAOTVPhase(Minecraft client) {
         ChatUtils.send_debug("Starting AOTV Phase...");
-        // 1. Look at coordinates
-        client.player.setXRot(48.9f); // Pitch
-        client.player.setYRot(-29.3f); // Yaw
+        client.player.setXRot(48.9f);
+        client.player.setYRot(-29.3f);
 
-        // 2. Switch to AOTV
         int slot = findItemSlot(client, "aspect of the void");
         if (slot != -1) {
             ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(slot);
@@ -76,11 +74,9 @@ public class BloodBlink {
             ChatUtils.send_debug("AOTV Error: Item not found!");
         }
 
-        // 3. Sneak
         client.options.keyShift.setDown(true);
-        resetTicks = 10; // Keep shift down for duration of macro
+        resetTicks = 10;
 
-        // 4. Click
         client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
     }
 
@@ -88,10 +84,8 @@ public class BloodBlink {
         if (pearlClicksRemaining == 7) {
             ChatUtils.send_debug("Starting Pearl Phase...");
         }
-        // 1. Change Yaw
         client.player.setYRot(-90f);
 
-        // 2. Switch to Pearls
         int slot = findItemSlot(client, "ender pearl");
         if (slot != -1) {
             ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(slot);
@@ -101,7 +95,6 @@ public class BloodBlink {
             return;
         }
 
-        // 3. Click 7 times
         if (pearlClicksRemaining > 0) {
             client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
             pearlClicksRemaining--;
@@ -110,7 +103,7 @@ public class BloodBlink {
         if (pearlClicksRemaining == 0) {
             ChatUtils.send_debug("Macro Complete!");
             macroPhase = 0;
-            resetTicks = 2; // Short buffer to release shift
+            resetTicks = 2;
         }
     }
 
@@ -127,35 +120,40 @@ public class BloodBlink {
 
     public static List<String> getDebugInfo() {
         List<String> info = new ArrayList<>();
-        if (!ConfigManager.data.BloodBlinkEnabled) return info;
+        if (!ConfigManager.data.BloodBlinkEnabled)
+            return info;
 
         info.add("");
-        info.add(net.minecraft.ChatFormatting.DARK_RED + "[BloodBlink Debug]");
+        info.add(ChatFormatting.DARK_RED + "[BloodBlink Debug]");
         info.add("Location: " + LocationUtils.getLocation());
-        info.add("Dungeon: " + (LocationUtils.inDungeons() ? net.minecraft.ChatFormatting.GREEN + "YES" : net.minecraft.ChatFormatting.RED + "NO"));
-        
+        info.add("Dungeon: " + (LocationUtils.inDungeons() ? ChatFormatting.GREEN + "YES"
+                : ChatFormatting.RED + "NO"));
+
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             boolean hasAOTV = findItemSlot(client, "aspect of the void") != -1;
             boolean hasPearls = findItemSlot(client, "ender pearl") != -1;
-            info.add("Items: " + (hasAOTV ? net.minecraft.ChatFormatting.GREEN + "AOTV" : net.minecraft.ChatFormatting.RED + "NO AOTV") + 
-                     net.minecraft.ChatFormatting.RESET + " / " + 
-                     (hasPearls ? net.minecraft.ChatFormatting.GREEN + "Pearls" : net.minecraft.ChatFormatting.RED + "NO Pearls"));
+            info.add("Items: "
+                    + (hasAOTV ? ChatFormatting.GREEN + "AOTV"
+                            : ChatFormatting.RED + "NO AOTV")
+                    + ChatFormatting.RESET + " / "
+                    + (hasPearls ? ChatFormatting.GREEN + "Pearls"
+                            : ChatFormatting.RED + "NO Pearls"));
         }
 
         String phaseStr = switch (macroPhase) {
-            case 1 -> net.minecraft.ChatFormatting.GOLD + "AOTV PHASE";
-            case 2 -> net.minecraft.ChatFormatting.LIGHT_PURPLE + "PEARL PHASE";
+            case 1 -> ChatFormatting.GOLD + "AOTV PHASE";
+            case 2 -> ChatFormatting.LIGHT_PURPLE + "PEARL PHASE";
             default -> "Idle";
         };
         info.add("Phase: " + phaseStr);
-        
+
         if (macroPhase == 0) {
             info.add("Target: 48.9 / -29.3 -> -90.0");
         } else if (macroPhase == 2) {
             info.add("Pearl Clicks: " + pearlClicksRemaining);
         }
-        
+
         if (resetTicks > 0) {
             info.add("Sneak Ticks: " + resetTicks);
         }

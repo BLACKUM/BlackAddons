@@ -21,6 +21,7 @@ public class ProfileStateManager {
     private static ProfileStateManager instance;
     private final Map<String, CacheEntry<JsonObject>> profileCache = new HashMap<>();
     private final Map<String, CacheEntry<JsonObject>> rngCache = new HashMap<>();
+    private final Map<String, CacheEntry<JsonObject>> leaderboardCache = new HashMap<>();
 
     private ProfileStateManager() {
     }
@@ -44,17 +45,13 @@ public class ProfileStateManager {
             }
         }
 
-        CompletableFuture<JsonObject> localFuture = ProfileService.getProfileStats(player, profileName, force);
-        CompletableFuture<JsonObject> botFuture = getSafeBotProfile(player, profileName, force);
-
-        CompletableFuture<JsonObject> future = localFuture.thenCombine(botFuture, (local, bot) -> {
-            if (local == null)
-                return bot;
-            if (bot != null && !bot.has("error")) {
-                mergeBotDataIntoLocal(local, bot);
-            }
-            return local;
-        });
+        CompletableFuture<JsonObject> future = ProfileService.getProfileStats(player, profileName, force)
+                .thenCompose(local -> {
+                    if (local != null) {
+                        return CompletableFuture.completedFuture(local);
+                    }
+                    return getSafeBotProfile(player, profileName, force);
+                });
 
         return future.thenApply(json -> {
             if (json == null)
@@ -97,35 +94,10 @@ public class ProfileStateManager {
                 .exceptionally(e -> null);
     }
 
-    private void mergeBotDataIntoLocal(JsonObject local, JsonObject bot) {
-        try {
-            JsonObject botData = bot.has("data") ? bot.getAsJsonObject("data") : bot;
-            if (botData.has("teammates")) {
-                JsonElement botTm = botData.get("teammates");
-                if (botTm.isJsonArray()) {
-                    JsonArray botTeammates = botTm.getAsJsonArray();
-                    JsonArray localTeammates = local.has("teammates") ? local.getAsJsonArray("teammates")
-                            : new JsonArray();
-                    JsonArray merged = LocalTeammateManager.getInstance()
-                            .mergeTeammates(localTeammates, botTeammates);
-                    local.add("teammates", merged);
-                }
-            }
-            if (botData.has("recent_runs"))
-                local.add("recent_runs", botData.get("recent_runs"));
-            if (botData.has("daily_stats"))
-                local.add("daily_stats", botData.get("daily_stats"));
-            if (botData.has("monthly_stats"))
-                local.add("monthly_stats", botData.get("monthly_stats"));
-        } catch (Exception e) {
-            Blackaddons.LOGGER.error("Error merging bot data: " + e.getMessage());
-        }
-    }
-
     public CompletableFuture<BotResult<JsonObject>> getRngData(String player) {
         if (rngCache.containsKey(player.toLowerCase())) {
             CacheEntry<JsonObject> entry = rngCache.get(player.toLowerCase());
-            if (!entry.isExpired()) {
+            if (!entry.isExpired(15)) {
                 return CompletableFuture.completedFuture(BotResult.success(entry.data));
             }
         }
@@ -248,9 +220,45 @@ public class ProfileStateManager {
                 });
     }
 
+    public CompletableFuture<BotResult<JsonObject>> getLeaderboard(String period, String metric, int page) {
+        String cacheKey = "lb:" + period + ":" + metric + ":" + page;
+        if (leaderboardCache.containsKey(cacheKey)) {
+            CacheEntry<JsonObject> entry = leaderboardCache.get(cacheKey);
+            if (!entry.isExpired(15)) {
+                return CompletableFuture.completedFuture(BotResult.success(entry.data));
+            }
+        }
+
+        return BotIntegration.getLeaderboard(period, metric, page).thenApply(json -> {
+            if (json == null)
+                return BotResult.error("API Unavailable");
+            if (json.has("error"))
+                return BotResult.error(json.get("error").getAsString());
+
+            leaderboardCache.put(cacheKey, new CacheEntry<>(json));
+            return BotResult.success(json);
+        });
+    }
+
+    public CompletableFuture<BotResult<JsonObject>> getLeaderboardWithPlayer(String period, String metric,
+            String player) {
+        return BotIntegration.getLeaderboardWithPlayer(period, metric, player).thenApply(json -> {
+            if (json == null)
+                return BotResult.error("API Unavailable");
+            if (json.has("error"))
+                return BotResult.error(json.get("error").getAsString());
+            return BotResult.success(json);
+        });
+    }
+
     public void clearCache(String player) {
         profileCache.entrySet().removeIf(entry -> entry.getKey().startsWith(player.toLowerCase() + (":")));
         rngCache.remove(player.toLowerCase());
+        leaderboardCache.clear();
+    }
+
+    public void clearLeaderboardCache() {
+        leaderboardCache.clear();
     }
 
     public void loadProfileAndOpen(String player, String profileName, boolean force) {
@@ -312,7 +320,11 @@ public class ProfileStateManager {
         }
 
         boolean isExpired() {
-            long durationMs = ConfigManager.data.cacheDurationMinutes * 60 * 1000L;
+            return isExpired(ConfigManager.data.cacheDurationMinutes);
+        }
+
+        boolean isExpired(int minutes) {
+            long durationMs = minutes * 60 * 1000L;
             return System.currentTimeMillis() - timestamp > durationMs;
         }
     }

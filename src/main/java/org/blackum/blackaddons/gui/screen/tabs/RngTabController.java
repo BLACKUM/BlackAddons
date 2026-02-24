@@ -51,8 +51,11 @@ public class RngTabController extends ProfileTabController {
         this.playerName = playerName;
     }
 
+    private TabPanel.Tab currentTab;
+
     @Override
     public void init(TabPanel.Tab tab) {
+        this.currentTab = tab;
         if (rngDropCounts != null) {
             buildRngTabUI(tab);
             if (currentRngSubcategory != null) {
@@ -61,13 +64,31 @@ public class RngTabController extends ProfileTabController {
             return;
         }
 
+        ListView loadingList = new ListView(tab.getParent().getContentX(), tab.getParent().getContentY(),
+                tab.getParent().getContentWidth(), tab.getParent().getMaxContentHeight());
+        tab.addWidget(loadingList);
+
+        addInfoRow(loadingList, "Loading RNG data...", "");
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return rngDropCounts != null;
+    }
+
+    @Override
+    public void onSelected() {
+        if (isLoaded() || currentTab == null)
+            return;
+
         ProfileStateManager.getInstance().getRngData(playerName).thenAccept(result -> {
             if (result == null || result.hasError()) {
                 Minecraft.getInstance().execute(() -> {
-                    tab.widgets.clear();
-                    ListView list = new ListView(tab.getParent().getContentX(), tab.getParent().getContentY(),
-                            tab.getParent().getContentWidth(), tab.getParent().getMaxContentHeight());
-                    tab.addWidget(list);
+                    currentTab.widgets.clear();
+                    ListView list = new ListView(currentTab.getParent().getContentX(),
+                            currentTab.getParent().getContentY(),
+                            currentTab.getParent().getContentWidth(), currentTab.getParent().getMaxContentHeight());
+                    currentTab.addWidget(list);
 
                     String errorMsg = (result != null && result.hasError()) ? result.getError() : "Unknown error";
                     addInfoRow(list, ChatFormatting.RED + "Error", "");
@@ -82,15 +103,12 @@ public class RngTabController extends ProfileTabController {
 
             parseRngData(json);
             Minecraft.getInstance().execute(() -> {
-                buildRngTabUI(tab);
+                buildRngTabUI(currentTab);
+                if (screen.tabPanel != null && screen.tabPanel.getSelectedTabIndex() == 2) {
+                    screen.tabPanel.selectTab(2);
+                }
             });
         });
-
-        ListView loadingList = new ListView(tab.getParent().getContentX(), tab.getParent().getContentY(),
-                tab.getParent().getContentWidth(), tab.getParent().getMaxContentHeight());
-        tab.addWidget(loadingList);
-
-        addInfoRow(loadingList, "Loading RNG data...", "");
     }
 
     private void parseRngData(JsonObject data) {
@@ -432,12 +450,20 @@ public class RngTabController extends ProfileTabController {
             String cat = (RngTabController.this.rngGlobalDrops != null
                     && RngTabController.this.rngGlobalDrops.contains(itemName)) ? "Global" : subcategory;
 
+            final int oldCount = count;
+            count++;
+            updateRngDropCountLocal(cat, itemName, count);
+
             ProfileStateManager.getInstance()
                     .updateRngCount(RngTabController.this.playerName, cat, itemName, "increment", null)
                     .thenAccept(newCount -> {
-                        if (newCount != null) {
+                        if (newCount == null || newCount != count) {
                             Minecraft.getInstance().execute(() -> {
-                                count = newCount;
+                                if (newCount != null) {
+                                    count = newCount;
+                                } else {
+                                    count = oldCount;
+                                }
                                 updateRngDropCountLocal(cat, itemName, count);
                             });
                         }
@@ -450,12 +476,20 @@ public class RngTabController extends ProfileTabController {
             String cat = (RngTabController.this.rngGlobalDrops != null
                     && RngTabController.this.rngGlobalDrops.contains(itemName)) ? "Global" : subcategory;
 
+            final int oldCount = count;
+            count = Math.max(0, count - 1);
+            updateRngDropCountLocal(cat, itemName, count);
+
             ProfileStateManager.getInstance()
                     .updateRngCount(RngTabController.this.playerName, cat, itemName, "decrement", null)
                     .thenAccept(newCount -> {
-                        if (newCount != null) {
+                        if (newCount == null || newCount != count) {
                             Minecraft.getInstance().execute(() -> {
-                                count = newCount;
+                                if (newCount != null) {
+                                    count = newCount;
+                                } else {
+                                    count = oldCount;
+                                }
                                 updateRngDropCountLocal(cat, itemName, count);
                             });
                         }
@@ -488,21 +522,29 @@ public class RngTabController extends ProfileTabController {
                             Component.literal("Confirm"),
                             btn -> {
                                 try {
-                                    int newCount = Integer.parseInt(inputBox.getValue());
+                                    int newCountVal = Integer.parseInt(inputBox.getValue());
                                     String cat = (RngTabController.this.rngGlobalDrops != null
                                             && RngTabController.this.rngGlobalDrops.contains(itemName))
                                                     ? "Global"
                                                     : subcategory;
 
+                                    final int oldCount = count;
+                                    count = newCountVal;
+                                    updateRngDropCountLocal(cat, itemName, count);
+                                    mc.setScreen(RngTabController.this.screen);
+
                                     ProfileStateManager.getInstance()
                                             .updateRngCount(RngTabController.this.playerName, cat, itemName, "set",
-                                                    newCount)
+                                                    newCountVal)
                                             .thenAccept(updatedCount -> {
-                                                if (updatedCount != null) {
+                                                if (updatedCount == null || updatedCount != count) {
                                                     mc.execute(() -> {
-                                                        count = updatedCount;
-                                                        updateRngDropCountLocal(cat, itemName, updatedCount);
-                                                        mc.setScreen(RngTabController.this.screen);
+                                                        if (updatedCount != null) {
+                                                            count = updatedCount;
+                                                        } else {
+                                                            count = oldCount;
+                                                        }
+                                                        updateRngDropCountLocal(cat, itemName, count);
                                                     });
                                                 }
                                             });

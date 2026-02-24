@@ -11,7 +11,7 @@ import org.blackum.blackaddons.gui.widget.SectionHeader;
 import org.blackum.blackaddons.core.util.FormatUtils;
 import org.blackum.blackaddons.core.util.JsonUtils;
 
-public abstract class ProfileTabController {
+public abstract class ProfileTabController implements LazyLoadable {
     protected final ProfileViewerScreen screen;
     protected final JsonObject profileData;
 
@@ -21,6 +21,15 @@ public abstract class ProfileTabController {
     }
 
     public abstract void init(TabPanel.Tab tab);
+
+    @Override
+    public void onSelected() {
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return true;
+    }
 
     protected double getDouble(JsonObject json, String key) {
         return JsonUtils.getDouble(json, key);

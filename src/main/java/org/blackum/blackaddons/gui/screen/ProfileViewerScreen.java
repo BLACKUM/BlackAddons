@@ -20,7 +20,7 @@ public class ProfileViewerScreen extends BaseScreen {
     private final String player;
     private String profileName;
     private final boolean forceUpdate;
-    private TabPanel tabPanel;
+    public TabPanel tabPanel;
     private JsonObject profileData;
     private boolean isLoading = true;
     private String errorMessage = null;
@@ -67,6 +67,7 @@ public class ProfileViewerScreen extends BaseScreen {
         tabPanel.setOnTabChange(index -> {
             lastTabIndex = index;
             stopConfetti();
+            triggerTabSelection(index);
         });
         addWidget(tabPanel);
 
@@ -141,6 +142,34 @@ public class ProfileViewerScreen extends BaseScreen {
         }
 
         tabPanel.selectTab(lastTabIndex);
+        triggerTabSelection(lastTabIndex);
+    }
+
+    private void triggerTabSelection(int index) {
+        if (tabPanel == null)
+            return;
+        switch (index) {
+            case 0:
+                if (dungeonsController != null)
+                    dungeonsController.onSelected();
+                break;
+            case 1:
+                if (teammatesController != null)
+                    teammatesController.onSelected();
+                break;
+            case 2:
+                if (rngController != null)
+                    rngController.onSelected();
+                break;
+            case 3:
+                if (dailyController != null)
+                    dailyController.onSelected();
+                break;
+            case 4:
+                if (rtcaController != null)
+                    rtcaController.onSelected();
+                break;
+        }
     }
 
     public ProfileViewerScreen(Screen parent, String player) {

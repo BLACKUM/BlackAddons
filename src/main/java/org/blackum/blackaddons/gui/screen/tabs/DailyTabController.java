@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
+import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -144,6 +145,15 @@ public class DailyTabController extends ProfileTabController {
         tab.addWidget(dailyFloorDropdown);
 
         updateDailyButtons();
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return dailyDataLoaded;
+    }
+
+    @Override
+    public void onSelected() {
         if (!dailyDataLoaded) {
             fetchDailyData();
         }
@@ -169,29 +179,31 @@ public class DailyTabController extends ProfileTabController {
             dailyLeaderboardList.clearItems();
             addInfoRow(dailyLeaderboardList, "Searching...", "");
 
-            BotIntegration.getLeaderboardWithPlayer(dailyPeriod, dailyMetric, query).thenAccept(json -> {
-                Minecraft.getInstance().execute(() -> {
-                    if (json == null || json.has("error")) {
-                        dailyLeaderboardList.clearItems();
-                        if (json != null && json.has("error")) {
-                            addInfoRow(dailyLeaderboardList, json.get("error").getAsString(), "");
-                        } else {
-                            addInfoRow(dailyLeaderboardList, "Not found.", "");
-                        }
-                        return;
-                    }
+            ProfileStateManager.getInstance().getLeaderboardWithPlayer(dailyPeriod, dailyMetric, query)
+                    .thenAccept(result -> {
+                        Minecraft.getInstance().execute(() -> {
+                            if (result == null || result.hasError()) {
+                                dailyLeaderboardList.clearItems();
+                                if (result != null && result.hasError()) {
+                                    addInfoRow(dailyLeaderboardList, result.getError(), "");
+                                } else {
+                                    addInfoRow(dailyLeaderboardList, "Not found.", "");
+                                }
+                                return;
+                            }
 
-                    if (json.has("page")) {
-                        this.dailyPage = json.get("page").getAsInt();
-                    }
-                    if (json.has("total_pages")) {
-                        this.dailyTotalPages = json.get("total_pages").getAsInt();
-                    }
+                            JsonObject json = result.getData();
+                            if (json.has("page")) {
+                                this.dailyPage = json.get("page").getAsInt();
+                            }
+                            if (json.has("total_pages")) {
+                                this.dailyTotalPages = json.get("total_pages").getAsInt();
+                            }
 
-                    dailyLeaderboardList.clearItems();
-                    renderLeaderboard(json);
-                });
-            });
+                            dailyLeaderboardList.clearItems();
+                            renderLeaderboard(json);
+                        });
+                    });
         }
     }
 
@@ -254,14 +266,15 @@ public class DailyTabController extends ProfileTabController {
             dailyLeaderboardList.clearItems();
             addInfoRow(dailyLeaderboardList, "Loading...", "");
 
-            BotIntegration.getLeaderboard(dailyPeriod, dailyMetric, dailyPage).thenAccept(json -> {
+            ProfileStateManager.getInstance().getLeaderboard(dailyPeriod, dailyMetric, dailyPage).thenAccept(result -> {
                 Minecraft.getInstance().execute(() -> {
                     dailyLeaderboardList.clearItems();
-                    if (json == null || json.has("error")) {
+                    if (result == null || result.hasError()) {
                         addInfoRow(dailyLeaderboardList, "Error fetching data.", "");
                         return;
                     }
 
+                    JsonObject json = result.getData();
                     if (json.has("total_pages")) {
                         dailyTotalPages = json.get("total_pages").getAsInt();
                     } else {

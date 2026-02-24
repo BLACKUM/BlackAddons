@@ -115,6 +115,34 @@ public class SettingsTabController extends SimpleTabController {
         cacheDropdown.setSelectedOption(currentCache);
         listView.addItem(cacheDropdown);
 
+        listView.addItem(new Label(0, 0, "Data Source Priority", Label.Style.TITLE));
+
+        List<String> apiOptions = List.of(
+                "Adjectils (Full stats)",
+                "Soopy (No secrets/score)",
+                "SkyCrypt (No blood mobs/MP)");
+
+        listView.addItem(new Label(0, 0, "Primary Source", Label.Style.BODY));
+        Dropdown p1 = new Dropdown(0, 0, width, Theme.BUTTON_HEIGHT, "1st Priority", apiOptions, (selected) -> {
+            updatePriority(0, selected);
+        });
+        p1.setSelectedOption(formatApiName(ConfigManager.data.apiPriorityList.get(0)));
+        listView.addItem(p1);
+
+        listView.addItem(new Label(0, 0, "Fallback", Label.Style.BODY));
+        Dropdown p2 = new Dropdown(0, 0, width, Theme.BUTTON_HEIGHT, "2nd Priority", apiOptions, (selected) -> {
+            updatePriority(1, selected);
+        });
+        p2.setSelectedOption(formatApiName(ConfigManager.data.apiPriorityList.get(1)));
+        listView.addItem(p2);
+
+        listView.addItem(new Label(0, 0, "Secondary Fallback", Label.Style.BODY));
+        Dropdown p3 = new Dropdown(0, 0, width, Theme.BUTTON_HEIGHT, "3rd Priority", apiOptions, (selected) -> {
+            updatePriority(2, selected);
+        });
+        p3.setSelectedOption(formatApiName(ConfigManager.data.apiPriorityList.get(2)));
+        listView.addItem(p3);
+
         listView.addItem(new Label(0, 0, "Appearance", Label.Style.TITLE));
         listView.addItem(new Label(0, 0, "Accent Color", Label.Style.BODY));
 
@@ -162,5 +190,27 @@ public class SettingsTabController extends SimpleTabController {
             NotificationManager.addNotification("Config", "Developer key saved.", NotificationType.SUCCESS);
         });
         listView.addItem(saveKeyBtn);
+    }
+
+    private void updatePriority(int index, String selected) {
+        String baseName = selected.split(" ")[0].toUpperCase();
+        ConfigManager.ApiPriority priority = ConfigManager.ApiPriority.valueOf(baseName);
+        if (ConfigManager.data.apiPriorityList.size() > index) {
+            ConfigManager.data.apiPriorityList.set(index, priority);
+            ConfigManager.save();
+        }
+    }
+
+    private String formatApiName(ConfigManager.ApiPriority priority) {
+        switch (priority) {
+            case ADJECTILS:
+                return "Adjectils (Full stats)";
+            case SOOPY:
+                return "Soopy (No secrets/score)";
+            case SKYCRYPT:
+                return "SkyCrypt (No blood mobs/MP)";
+            default:
+                return priority.name();
+        }
     }
 }

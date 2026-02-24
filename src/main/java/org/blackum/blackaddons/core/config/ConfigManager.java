@@ -86,6 +86,10 @@ public class ConfigManager {
         BOT, LOCAL
     }
 
+    public enum ApiPriority {
+        ADJECTILS, SOOPY, SKYCRYPT
+    }
+
     public static class ConfigData {
         public int overlayX = 5;
         public int overlayY = 5;
@@ -99,6 +103,8 @@ public class ConfigManager {
         // Bot
         public String botUrl = Constants.DEFAULT_BOT_URL;
         public DataSource dataSource = DataSource.LOCAL;
+        public List<ApiPriority> apiPriorityList = new ArrayList<>(
+                List.of(ApiPriority.ADJECTILS, ApiPriority.SOOPY, ApiPriority.SKYCRYPT));
         public boolean rngTrackerEnabled = true;
         public String developerKey = "";
         public boolean partyFinderAutoInvite = true;
