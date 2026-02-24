@@ -227,17 +227,15 @@ public class ResizableCard extends Card {
         double scaledMouseY = (mouseY - contentY) / scale + contentY;
 
         java.util.List<Widget> children = getChildren();
-
-        for (int i = children.size() - 1; i >= 0; i--) {
-            Widget child = children.get(i);
+        for (Widget child : children) {
             if (child.isMouseOver(scaledMouseX, scaledMouseY)) {
-                child.mouseClicked(scaledMouseX, scaledMouseY, button);
-                return true;
+                if (child.mouseClicked(scaledMouseX, scaledMouseY, button)) {
+                    return true;
+                }
             }
         }
 
-        for (int i = children.size() - 1; i >= 0; i--) {
-            Widget child = children.get(i);
+        for (Widget child : children) {
             if (child.mouseClicked(scaledMouseX, scaledMouseY, button)) {
                 return true;
             }
@@ -274,8 +272,7 @@ public class ResizableCard extends Card {
         double scaledMouseY = (mouseY - contentY) / scale + contentY;
 
         java.util.List<Widget> children = getChildren();
-        for (int i = children.size() - 1; i >= 0; i--) {
-            Widget child = children.get(i);
+        for (Widget child : children) {
             if (child.mouseReleased(scaledMouseX, scaledMouseY, button)) {
                 return true;
             }
@@ -356,8 +353,7 @@ public class ResizableCard extends Card {
         double scaledDragY = dragY / scale;
 
         java.util.List<Widget> children = getChildren();
-        for (int i = children.size() - 1; i >= 0; i--) {
-            Widget child = children.get(i);
+        for (Widget child : children) {
             if (child.mouseDragged(scaledMouseX, scaledMouseY, button, scaledDragX, scaledDragY)) {
                 return true;
             }
@@ -454,8 +450,7 @@ public class ResizableCard extends Card {
         double scaledMouseY = (mouseY - contentY) / scale + contentY;
 
         java.util.List<Widget> children = getChildren();
-        for (int i = children.size() - 1; i >= 0; i--) {
-            Widget child = children.get(i);
+        for (Widget child : children) {
             if (child.mouseScrolled(scaledMouseX, scaledMouseY, scrollX, scrollY)) {
                 return true;
             }

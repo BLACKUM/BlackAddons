@@ -35,6 +35,15 @@ public class SettingsTabController extends SimpleTabController {
                 });
         listView.addItem(disableCmdConfirmToggle);
 
+        ToggleSwitch disableUnsecureChatToastToggle = new ToggleSwitch(0, 0, width,
+                "Disable Unsecure Chat Toast",
+                "Disables the 'Chat messages can't be verified' warning toast",
+                ConfigManager.data.disableUnsecureChatToast, (val) -> {
+                    ConfigManager.data.disableUnsecureChatToast = val;
+                    ConfigManager.save();
+                });
+        listView.addItem(disableUnsecureChatToastToggle);
+
         listView.addItem(new Label(0, 0, "Party Finder", Label.Style.TITLE));
 
         ToggleSwitch pfAutoInviteToggle = new ToggleSwitch(0, 0, width,

@@ -153,6 +153,7 @@ public class ConfigManager {
         public int notificationDuration = 4000;
         public int cacheDurationMinutes = 5;
         public boolean disableCommandConfirmation = true;
+        public boolean disableUnsecureChatToast = true;
 
         // Chat triggers defaults
         public List<SoundAlert> chatSoundAlerts = new ArrayList<>(List.of(

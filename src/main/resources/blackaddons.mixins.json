@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "gui.AnvilMenuMixin",
+    "gui.ToastManagerMixin",
+    "gui.SystemToastAccessor",
     "core.LanguageAccessor"
   ],
   "injectors": {
