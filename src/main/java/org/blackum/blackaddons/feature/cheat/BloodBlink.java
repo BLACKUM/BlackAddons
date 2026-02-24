@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -19,7 +19,7 @@ import java.util.List;
 
 public class BloodBlink {
     private static final KeyMapping.Category CHEATS_CATEGORY = KeyMapping.Category
-            .register(Identifier.fromNamespaceAndPath("blackaddons", "main"));
+            .register(ResourceLocation.fromNamespaceAndPath("blackaddons", "main"));
 
     private static KeyMapping blinkKey;
     private static int macroPhase = 0;
