@@ -20,6 +20,7 @@ public class Dropdown extends Widget {
     private int selectedIndex = -1;
     private boolean expanded = false;
     private Consumer<String> onSelect;
+    private Runnable onExpand;
 
     private Animation hoverAnimation;
     private Animation expandAnimation;
@@ -40,6 +41,14 @@ public class Dropdown extends Widget {
 
         this.hoverAnimation = new Animation(0, 1, Theme.ANIM_HOVER, Easing::easeOut);
         this.expandAnimation = new Animation(0, 1, Theme.ANIM_CLICK, Easing::easeOutBack);
+    }
+
+    public void setOnExpand(Runnable onExpand) {
+        this.onExpand = onExpand;
+    }
+
+    public void collapse() {
+        expanded = false;
     }
 
     public int getSelectedIndex() {
@@ -158,6 +167,9 @@ public class Dropdown extends Widget {
 
         if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
             expanded = !expanded;
+            if (expanded && onExpand != null) {
+                onExpand.run();
+            }
             if (expanded)
                 menuScrollOffset = 0;
             Minecraft.getInstance().getSoundManager()

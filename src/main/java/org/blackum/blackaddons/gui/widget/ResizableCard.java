@@ -227,6 +227,15 @@ public class ResizableCard extends Card {
         double scaledMouseY = (mouseY - contentY) / scale + contentY;
 
         java.util.List<Widget> children = getChildren();
+
+        for (int i = children.size() - 1; i >= 0; i--) {
+            Widget child = children.get(i);
+            if (child.isMouseOver(scaledMouseX, scaledMouseY)) {
+                child.mouseClicked(scaledMouseX, scaledMouseY, button);
+                return true;
+            }
+        }
+
         for (int i = children.size() - 1; i >= 0; i--) {
             Widget child = children.get(i);
             if (child.mouseClicked(scaledMouseX, scaledMouseY, button)) {

@@ -4,9 +4,15 @@ import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.widget.*;
 
+import java.util.List;
+
 public class CheatsTabController extends SimpleTabController {
     private ResizableCard autoTntCard;
     private ResizableCard fastLeapCard;
+    private Dropdown s1Dropdown;
+    private Dropdown s2Dropdown;
+    private Dropdown s3Dropdown;
+    private Dropdown s4Dropdown;
 
     public CheatsTabController(BlackAddonsGUI screen) {
         super(screen);
@@ -62,8 +68,6 @@ public class CheatsTabController extends SimpleTabController {
         fastLeapCard = createFastLeapCard(contentX + 340, currentY);
         cheatsCardContainer.addCard(fastLeapCard);
 
-        ResizableCard bloodBlinkCard = createBloodBlinkCard(contentX + 340, currentY + 140);
-        cheatsCardContainer.addCard(bloodBlinkCard);
     }
 
     private ResizableCard createAutoTntCard(int x, int y) {
@@ -125,10 +129,12 @@ public class CheatsTabController extends SimpleTabController {
     }
 
     private ResizableCard createFastLeapCard(int x, int y) {
-        fastLeapCard = screen.createResizableCard("fastLeap", x, y, 300, 120, "FastLeap");
+        fastLeapCard = screen.createResizableCard("fastLeap", x, y, 300, 330, "FastLeap");
 
         int contentX = fastLeapCard.getContentX();
         int contentY = fastLeapCard.getContentY();
+
+        List<String> classOptions = List.of("NONE", "HEALER", "MAGE", "BERSERK", "ARCHER", "TANK");
 
         ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
                 "Enable FastLeap",
@@ -139,7 +145,7 @@ public class CheatsTabController extends SimpleTabController {
                 });
         fastLeapCard.addChild(enableToggle);
 
-        ToggleSwitch doorOpenerToggle = new ToggleSwitch(contentX, contentY + 30, 260,
+        ToggleSwitch doorOpenerToggle = new ToggleSwitch(contentX, contentY + 40, 260,
                 "Door Opener",
                 "Leap to the player who opens wither doors",
                 ConfigManager.data.FastLeapDoorOpener, value -> {
@@ -148,26 +154,60 @@ public class CheatsTabController extends SimpleTabController {
                 });
         fastLeapCard.addChild(doorOpenerToggle);
 
+        ToggleSwitch positionalToggle = new ToggleSwitch(contentX, contentY + 80, 260,
+                "Positional",
+                "Leap to a class based on your S-room position",
+                ConfigManager.data.FastLeapPositional, value -> {
+                    ConfigManager.data.FastLeapPositional = value;
+                    ConfigManager.save();
+                });
+        fastLeapCard.addChild(positionalToggle);
+
+        fastLeapCard.addChild(new Label(contentX, contentY + 125, "S1 Class", Label.Style.BODY));
+        s1Dropdown = new Dropdown(contentX, contentY + 137, 260, "S1 Class", classOptions, value -> {
+            ConfigManager.data.FastLeapS1Class = value;
+            ConfigManager.save();
+        });
+        s1Dropdown.setSelectedOption(ConfigManager.data.FastLeapS1Class);
+        s1Dropdown.setOnExpand(() -> collapseOtherDropdowns(s1Dropdown));
+        fastLeapCard.addChild(s1Dropdown);
+
+        fastLeapCard.addChild(new Label(contentX, contentY + 175, "S2 Class", Label.Style.BODY));
+        s2Dropdown = new Dropdown(contentX, contentY + 187, 260, "S2 Class", classOptions, value -> {
+            ConfigManager.data.FastLeapS2Class = value;
+            ConfigManager.save();
+        });
+        s2Dropdown.setSelectedOption(ConfigManager.data.FastLeapS2Class);
+        s2Dropdown.setOnExpand(() -> collapseOtherDropdowns(s2Dropdown));
+        fastLeapCard.addChild(s2Dropdown);
+
+        fastLeapCard.addChild(new Label(contentX, contentY + 225, "S3 Class", Label.Style.BODY));
+        s3Dropdown = new Dropdown(contentX, contentY + 237, 260, "S3 Class", classOptions, value -> {
+            ConfigManager.data.FastLeapS3Class = value;
+            ConfigManager.save();
+        });
+        s3Dropdown.setSelectedOption(ConfigManager.data.FastLeapS3Class);
+        s3Dropdown.setOnExpand(() -> collapseOtherDropdowns(s3Dropdown));
+        fastLeapCard.addChild(s3Dropdown);
+
+        fastLeapCard.addChild(new Label(contentX, contentY + 275, "S4 Class", Label.Style.BODY));
+        s4Dropdown = new Dropdown(contentX, contentY + 287, 260, "S4 Class", classOptions, value -> {
+            ConfigManager.data.FastLeapS4Class = value;
+            ConfigManager.save();
+        });
+        s4Dropdown.setSelectedOption(ConfigManager.data.FastLeapS4Class);
+        s4Dropdown.setOnExpand(() -> collapseOtherDropdowns(s4Dropdown));
+        fastLeapCard.addChild(s4Dropdown);
+
         fastLeapCard.updateLayout();
         return fastLeapCard;
     }
 
-    private ResizableCard createBloodBlinkCard(int x, int y) {
-        ResizableCard bloodBlinkCard = screen.createResizableCard("bloodBlink", x, y, 300, 100, "BloodBlink");
-
-        int contentX = bloodBlinkCard.getContentX();
-        int contentY = bloodBlinkCard.getContentY();
-
-        ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
-                "Enable BloodBlink",
-                "AOTV (48.9/-29.3) -> Pearls (-90 Yaw) x7",
-                ConfigManager.data.BloodBlinkEnabled, value -> {
-                    ConfigManager.data.BloodBlinkEnabled = value;
-                    ConfigManager.save();
-                });
-        bloodBlinkCard.addChild(enableToggle);
-
-        bloodBlinkCard.updateLayout();
-        return bloodBlinkCard;
+    private void collapseOtherDropdowns(Dropdown active) {
+        if (s1Dropdown != null && s1Dropdown != active) s1Dropdown.collapse();
+        if (s2Dropdown != null && s2Dropdown != active) s2Dropdown.collapse();
+        if (s3Dropdown != null && s3Dropdown != active) s3Dropdown.collapse();
+        if (s4Dropdown != null && s4Dropdown != active) s4Dropdown.collapse();
     }
+
 }

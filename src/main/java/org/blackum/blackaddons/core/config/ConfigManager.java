@@ -132,7 +132,11 @@ public class ConfigManager {
 
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;
-        public boolean BloodBlinkEnabled = false;
+        public boolean FastLeapPositional = false;
+        public String FastLeapS1Class = "NONE";
+        public String FastLeapS2Class = "NONE";
+        public String FastLeapS3Class = "NONE";
+        public String FastLeapS4Class = "NONE";
 
         public boolean hideMods() {
             return switch (modHiderSpoofMode) {

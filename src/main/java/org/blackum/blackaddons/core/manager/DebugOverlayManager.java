@@ -7,7 +7,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
-import org.blackum.blackaddons.feature.cheat.BloodBlink;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BaseScreen;
 
@@ -93,7 +92,6 @@ public class DebugOverlayManager {
         addModHiderDetail(debugInfo);
         debugInfo.addAll(AutoTNT.getDebugInfo());
         debugInfo.addAll(FastLeap.getDebugInfo());
-        debugInfo.addAll(BloodBlink.getDebugInfo());
 
         return debugInfo;
     }
