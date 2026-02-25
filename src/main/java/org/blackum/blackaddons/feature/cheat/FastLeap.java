@@ -12,14 +12,24 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.component.ItemLore;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.feature.chat.ChatUtils;
+import org.blackum.blackaddons.core.util.ScoreboardUtils;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.item.ItemStack;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FastLeap {
-    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)(?:\\[.*?\\] )?([A-Za-z0-9_]+) opened a (?:Wither )?door!");
+    private static final Pattern WITHER_DOOR_PATTERN = Pattern.compile("(?i)([A-Za-z0-9_]+) opened a .*?door!");
     private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)You are on a leap cooldown!");
     private static final Pattern BLOOD_DOOR_PATTERN = Pattern.compile("(?i)the BLOOD DOOR has been opened!");
 
@@ -37,11 +47,20 @@ public class FastLeap {
     private static boolean menuOpened = false;
     private static boolean wasAttackDown = false;
     private static String lastDetectedRoom = null;
+    private static final Map<UUID, String> playerRooms = new HashMap<>();
+    private static boolean bloodRoomOpened = false;
 
     public static void register() {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> onChatMessage(message));
         ClientTickEvents.END_CLIENT_TICK.register(FastLeap::onTick);
+
+        // Strong reset when joining a new world/server instance
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            resetState();
+            bloodRoomOpened = false;
+            leapTarget = null;
+        });
     }
 
     private static void onChatMessage(Component message) {
@@ -54,8 +73,10 @@ public class FastLeap {
             String cleanText = message.getString().replaceAll("(?i)§[0-9A-FK-ORX]", "").trim();
 
             if (BLOOD_DOOR_PATTERN.matcher(cleanText).find()) {
+                bloodRoomOpened = true;
                 leapTarget = null;
                 searchByClass = false;
+                ChatUtils.send_debug("[FastLeap] Blood Room opened. Door Opener disabled.");
                 return;
             }
 
@@ -68,19 +89,113 @@ public class FastLeap {
             if (COOLDOWN_PATTERN.matcher(cleanText).find()) {
                 resetState();
             }
+            
+            // Reset state for new dungeon runs
+            if (cleanText.contains("The Dungeon starts in 1 second.") || cleanText.contains("Starting in 1 second.")) {
+                bloodRoomOpened = false;
+                leapTarget = null;
+                ChatUtils.send_debug("[FastLeap] Dungeon Start detected. Door Opener reset.");
+            }
         });
     }
 
-    private static String getDetectedRoom(Minecraft mc) {
-        if (mc.player == null) return null;
-        double x = mc.player.getX();
-        double y = mc.player.getY();
-        double z = mc.player.getZ();
+    private static String getPositionalTargetPlayer(Minecraft mc) {
+        if (mc.level == null || mc.player == null) return null;
+
+        String myName = mc.player.getScoreboardName();
+        String[] roomPriority = {"S1", "S2", "S3", "S4"};
+
+        for (String targetRoom : roomPriority) {
+            String configuredClass = getRoomClass(targetRoom);
+            if (configuredClass == null || configuredClass.equals(CLASS_NONE)) continue;
+
+            for (Player player : mc.level.players()) {
+                // Do not leap to ourselves
+                if (player.getScoreboardName().equalsIgnoreCase(myName)) continue;
+
+                double x = player.getX();
+                double y = player.getY();
+                double z = player.getZ();
+
+                boolean inRoom = false;
+                if (targetRoom.equals("S1") && isInBox(x, y, z, S1_MIN_X, S1_MAX_X, S1_MIN_Y, S1_MAX_Y, S1_MIN_Z, S1_MAX_Z)) inRoom = true;
+                else if (targetRoom.equals("S2") && isInBox(x, y, z, S2_MIN_X, S2_MAX_X, S2_MIN_Y, S2_MAX_Y, S2_MIN_Z, S2_MAX_Z)) inRoom = true;
+                else if (targetRoom.equals("S3") && isInBox(x, y, z, S3_MIN_X, S3_MAX_X, S3_MIN_Y, S3_MAX_Y, S3_MIN_Z, S3_MAX_Z)) inRoom = true;
+                else if (targetRoom.equals("S4") && isInBox(x, y, z, S4_MIN_X, S4_MAX_X, S4_MIN_Y, S4_MAX_Y, S4_MIN_Z, S4_MAX_Z)) inRoom = true;
+
+                if (inRoom) {
+                    String rawText = getPlayerClassRaw(player);
+                    String detectedClass = detectClass(rawText);
+                    
+                    if (detectedClass != null && configuredClass != null && configuredClass.equalsIgnoreCase(detectedClass)) {
+                        String fullName = player.getName().getString();
+                        ChatUtils.send_debug("[FastLeap] Priority MATCH! Target: " + fullName + " (" + detectedClass + ") in " + targetRoom);
+                        return fullName;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String detectClass(String rawText) {
+        if (rawText == null) return null;
+        if (rawText.contains("[h] ")) return "HEALER";
+        if (rawText.contains("[m] ")) return "MAGE";
+        if (rawText.contains("[b] ")) return "BERSERK";
+        if (rawText.contains("[a] ")) return "ARCHER";
+        if (rawText.contains("[t] ")) return "TANK";
+        // Fallback for end of string or tight bracket
+        if (rawText.contains("[h]")) return "HEALER";
+        if (rawText.contains("[m]")) return "MAGE";
+        if (rawText.contains("[b]")) return "BERSERK";
+        if (rawText.contains("[a]")) return "ARCHER";
+        if (rawText.contains("[t]")) return "TANK";
+        return null;
+    }
+
+    private static String getPlayerClassRaw(Player player) {
+        String playerName = player.getName().getString().toLowerCase();
+
+        for (String line : ScoreboardUtils.getCleanSidebarLines()) {
+            String lowerLine = line.toLowerCase().replaceAll("§.", "").trim();
+
+            if (lowerLine.matches("^\\s*\\[[hmbat]\\].*")) {
+                int firstSpace = lowerLine.indexOf(' ');
+                if (firstSpace == -1) continue;
+                
+                int secondSpace = lowerLine.indexOf(' ', firstSpace + 1);
+                String rawChunk = secondSpace != -1 ? lowerLine.substring(firstSpace + 1, secondSpace) : lowerLine.substring(firstSpace + 1);
+                
+                String boardName = rawChunk.replaceAll("[^a-z0-9_]", "");
+                
+                if (boardName.length() >= 3 && playerName.startsWith(boardName)) {
+                    ChatUtils.send_debug("[FastLeap] Scoreboard Scan Found: " + player.getName().getString() + " -> " + lowerLine);
+                    return lowerLine;
+                } else {
+                    ChatUtils.send_debug("[FastLeap] Scoreboard Skip: " + playerName + " != " + boardName);
+                }
+            }
+        }
+        
+        return null;
+    }
+
+
+    private static String getDetectedPlayerRoom(Player player) {
+        if (player == null) return null;
+        double x = player.getX();
+        double y = player.getY();
+        double z = player.getZ();
         if (isInBox(x, y, z, S1_MIN_X, S1_MAX_X, S1_MIN_Y, S1_MAX_Y, S1_MIN_Z, S1_MAX_Z)) return "S1";
         if (isInBox(x, y, z, S2_MIN_X, S2_MAX_X, S2_MIN_Y, S2_MAX_Y, S2_MIN_Z, S2_MAX_Z)) return "S2";
         if (isInBox(x, y, z, S3_MIN_X, S3_MAX_X, S3_MIN_Y, S3_MAX_Y, S3_MIN_Z, S3_MAX_Z)) return "S3";
         if (isInBox(x, y, z, S4_MIN_X, S4_MAX_X, S4_MIN_Y, S4_MAX_Y, S4_MIN_Z, S4_MAX_Z)) return "S4";
         return null;
+    }
+
+    private static String getDetectedRoom(Minecraft mc) {
+        return getDetectedPlayerRoom(mc.player);
     }
 
     private static String getRoomClass(String room) {
@@ -100,16 +215,34 @@ public class FastLeap {
     }
 
     private static void onTick(Minecraft client) {
-        if (!ConfigManager.data.FastLeapEnabled || client.player == null) return;
+        if (!ConfigManager.data.FastLeapEnabled || client.player == null || client.level == null) return;
 
         if (ConfigManager.data.FastLeapPositional) {
-            String room = getDetectedRoom(client);
-            if (room != null && !room.equals(lastDetectedRoom)) {
-                String target = getRoomClass(room);
-                ChatUtils.send_debug("[FastLeap] Entered " + room
-                        + (target != null && !target.equals("NONE") ? " -> " + target : ""));
+            // Check local player room for the simple "Entered S1" message
+            String myRoom = getDetectedRoom(client);
+            if (myRoom != null && !myRoom.equals(lastDetectedRoom)) {
+                String targetClass = getRoomClass(myRoom);
+                ChatUtils.send_debug("[FastLeap] You entered " + myRoom
+                        + (targetClass != null && !targetClass.equals(CLASS_NONE) ? " -> " + targetClass : ""));
             }
-            lastDetectedRoom = room;
+            lastDetectedRoom = myRoom;
+
+            // Scan all players for debug announcements
+            for (Player player : client.level.players()) {
+                String room = getDetectedPlayerRoom(player);
+                UUID uuid = player.getUUID();
+                String lastRoom = playerRooms.get(uuid);
+
+                if (room != null && !room.equals(lastRoom)) {
+                    String rawText = getPlayerClassRaw(player);
+                    String msg = "[FastLeap] " + player.getName().getString() + " in " + room;
+                    if (rawText != null) msg += " (" + rawText + ")";
+                    ChatUtils.send_debug(msg);
+                }
+                
+                if (room != null) playerRooms.put(uuid, room);
+                else playerRooms.remove(uuid);
+            }
         }
         if (client.screen == null) {
             boolean attackDown = client.options.keyAttack.isDown();
@@ -120,19 +253,22 @@ public class FastLeap {
             }
 
             if (attackDown && !wasAttackDown) {
+                ItemStack hand = client.player.getMainHandItem();
+                if (!isLeapItem(hand)) {
+                    wasAttackDown = true;
+                    return;
+                }
+
                 String target = null;
                 boolean byClass = false;
 
+                // 1. Try Positional target first if enabled
                 if (ConfigManager.data.FastLeapPositional) {
-                    String room = getDetectedRoom(client);
-                    String positional = room != null ? getRoomClass(room) : null;
-                    if (positional != null && !positional.isEmpty() && !positional.equals(CLASS_NONE)) {
-                        target = positional;
-                        byClass = true;
-                    }
+                    target = getPositionalTargetPlayer(client);
                 }
 
-                if (target == null && ConfigManager.data.FastLeapDoorOpener && leapTarget != null) {
+                // 2. Fallback to Door Opener if enabled and Positional didn't find anyone
+                if (target == null && ConfigManager.data.FastLeapDoorOpener && leapTarget != null && !bloodRoomOpened) {
                     target = leapTarget;
                     byClass = false;
                 }
@@ -143,8 +279,11 @@ public class FastLeap {
                     inProgress = true;
                     clickedLeap = false;
                     if (client.gameMode != null) {
+                        ChatUtils.send_debug("[FastLeap] Triggering! Target: " + target + (byClass ? " (Lore)" : " (Name)"));
                         client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
                     }
+                } else {
+                    ChatUtils.send_debug("[FastLeap] Trigger failed: No player in boxes or no class match.");
                 }
             }
             wasAttackDown = attackDown;
@@ -152,29 +291,42 @@ public class FastLeap {
 
         if (client.screen instanceof ContainerScreen containerScreen) {
             String title = containerScreen.getTitle().getString();
-            if ("Spirit Leap".equals(title)) {
-                menuOpened = true;
+            if (title.contains("Spirit Leap")) {
+                if (!menuOpened) {
+                    ChatUtils.send_debug("[FastLeap] Spirit Leap menu detected!");
+                    menuOpened = true;
+                }
+                
                 if (inProgress && leapTarget != null && !clickedLeap) {
                     int invStart = containerScreen.getMenu().slots.size() - 36;
-                    String target = leapTarget.toLowerCase();
+                    String target = leapTarget.toLowerCase().trim();
+                    int foundSlots = 0;
 
                     for (Slot slot : containerScreen.getMenu().slots) {
                         if (slot.index >= invStart) continue;
                         if (slot.getItem().isEmpty()) continue;
+                        foundSlots++;
 
+                        String itemName = slot.getItem().getHoverName().getString()
+                                .replaceAll("(?i)§[0-9A-FK-ORX]", "").toLowerCase();
+
+                        // Match logic identical to door opener: startsWith or contains depending on preference
+                        // Door opener typically uses startsWith since names are at the beginning
                         boolean matches = searchByClass
                                 ? slotLoreContains(slot, target)
-                                : slot.getItem().getHoverName().getString()
-                                        .replaceAll("(?i)§[0-9A-FK-ORX]", "").toLowerCase()
-                                        .startsWith(target);
+                                : itemName.startsWith(target) || itemName.contains(target);
 
                         if (matches) {
+                            ChatUtils.send_debug("[FastLeap] Found " + itemName + "! Clicking slot " + slot.index);
                             clickedLeap = true;
                             client.gameMode.handleInventoryMouseClick(
                                     containerScreen.getMenu().containerId, slot.index, 0, ClickType.PICKUP, client.player);
                             finishLeap(client);
-                            break;
+                            return;
                         }
+                    }
+                    if (foundSlots > 0 && !clickedLeap) {
+                        ChatUtils.send_debug("[FastLeap] Scanned " + foundSlots + " items, no match for: " + target);
                     }
                 }
             } else if (menuOpened) {
@@ -207,6 +359,12 @@ public class FastLeap {
         clickedLeap = false;
         menuOpened = false;
         searchByClass = false;
+    }
+
+    private static boolean isLeapItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        String name = stack.getHoverName().getString().toLowerCase().replaceAll("(?i)§[0-9A-FK-ORX]", "");
+        return name.contains("infinileap");
     }
 
     public static List<String> getDebugInfo() {
