@@ -26,7 +26,13 @@ public class ConfigManager {
     public static final Set<String> FABRIC_DEFAULT_CHANNELS = Set.of(
             "fabric:attachment_sync_v1",
             "fabric:recipe_sync",
-            "fabric-screen-handler-api-v1:open_screen");
+            "fabric-screen-handler-api-v1:open_screen",
+            "hypixel:ping",
+            "hypixel:party_info",
+            "hypixel:player_info",
+            "hypixel:hello",
+            "hypixel:register",
+            "hyevent:location");
 
     public static class CardState {
         public int x;
@@ -196,6 +202,10 @@ public class ConfigManager {
         try (FileReader reader = new FileReader(CONFIG_FILE)) {
             ConfigData loadedData = GSON.fromJson(reader, ConfigData.class);
             if (loadedData != null) {
+                // TODO: Delete migration when enough versions have passed
+                if (loadedData.modHiderAllowedCustomPayloadChannels != null) {
+                    loadedData.modHiderAllowedCustomPayloadChannels.addAll(FABRIC_DEFAULT_CHANNELS);
+                }
                 data = loadedData;
             }
         } catch (IOException e) {
