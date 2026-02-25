@@ -20,6 +20,7 @@
     "core.PlayerNameMixin",
     "core.PlayerTeamMixin",
     "gui.PlayerTabListMixin",
+    "gui.GuiMixin",
     "core.TextColorMixin",
     "core.TextColorAccessor"
   ],

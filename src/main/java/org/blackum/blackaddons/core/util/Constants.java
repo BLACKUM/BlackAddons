@@ -108,7 +108,7 @@ public final class Constants {
         // Party Finder
         public static final String JOIN_REQUEST_TEMPLATE = "[BlackAddons] join party request - id:%s";
         public static final String JOIN_REQUEST_WHISPER_REGEX = "^(?:From (?:\\[.+\\] )?(\\w+):|(?:\\[.+\\] )?(\\w+) whispers to you:)\\s*\\[BlackAddons\\] join party request - id:([\\w-]+)\\s*$";
-        public static final String PARTY_INVITE_REGEX = "^(?:(?:\\[.+\\] )?(\\w+) has invited you to join their party!.*|§9§m-{10,}.*?§e(?:\\[.+\\] )?(\\w+) has invited you to join their party!.*)$";
+        public static final String PARTY_INVITE_REGEX = "(?s)^(?:.*?(?:\\[.+\\] )?(\\w+) has invited you to join (?:their|(?:\\[.+\\] )?(\\w+)'s) party!.*)$";
         public static final String PARTY_JOINED_REGEX = "^(?:\\[.+\\] )?(\\w+) joined the party\\.$";
         public static final String PARTY_LEFT_REGEX = "^(?:\\[.+\\] )?(\\w+) left the party\\.$";
         public static final String PARTY_REMOVED_REGEX = "^(?:\\[.+\\] )?(\\w+) was removed from the party\\.$";

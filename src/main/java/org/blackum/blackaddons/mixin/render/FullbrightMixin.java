@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.mixin.render;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.renderer.LightTexture;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -12,7 +13,8 @@ public class FullbrightMixin {
 
     @Redirect(method = "updateLightTexture", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;"))
     private Object redirectGamma(OptionInstance<Double> instance) {
-        if (ConfigManager.data.legitFullbrightEnabled) {
+        if (ConfigManager.data.legitFullbrightEnabled
+                && instance == Minecraft.getInstance().options.gamma()) {
             return 1000.0;
         }
         return instance.get();

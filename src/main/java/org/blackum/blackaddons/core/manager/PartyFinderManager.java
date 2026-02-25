@@ -1,32 +1,34 @@
 package org.blackum.blackaddons.core.manager;
 
-import org.blackum.blackaddons.core.manager.ProfileStateManager;
-import org.blackum.blackaddons.core.util.Constants;
-import org.blackum.blackaddons.core.util.JsonUtils;
-import org.blackum.blackaddons.core.util.FormatUtils;
-import org.blackum.blackaddons.core.util.DungeonUtils;
-import org.blackum.blackaddons.core.util.MinecraftInstance;
-import org.blackum.blackaddons.feature.chat.ChatUtils;
-import org.blackum.blackaddons.integration.BotIntegration;
-import com.google.gson.JsonObject;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
-import org.blackum.blackaddons.core.config.ConfigManager;
-import org.blackum.blackaddons.gui.notification.NotificationManager;
-import org.blackum.blackaddons.gui.notification.NotificationType;
-
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Set;
+
+import com.google.gson.JsonObject;
+
+import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.core.manager.ProfileStateManager;
+import org.blackum.blackaddons.core.util.Constants;
+import org.blackum.blackaddons.core.util.DungeonUtils;
+import org.blackum.blackaddons.core.util.FormatUtils;
+import org.blackum.blackaddons.core.util.JsonUtils;
+import org.blackum.blackaddons.core.util.MinecraftInstance;
+import org.blackum.blackaddons.feature.chat.ChatUtils;
+import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
+import org.blackum.blackaddons.gui.notification.NotificationManager;
+import org.blackum.blackaddons.gui.notification.NotificationType;
+import org.blackum.blackaddons.integration.BotIntegration;
 
 public class PartyFinderManager {
     private static PartyFinderManager instance;
@@ -101,7 +103,7 @@ public class PartyFinderManager {
                                                             Component.literal(Constants.HOVER_INVITE))))));
                 });
                 if (ConfigManager.data.partyFinderShowStatsOnRequest) {
-                    org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler.fetchAndShowStats(sender, "N/A", "0");
+                    DungeonJoinHandler.fetchAndShowStats(sender, "N/A", "0");
                 }
             }
             return;
@@ -110,19 +112,28 @@ public class PartyFinderManager {
         Matcher inviteMatcher = Pattern.compile(Constants.PARTY_INVITE_REGEX)
                 .matcher(text);
         if (inviteMatcher.find()) {
-            String inviter = inviteMatcher.group(1) != null ? inviteMatcher.group(1) : inviteMatcher.group(2);
-            if (ConfigManager.data.partyFinderAutoAcceptInvite && pendingRequests.containsKey(inviter)) {
-                long time = pendingRequests.get(inviter);
+            String sender = inviteMatcher.group(1);
+            String leader = inviteMatcher.group(2);
+            String matchedRequest = null;
+
+            if (pendingRequests.containsKey(sender)) {
+                matchedRequest = sender;
+            } else if (leader != null && pendingRequests.containsKey(leader)) {
+                matchedRequest = leader;
+            }
+
+            if (ConfigManager.data.partyFinderAutoAcceptInvite && matchedRequest != null) {
+                long time = pendingRequests.get(matchedRequest);
                 if (System.currentTimeMillis() - time < 60000) {
                     MinecraftInstance.mc.execute(() -> {
                         MinecraftInstance.mc.gui.getChat()
-                                .addMessage(ChatUtils.getMessage(String.format(Constants.MSG_AUTO_ACCEPT, inviter)));
+                                .addMessage(ChatUtils.getMessage(String.format(Constants.MSG_AUTO_ACCEPT, sender)));
                         LocalPlayer player = MinecraftInstance.mc.player;
                         if (player != null && player.connection != null) {
-                            player.connection.sendCommand("p accept " + inviter);
+                            player.connection.sendCommand("p accept " + sender);
                         }
                     });
-                    pendingRequests.remove(inviter);
+                    pendingRequests.remove(matchedRequest);
                 }
             }
             return;

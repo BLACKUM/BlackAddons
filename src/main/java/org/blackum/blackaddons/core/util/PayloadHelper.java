@@ -1,8 +1,6 @@
 package org.blackum.blackaddons.core.util;
 
-import org.blackum.blackaddons.core.util.ReflectionDump;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -10,43 +8,19 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.resources.Identifier;
 import org.blackum.blackaddons.Blackaddons;
 
 public class PayloadHelper {
 
-    private static final String TRY_PARSE_METHOD = "tryParse";
-    private static final String ERROR_TRY_PARSE_NOT_FOUND = "[ModHider] Could not find tryParse in ";
-    private static final String ERROR_REFLECTION_FAILED = "[ModHider] Failed to create payload via reflection";
+    private static final String ERROR_PAYLOAD_CREATION = "[ModHider] Failed to create payload via reflection constructor";
 
     public static CustomPacketPayload createRegisterPayload(CustomPacketPayload original, Set<String> channels) {
         try {
             Class<?> clazz = original.getClass();
-            Object sampleId = original.type().id();
-            Class<?> idClass = sampleId.getClass();
-
-            Method tryParse = null;
-            try {
-                tryParse = idClass.getMethod(TRY_PARSE_METHOD, String.class);
-            } catch (NoSuchMethodException e) {
-                Blackaddons.LOGGER.error(ERROR_TRY_PARSE_NOT_FOUND + idClass.getName());
-                if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                    ReflectionDump.dumpClass(idClass);
-                }
-
-                return null;
-            }
-
-            final Method parseMethod = tryParse;
 
             List<Object> idList = channels.stream()
-                    .map(s -> {
-                        try {
-                            return parseMethod.invoke(null, s);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                    })
+                    .map(Identifier::tryParse)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
@@ -71,7 +45,7 @@ public class PayloadHelper {
                 }
             }
         } catch (Exception e) {
-            Blackaddons.LOGGER.error(ERROR_REFLECTION_FAILED, e);
+            Blackaddons.LOGGER.error(ERROR_PAYLOAD_CREATION, e);
         }
         return null;
     }
