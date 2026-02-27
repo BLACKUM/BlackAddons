@@ -174,23 +174,34 @@ public class InventoryTabController extends ProfileTabController {
                 if (!sections.isEmpty()) {
                     int btnWidth = 30;
                     int btnGap = 5;
-                    int totalBtnWidth = labels.size() * btnWidth + (labels.size() - 1) * btnGap;
-                    int btnX = startX + (contentWidth - totalBtnWidth) / 2;
-                    int btnY = startY;
+                    int maxRowWidth = contentWidth - 20;
+                    int buttonsPerRow = Math.max(1, maxRowWidth / (btnWidth + btnGap));
+                    int numRows = (int) Math.ceil((double) labels.size() / buttonsPerRow);
 
-                    for (int i = 0; i < labels.size(); i++) {
-                        final int idx = i;
-                        Button btn = new Button(btnX, btnY, btnWidth, 20, String.valueOf(i + 1), () -> {
-                            if (pagedListView != null && idx < pagedOffsets.size()) {
-                                pagedListView.scrollTo(pagedOffsets.get(idx));
-                            }
-                        });
-                        tab.addWidget(btn);
-                        currentWidgets.add(btn);
-                        btnX += btnWidth + btnGap;
+                    for (int row = 0; row < numRows; row++) {
+                        int startIdx = row * buttonsPerRow;
+                        int endIdx = Math.min(startIdx + buttonsPerRow, labels.size());
+                        int rowBtnCount = endIdx - startIdx;
+                        int rowWidth = rowBtnCount * btnWidth + (rowBtnCount - 1) * btnGap;
+                        int btnX = startX + (contentWidth - rowWidth) / 2;
+                        int btnY = startY + (row * 25);
+
+                        for (int i = startIdx; i < endIdx; i++) {
+                            final int idx = i;
+                            Button btn = new Button(btnX, btnY, btnWidth, 20, String.valueOf(i + 1), () -> {
+                                if (pagedListView != null && idx < pagedOffsets.size()) {
+                                    pagedListView.scrollTo(pagedOffsets.get(idx));
+                                }
+                            });
+                            tab.addWidget(btn);
+                            currentWidgets.add(btn);
+                            btnX += btnWidth + btnGap;
+                        }
                     }
 
-                    pagedListView = new ListView(startX, startY + 30, contentWidth, contentHeight - 70);
+                    int buttonsTotalHeight = numRows * 25;
+                    int listTopOffset = buttonsTotalHeight + 10;
+                    pagedListView = new ListView(startX, startY + listTopOffset, contentWidth, contentHeight - (40 + listTopOffset + 20));
                     tab.addWidget(pagedListView);
                     currentWidgets.add(pagedListView);
 

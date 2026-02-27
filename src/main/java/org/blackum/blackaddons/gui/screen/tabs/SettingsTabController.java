@@ -170,6 +170,25 @@ public class SettingsTabController extends SimpleTabController {
                 });
         listView.addItem(layoutToggle);
 
+        Label guiScaleLabel = new Label(0, 0,
+                "Forced GUI Scale: "
+                        + (ConfigManager.data.forcedGuiScale == 0 ? "Off" : ConfigManager.data.forcedGuiScale),
+                Label.Style.BODY);
+        listView.addItem(guiScaleLabel);
+
+        Slider guiScaleSlider = new Slider(0, 0, width, 0f, 5f,
+                ConfigManager.data.forcedGuiScale, (val) -> {
+                    int scale = Math.round(val);
+                    ConfigManager.data.forcedGuiScale = scale;
+                    guiScaleLabel.setText("Forced GUI Scale: " + (scale == 0 ? "Off" : scale));
+                    ConfigManager.save();
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    if (mc.screen instanceof org.blackum.blackaddons.gui.screen.BaseScreen) {
+                        mc.resizeDisplay();
+                    }
+                });
+        listView.addItem(guiScaleSlider);
+
         listView.addItem(new Label(0, 0, "Interface", Label.Style.TITLE));
 
         Label durationLabel = new Label(0, 0,
