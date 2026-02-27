@@ -33,6 +33,11 @@ public class ProfileViewerScreen extends BaseScreen {
     private RtcaTabController rtcaController;
 
     @Override
+    protected int getContentHeight() {
+        return 0;
+    }
+
+    @Override
     protected void initWidgets() {
         if (isLoading) {
             ProfileStateManager.getInstance().getProfile(player, profileName, forceUpdate)
