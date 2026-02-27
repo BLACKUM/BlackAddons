@@ -150,7 +150,8 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+            float partialTick) {
         if (!visible || collapsed)
             return;
 
@@ -166,7 +167,7 @@ public class ResizableCard extends Card {
         for (Widget child : getChildren()) {
             if (child.isVisible()) {
                 child.renderOverlay(graphics, (int) ((mouseX - contentX) / scale + contentX),
-                        (int) ((mouseY - contentY) / scale + contentY), partialTick);
+                        (int) ((mouseY - contentY) / scale + contentY), rawMouseX, rawMouseY, partialTick);
             }
         }
 

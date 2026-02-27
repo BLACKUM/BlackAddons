@@ -6,8 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 
-import org.blackum.blackaddons.gui.widget.Label;
-import org.blackum.blackaddons.gui.widget.TabPanel;
+import org.blackum.blackaddons.gui.widget.*;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.ConfettiEffect;
 import org.blackum.blackaddons.core.manager.ProfileStateManager;
@@ -27,6 +26,7 @@ public class ProfileViewerScreen extends BaseScreen {
     private static int lastTabIndex = 0;
 
     private DungeonsTabController dungeonsController;
+    private InventoryTabController inventoryController;
     private TeammatesTabController teammatesController;
     private RngTabController rngController;
     private DailyTabController dailyController;
@@ -43,8 +43,7 @@ public class ProfileViewerScreen extends BaseScreen {
                         } else {
                             errorMessage = result.getError();
                         }
-                        Minecraft.getInstance()
-                                .execute(() -> this.init(Minecraft.getInstance(), this.width, this.height));
+                        Minecraft.getInstance().execute(() -> this.init(Minecraft.getInstance(), this.width, this.height));
                     });
         }
 
@@ -75,6 +74,11 @@ public class ProfileViewerScreen extends BaseScreen {
             dungeonsController = new DungeonsTabController(this, profileData);
         }
         dungeonsController.init(tabPanel.addTab("Dungeons"));
+
+        if (inventoryController == null) {
+            inventoryController = new InventoryTabController(this, profileData);
+        }
+        inventoryController.init(tabPanel.addTab("Inventory"));
 
         if (teammatesController == null) {
             teammatesController = new TeammatesTabController(this, profileData);
@@ -154,18 +158,23 @@ public class ProfileViewerScreen extends BaseScreen {
                     dungeonsController.onSelected();
                 break;
             case 1:
+                if (inventoryController != null)
+                    inventoryController.onSelected();
+                break;
+
+            case 2:
                 if (teammatesController != null)
                     teammatesController.onSelected();
                 break;
-            case 2:
+            case 3:
                 if (rngController != null)
                     rngController.onSelected();
                 break;
-            case 3:
+            case 4:
                 if (dailyController != null)
                     dailyController.onSelected();
                 break;
-            case 4:
+            case 5:
                 if (rtcaController != null)
                     rtcaController.onSelected();
                 break;
@@ -214,7 +223,7 @@ public class ProfileViewerScreen extends BaseScreen {
 
         ProfileStateManager.getInstance().getProfile(player, targetProfile, false)
                 .thenAccept(result -> {
-                    if (result.isSuccess() && result.getData() != null) {
+                    if (result.isSuccess()) {
                         this.profileData = result.getData();
                         this.profileName = targetProfile;
 
@@ -224,12 +233,15 @@ public class ProfileViewerScreen extends BaseScreen {
                         this.dailyController = null;
                         this.rtcaController = null;
 
-                        Minecraft.getInstance().execute(() -> {
-                            this.init(Minecraft.getInstance(), this.width, this.height);
-                        });
+                        if (this.profileData != null) {
+                            Minecraft.getInstance().execute(() -> {
+                                this.init(Minecraft.getInstance(), this.width, this.height);
+                            });
+                        }
                     } else {
-                        String err = result.getError() != null ? result.getError() : "Unknown error";
-                        NotificationManager.addNotification("Switch Failed", err, NotificationType.ERROR);
+                        Minecraft.getInstance().execute(() -> {
+                            minecraft.setScreen(new ProfileViewerScreen(parent, player));
+                        });
                     }
                 });
     }
@@ -243,25 +255,14 @@ public class ProfileViewerScreen extends BaseScreen {
             String label = "Viewing: " + player;
             int x = containerX + 10;
             int y = containerY + containerHeight - 25;
-            graphics.drawString(Minecraft.getInstance().font, label, x, y,
-                    Theme.TEXT_SECONDARY);
-
+            graphics.drawString(Minecraft.getInstance().font, label, x, y, Theme.TEXT_SECONDARY);
         }
     }
 
     @Override
-    protected int getContentHeight() {
-        return tabPanel != null ? tabPanel.getMaxContentHeight() : super.getContentHeight();
-    }
-
-    @Override
-    public void tick() {
-        super.tick();
+    public void init() {
+        super.init();
         tickConfetti();
-
-        if (dailyController != null) {
-            dailyController.tick();
-        }
     }
 
     @Override

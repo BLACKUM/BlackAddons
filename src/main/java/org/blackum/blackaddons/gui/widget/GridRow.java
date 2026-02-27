@@ -43,11 +43,15 @@ public class GridRow extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+            float partialTick) {
         if (!visible)
             return;
         for (Map.Entry<Widget, Integer> entry : children) {
-            entry.getKey().renderOverlay(graphics, mouseX, mouseY, partialTick);
+            Widget widget = entry.getKey();
+            if (widget.isVisible()) {
+                widget.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+            }
         }
     }
 

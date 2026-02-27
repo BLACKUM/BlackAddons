@@ -232,14 +232,11 @@ public abstract class BaseScreen extends Screen {
         graphics.pose().popMatrix();
         graphics.disableScissor();
 
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(0f, (float) -scrollOffset);
         for (Widget widget : widgets) {
             if (widget.isVisible()) {
-                widget.renderOverlay(graphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
+                widget.renderOverlay(graphics, mouseX, (int) (mouseY + scrollOffset), mouseX, mouseY, partialTick);
             }
         }
-        graphics.pose().popMatrix();
 
         if (canScroll) {
             int scrollBarHeight = (int) ((containerHeight / (double) contentHeight) * containerHeight);

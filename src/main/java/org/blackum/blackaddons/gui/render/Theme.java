@@ -11,6 +11,7 @@ public class Theme {
     public static int ACCENT_HOVER = 0xFF0090D9;
     public static int TEXT_PRIMARY = 0xFFFFFFFF;
     public static int TEXT_SECONDARY = 0xFFBBBBBB;
+    public static int TEXT = TEXT_PRIMARY; // TODO: just make it as primary everywhere
     public static int BORDER = 0x44FFFFFF;
 
     public static int BACKGROUND_SECONDARY = 0xAA222222;
@@ -48,6 +49,10 @@ public class Theme {
     public static final int DROPDOWN_WIDTH = 200;
     public static final int COLOR_PICKER_HEIGHT = 210;
     public static final int TOGGLE_HEIGHT = 20;
+
+    public static final float ITEM_GRID_SCALE = 2.0f;
+    public static final int ITEM_GRID_SLOT_SIZE = 18;
+    public static final int ITEM_GRID_PADDING = 6;
 
     public static final int PADDING_SMALL = 8;
     public static final int PADDING_MEDIUM = 12;

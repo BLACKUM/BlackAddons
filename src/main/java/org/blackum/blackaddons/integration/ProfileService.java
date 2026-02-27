@@ -75,7 +75,44 @@ public class ProfileService {
         return HttpUtils.sendGetRequest(url).thenApply(res -> {
             if (res != null && res.statusCode() == 200) {
                 try {
-                    return JsonParser.parseString(res.body()).getAsJsonObject();
+                    JsonObject json = JsonParser.parseString(res.body()).getAsJsonObject();
+                    if (json.has("profiles") && json.get("profiles").isJsonArray()) {
+                        for (JsonElement pEl : json.getAsJsonArray("profiles")) {
+                            if (pEl.isJsonObject()) {
+                                JsonObject p = pEl.getAsJsonObject();
+                                if (p.has("members") && p.get("members").isJsonObject()) {
+                                    JsonObject members = p.getAsJsonObject("members");
+                                    for (String mUuid : members.keySet()) {
+                                        JsonElement mEl = members.get(mUuid);
+                                        if (mEl != null && mEl.isJsonObject()) {
+                                            JsonObject m = mEl.getAsJsonObject();
+                                            if (m.has("pets_data") && m.get("pets_data").isJsonObject()) {
+                                                JsonObject petsData = m.getAsJsonObject("pets_data");
+                                                if (petsData.has("pets")) {
+                                                    m.add("pets", petsData.get("pets"));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (p.has("pets_data") && p.get("pets_data").isJsonObject()) {
+                                    JsonObject petsData = p.getAsJsonObject("pets_data");
+                                    if (petsData.has("pets")) {
+                                        if (p.has("members") && p.get("members").isJsonObject()) {
+                                            JsonObject members = p.getAsJsonObject("members");
+                                            if (members.has(uuid) && members.get(uuid).isJsonObject()) {
+                                                JsonObject m = members.getAsJsonObject(uuid);
+                                                if (!m.has("pets")) {
+                                                    m.add("pets", petsData.get("pets"));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return json;
                 } catch (Exception e) {
                     Blackaddons.LOGGER.error("Failed to parse Adjectils Backend profile data: " + e.getMessage());
                 }
@@ -479,9 +516,15 @@ public class ProfileService {
                 memberData.add("dungeons", normalizedDungeons);
             }
 
-            if (profileInfo.has("items") && !profileInfo.get("items").isJsonNull()
-                    && profileInfo.getAsJsonObject("items").has("accessory_bag")) {
-                memberData.add("accessory_bag_storage", profileInfo.getAsJsonObject("items").get("accessory_bag"));
+            if (profileInfo.has("items") && !profileInfo.get("items").isJsonNull()) {
+                memberData.add("inventory", profileInfo.getAsJsonObject("items"));
+                if (profileInfo.getAsJsonObject("items").has("accessory_bag")) {
+                    memberData.add("accessory_bag_storage", profileInfo.getAsJsonObject("items").get("accessory_bag"));
+                }
+            }
+
+            if (profileInfo.has("pets") && !profileInfo.get("pets").isJsonNull()) {
+                memberData.add("pets", profileInfo.get("pets"));
             }
 
             members.add(uuid, memberData);
@@ -682,6 +725,13 @@ public class ProfileService {
                         }
                     }
 
+                    if (rawMember.has("inventory") && !rawMember.get("inventory").isJsonNull()) {
+                        memberData.add("inventory", rawMember.get("inventory"));
+                    }
+                    if (rawMember.has("pets") && !rawMember.get("pets").isJsonNull()) {
+                        memberData.add("pets", rawMember.get("pets"));
+                    }
+
                     members.add(memberUuid, memberData);
                 }
 
@@ -743,6 +793,8 @@ public class ProfileService {
             result.add("accessory_bag_storage",
                     member.has("accessory_bag_storage") ? member.getAsJsonObject("accessory_bag_storage")
                             : new JsonObject());
+            result.add("inventory", member.has("inventory") ? member.get("inventory") : new JsonObject());
+            result.add("pets", member.has("pets") ? member.get("pets") : new JsonArray());
             result.add("floors", extractFloorStats(dungeons));
 
             JsonArray recentRuns = extractRecentRuns(dungeons, uuid);

@@ -108,7 +108,8 @@ public class Dropdown extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+            float partialTick) {
         if (!visible || !expanded)
             return;
 

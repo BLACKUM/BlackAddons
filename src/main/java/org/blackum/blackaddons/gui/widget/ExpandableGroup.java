@@ -119,7 +119,8 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+            float partialTick) {
         if (!visible || expandAnimation.getValue() == 0)
             return;
 
@@ -130,7 +131,7 @@ public class ExpandableGroup extends Widget {
         }
 
         for (Widget child : children) {
-            child.renderOverlay(graphics, mouseX, mouseY, partialTick);
+            child.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
         }
 
         if (scissored) {

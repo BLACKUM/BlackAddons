@@ -31,6 +31,7 @@ public final class Constants {
         public static final String TEAMMATES_FILE_NAME = "teammates.json";
         public static final String RNG_DATA_FILE_NAME = "rng_data.json";
         public static final String BLOCKED_PACKETS_LOG_NAME = "blocked_packets.log";
+        public static final long BLOCKED_PACKETS_LOG_MAX_BYTES = 5L * 1024 * 1024;
 
         // APIs
         public static final String DEFAULT_BOT_URL = "http://hypixel-skyblock-socket.pegle.com:8080";

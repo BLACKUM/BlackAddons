@@ -29,6 +29,15 @@ public class RenderHelper {
         graphics.fill(x, y, x + width, y + height, color);
     }
 
+    public static void renderChromaRect(GuiGraphics graphics, int x, int y, int width, int height) {
+        long time = System.currentTimeMillis() / 10;
+        for (int i = 0; i < width; i++) {
+            float hue = ((time + i * 4) % 1000) / 1000f;
+            int color = java.awt.Color.HSBtoRGB(hue, 0.7f, 1f);
+            graphics.fill(x + i, y, x + i + 1, y + height, color);
+        }
+    }
+
     public static int adjustAlpha(int color, float alphaMultiplier) {
         int a = (color >> 24) & 0xFF;
         if (a == 0 && color != 0)

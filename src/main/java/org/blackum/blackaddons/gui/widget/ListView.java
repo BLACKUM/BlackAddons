@@ -63,7 +63,8 @@ public class ListView extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+            float partialTick) {
         if (!visible)
             return;
 
@@ -73,7 +74,7 @@ public class ListView extends Widget {
             item.setY(currentY);
             item.setWidth(width - scrollbarWidth - 12);
 
-            item.renderOverlay(graphics, mouseX, mouseY, partialTick);
+            item.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
 
             currentY += item.getHeight() + itemSpacing;
         }
@@ -210,6 +211,10 @@ public class ListView extends Widget {
         float mouseProgress = (float) (mouseY - y) / scrollableHeight;
         scrollOffset = (int) (mouseProgress * maxScroll);
         scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
+    }
+
+    public void scrollTo(int offset) {
+        this.scrollOffset = Math.max(0, Math.min(getMaxScroll(), offset));
     }
 
     private void scroll(int delta) {
