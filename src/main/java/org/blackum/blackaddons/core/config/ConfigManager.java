@@ -34,6 +34,12 @@ public class ConfigManager {
             "hypixel:register",
             "hyevent:location");
 
+    public static final Set<String> DEFAULT_ALLOWED_MODS = Set.of(
+            "minecraft",
+            "fabricloader",
+            "java",
+            "fabric");
+
     public static class CardState {
         public int x;
         public int y;
@@ -126,7 +132,7 @@ public class ConfigManager {
         public String modHiderCustomClient = "fabric";
         public boolean modHiderHideMods = true;
         public boolean modHiderDisableCustomPayloads = true;
-        public Set<String> modHiderAllowedMods = new HashSet<>();
+        public Set<String> modHiderAllowedMods = new HashSet<>(DEFAULT_ALLOWED_MODS);
         public Set<String> modHiderAllowedCustomPayloadChannels = new HashSet<>(FABRIC_DEFAULT_CHANNELS);
 
         // Cheats
@@ -206,6 +212,9 @@ public class ConfigManager {
                 // TODO: Delete migration when enough versions have passed
                 if (loadedData.modHiderAllowedCustomPayloadChannels != null) {
                     loadedData.modHiderAllowedCustomPayloadChannels.addAll(FABRIC_DEFAULT_CHANNELS);
+                }
+                if (loadedData.modHiderAllowedMods != null) {
+                    loadedData.modHiderAllowedMods.addAll(DEFAULT_ALLOWED_MODS);
                 }
                 data = loadedData;
             }
