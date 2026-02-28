@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -30,16 +31,60 @@ public class CommandUtils {
         ClientTickEvents.END_CLIENT_TICK.register(CommandUtils::onEndTick);
 
         ConfigManager.data.knownAliases.forEach((name, command) -> {
+            registerAlias(dispatcher, name, command);
+        });
+    }
+
+    private static void registerAlias(CommandDispatcher<FabricClientCommandSource> dispatcher, String name,
+            String command) {
+        String cleanedCommand = command.startsWith("/") ? command.substring(1) : command;
+        String[] parts = cleanedCommand.trim().split("\\s+");
+        CommandNode<FabricClientCommandSource> targetNode = dispatcher.getRoot();
+        boolean simpleLiteral = true;
+
+        for (String part : parts) {
+            CommandNode<FabricClientCommandSource> child = targetNode.getChild(part);
+            if (child instanceof LiteralCommandNode) {
+                targetNode = child;
+            } else {
+                simpleLiteral = false;
+                break;
+            }
+        }
+
+        if (simpleLiteral && targetNode != dispatcher.getRoot() && parts.length > 0) {
+            dispatcher.register(ClientCommandManager.literal(name)
+                    .redirect(targetNode));
+        } else {
             dispatcher.register(ClientCommandManager.literal(name)
                     .executes(context -> {
                         if (!ConfigManager.data.knownAliases.containsKey(name)) {
                             return 0;
                         }
                         assert mc.player != null;
-                        mc.player.connection.sendCommand(command);
+                        mc.player.connection.sendCommand(cleanedCommand);
                         return 1;
-                    }));
-        });
+                    })
+                    .then(ClientCommandManager.argument("args", StringArgumentType.greedyString())
+                            .suggests((context, builder) -> {
+                                if (activeDispatcher == null || mc.player == null)
+                                    return builder.buildFuture();
+                                String remaining = builder.getRemaining();
+                                String fullCommand = cleanedCommand + " " + remaining;
+                                return activeDispatcher.getCompletionSuggestions(
+                                        activeDispatcher.parse(fullCommand, context.getSource()),
+                                        fullCommand.length() - remaining.length());
+                            })
+                            .executes(context -> {
+                                if (!ConfigManager.data.knownAliases.containsKey(name)) {
+                                    return 0;
+                                }
+                                String args = StringArgumentType.getString(context, "args");
+                                assert mc.player != null;
+                                mc.player.connection.sendCommand(cleanedCommand + " " + args);
+                                return 1;
+                            })));
+        }
     }
 
     static void onEndTick(Minecraft client) {
@@ -62,10 +107,9 @@ public class CommandUtils {
             e.printStackTrace();
         }
     }
-
     static ArgumentBuilder<FabricClientCommandSource, ?> add = ClientCommandManager.literal("add")
             .then(ClientCommandManager.argument("alias", StringArgumentType.string())
-                    .then(ClientCommandManager.argument("real_command", StringArgumentType.string())
+                    .then(ClientCommandManager.argument("real_command", StringArgumentType.greedyString())
                             .executes(ctx -> {
                                 String name = StringArgumentType.getString(ctx, "alias");
                                 String desc = StringArgumentType.getString(ctx, "real_command");
@@ -74,14 +118,7 @@ public class CommandUtils {
                                 ConfigManager.save();
 
                                 if (activeDispatcher != null) {
-                                    activeDispatcher.register(ClientCommandManager.literal(name).executes(context -> {
-                                        if (!ConfigManager.data.knownAliases.containsKey(name)) {
-                                            return 0;
-                                        }
-                                        assert mc.player != null;
-                                        mc.player.connection.sendCommand(desc);
-                                        return 1;
-                                    }));
+                                    registerAlias(activeDispatcher, name, desc);
                                 }
 
                                 if (mc.player != null && mc.player.connection != null) {

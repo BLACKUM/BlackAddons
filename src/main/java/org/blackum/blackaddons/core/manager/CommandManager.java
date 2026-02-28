@@ -363,7 +363,6 @@ public class CommandManager {
                                                 return 1;
                                         });
 
-                        CommandUtils.register(dispatcher);
                         for (String alias : new String[] { Constants.BASE_COMMAND, "black", "blackaddons" }) {
                                 var cmd = ClientCommandManager.literal(alias).executes(openGui);
 
@@ -403,6 +402,7 @@ public class CommandManager {
 
                                 dispatcher.register(cmd);
                         }
+                        CommandUtils.register(dispatcher);
                 });
         }
 }
