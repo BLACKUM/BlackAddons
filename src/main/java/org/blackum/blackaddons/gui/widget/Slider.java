@@ -14,6 +14,7 @@ public class Slider extends Widget {
     private float minValue;
     private float maxValue;
     private Consumer<Float> onValueChange;
+    private Consumer<Float> onRelease;
     private boolean dragging = false;
     private Animation hoverAnimation;
 
@@ -96,9 +97,17 @@ public class Slider extends Widget {
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (dragging && button == 0) {
             dragging = false;
+            if (onRelease != null) {
+                onRelease.accept(value);
+            }
             return true;
         }
         return false;
+    }
+
+    public Slider onRelease(Consumer<Float> onRelease) {
+        this.onRelease = onRelease;
+        return this;
     }
 
     @Override

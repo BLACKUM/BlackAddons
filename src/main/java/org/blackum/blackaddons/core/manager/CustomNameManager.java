@@ -5,10 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.util.FormattedCharSequence;
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.util.Constants;
@@ -183,6 +185,59 @@ public class CustomNameManager {
         }
 
         return processComponent(component);
+    }
+
+    public String replaceInString(String text) {
+        if (customNames.isEmpty() || text == null || text.isEmpty()) return text;
+        String lower = text.toLowerCase();
+        if (!containsAnyIgn(lower)) return text;
+        for (String ign : customNames.keySet()) {
+            if (lower.contains(ign)) {
+                CustomName custom = customNames.get(ign);
+                text = text.replaceAll("(?i)" + Pattern.quote(ign), custom.display());
+            }
+        }
+        return text;
+    }
+
+    public FormattedCharSequence replaceInSequence(FormattedCharSequence sequence) {
+        if (customNames.isEmpty() || sequence == null) return sequence;
+        StringBuilder sb = new StringBuilder();
+        sequence.accept((index, style, codePoint) -> {
+            sb.appendCodePoint(codePoint);
+            return true;
+        });
+        String plain = sb.toString();
+        if (!containsAnyIgn(plain.toLowerCase())) return sequence;
+
+        MutableComponent rebuilt = Component.literal("");
+        Style[] currentStyle = new Style[]{null};
+        StringBuilder buffer = new StringBuilder();
+
+        sequence.accept((index, style, codePoint) -> {
+            if (!java.util.Objects.equals(style, currentStyle[0])) {
+                if (buffer.length() > 0) {
+                    rebuilt.append(Component.literal(buffer.toString()).withStyle(currentStyle[0] != null ? currentStyle[0] : Style.EMPTY));
+                    buffer.setLength(0);
+                }
+                currentStyle[0] = style;
+            }
+            buffer.appendCodePoint(codePoint);
+            return true;
+        });
+
+        if (buffer.length() > 0) {
+            rebuilt.append(Component.literal(buffer.toString()).withStyle(currentStyle[0] != null ? currentStyle[0] : Style.EMPTY));
+        }
+
+        return net.minecraft.locale.Language.getInstance().getVisualOrder(replaceNames(rebuilt));
+    }
+
+    private boolean containsAnyIgn(String lowerText) {
+        for (String ign : customNames.keySet()) {
+            if (lowerText.contains(ign)) return true;
+        }
+        return false;
     }
 
     private Component processComponent(Component component) {

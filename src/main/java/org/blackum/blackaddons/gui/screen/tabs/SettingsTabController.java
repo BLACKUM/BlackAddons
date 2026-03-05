@@ -1,7 +1,9 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
 import java.util.List;
+import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.gui.screen.BaseScreen;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
@@ -182,8 +184,9 @@ public class SettingsTabController extends SimpleTabController {
                     ConfigManager.data.forcedGuiScale = scale;
                     guiScaleLabel.setText("Forced GUI Scale: " + (scale == 0 ? "Off" : scale));
                     ConfigManager.save();
-                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                    if (mc.screen instanceof org.blackum.blackaddons.gui.screen.BaseScreen) {
+                }).onRelease((val) -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    if (mc.screen instanceof BaseScreen) {
                         mc.resizeDisplay();
                     }
                 });
