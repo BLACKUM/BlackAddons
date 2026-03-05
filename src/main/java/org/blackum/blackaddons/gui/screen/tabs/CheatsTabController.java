@@ -129,7 +129,7 @@ public class CheatsTabController extends SimpleTabController {
     }
 
     private ResizableCard createFastLeapCard(int x, int y) {
-        fastLeapCard = screen.createResizableCard("fastLeap", x, y, 300, 330, "FastLeap");
+        fastLeapCard = screen.createResizableCard("fastLeap", x, y, 300, 330, "⚠ FastLeap [WIP] (DO NOT USE)");
 
         int contentX = fastLeapCard.getContentX();
         int contentY = fastLeapCard.getContentY();
@@ -137,8 +137,8 @@ public class CheatsTabController extends SimpleTabController {
         List<String> classOptions = List.of("NONE", "HEALER", "MAGE", "BERSERK", "ARCHER", "TANK");
 
         ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
-                "Enable FastLeap",
-                "Automatically leaps to players or classes",
+                "⚠ Enable FastLeap [WIP]",
+                "Automatically leaps to players or classes (DO NOT USE)",
                 ConfigManager.data.FastLeapEnabled, value -> {
                     ConfigManager.data.FastLeapEnabled = value;
                     ConfigManager.save();
