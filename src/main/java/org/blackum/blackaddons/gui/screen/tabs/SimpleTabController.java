@@ -11,4 +11,10 @@ public abstract class SimpleTabController {
     }
 
     public abstract void init(TabPanel.Tab tab);
+
+    public void tick() {
+    }
+
+    public void onSelected() {
+    }
 }

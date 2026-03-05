@@ -9,4 +9,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface KeyBindingAccessor {
     @Accessor("key")
     InputConstants.Key getBoundKey();
+
+    @Accessor("isDown")
+    void setBlackaddonsIsDown(boolean isDown);
 }

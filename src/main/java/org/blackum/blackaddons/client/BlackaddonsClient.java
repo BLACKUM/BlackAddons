@@ -23,7 +23,7 @@ import org.blackum.blackaddons.integration.BotIntegration;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.feature.chat.ChatImageHandler;
-import org.blackum.blackaddons.feature.chat.ChatSoundAlertManager;
+import org.blackum.blackaddons.feature.chat.ChatTriggerManager;
 import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
 import org.blackum.blackaddons.core.manager.CustomNameManager;
@@ -106,7 +106,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             RngTracker.onChatMessage(handled);
             DungeonJoinHandler.onChatMessage(handled);
             PartyFinderManager.getInstance().onChatMessage(handled);
-            ChatSoundAlertManager.getInstance().onChatMessage(handled);
+            ChatTriggerManager.getInstance().onChatMessage(handled);
         });
 
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
@@ -115,7 +115,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             RngTracker.onChatMessage(handled);
             DungeonJoinHandler.onChatMessage(handled);
             PartyFinderManager.getInstance().onChatMessage(handled);
-            ChatSoundAlertManager.getInstance().onChatMessage(handled);
+            ChatTriggerManager.getInstance().onChatMessage(handled);
         });
 
         Blackaddons.LOGGER.info("Client initialization completed");

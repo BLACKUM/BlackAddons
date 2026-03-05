@@ -46,4 +46,8 @@ public class RenderHelper {
         int newAlpha = Math.min(255, Math.max(0, (int) (a * alphaMultiplier)));
         return (newAlpha << 24) | rgb;
     }
+
+    public static void drawCenteredString(GuiGraphics graphics, net.minecraft.client.gui.Font font, String text, int x, int y, int color) {
+        graphics.drawString(font, text, x - font.width(text) / 2, y, color);
+    }
 }

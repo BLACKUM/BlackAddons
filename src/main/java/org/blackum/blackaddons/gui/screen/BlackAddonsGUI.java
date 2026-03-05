@@ -38,7 +38,8 @@ public class BlackAddonsGUI extends BaseScreen {
     private CheatsTabController cheatsController;
     private LegitTabController legitController;
     private AboutTabController aboutController;
-    private SoundAlertsTabController soundAlertsController;
+    private ChatTriggersTabController chatTriggersController;
+    private final List<SimpleTabController> controllers = new ArrayList<>();
 
     public BlackAddonsGUI() {
         this(null);
@@ -52,7 +53,12 @@ public class BlackAddonsGUI extends BaseScreen {
     protected void initWidgets() {
         tabPanel = new TabPanel(containerX + Theme.PADDING, containerY + 40, containerWidth - (Theme.PADDING * 2),
                 containerHeight - 50);
-        tabPanel.setOnTabChange(index -> lastTabIndex = index);
+        tabPanel.setOnTabChange(index -> {
+            lastTabIndex = index;
+            if (index >= 0 && index < controllers.size()) {
+                controllers.get(index).onSelected();
+            }
+        });
 
         settingsController = new SettingsTabController(this);
         modHiderController = new ModHiderTabController(this);
@@ -60,14 +66,23 @@ public class BlackAddonsGUI extends BaseScreen {
         cheatsController = new CheatsTabController(this);
         legitController = new LegitTabController(this);
         aboutController = new AboutTabController(this);
-        soundAlertsController = new SoundAlertsTabController(this);
+        chatTriggersController = new ChatTriggersTabController(this);
+
+        controllers.clear();
+        controllers.add(settingsController);
+        controllers.add(modHiderController);
+        controllers.add(payloadsController);
+        controllers.add(cheatsController);
+        controllers.add(legitController);
+        controllers.add(chatTriggersController);
+        controllers.add(aboutController);
 
         settingsController.init(tabPanel.addTab("Settings"));
         modHiderController.init(tabPanel.addTab("Mod Hider"));
         payloadsController.init(tabPanel.addTab("Payloads"));
         cheatsController.init(tabPanel.addTab("Cheats"));
         legitController.init(tabPanel.addTab("Legit"));
-        soundAlertsController.init(tabPanel.addTab("Chat Triggers"));
+        chatTriggersController.init(tabPanel.addTab("Chat Triggers"));
         aboutController.init(tabPanel.addTab("About"));
 
         tabPanel.selectTab(lastTabIndex);
@@ -82,6 +97,9 @@ public class BlackAddonsGUI extends BaseScreen {
     @Override
     public void tick() {
         super.tick();
+        if (lastTabIndex >= 0 && lastTabIndex < controllers.size()) {
+            controllers.get(lastTabIndex).tick();
+        }
     }
 
     public void rebuildChannelsList(ListView channelsList) {

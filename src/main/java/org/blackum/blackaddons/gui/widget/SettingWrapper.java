@@ -25,6 +25,11 @@ public class SettingWrapper extends Widget {
         this.rightLabel = rightLabel;
     }
 
+    public void setControl(Widget control) {
+        this.control = control;
+        updateLayout();
+    }
+
     public SettingWrapper(int x, int y, int width, String label, String description, Widget control) {
         super(x, y, width, HEADER_HEIGHT);
         this.label = label;

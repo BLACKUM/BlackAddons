@@ -63,7 +63,54 @@ public class ConfigManager {
         }
     }
 
-    public static class SoundAlert {
+    public enum TriggerActionType {
+        SWITCH_SLOT("Switch Slot"),
+        USE_ITEM("Use Item"),
+        ATTACK("Attack"),
+        SEND_MESSAGE("Send Message"),
+        PRESS_KEYBIND("Press Keybind");
+
+        private final String displayName;
+
+        TriggerActionType(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public static TriggerActionType fromDisplayName(String displayName) {
+            for (TriggerActionType type : values()) {
+                if (type.displayName.equalsIgnoreCase(displayName)) {
+                    return type;
+                }
+            }
+            return SWITCH_SLOT;
+        }
+    }
+
+    public static class TriggerAction {
+        public TriggerActionType type;
+        public int slotIndex;
+        public String message = "";
+        public int delayTicks;
+        public int durationTicks;
+        public boolean collapsed = false;
+
+        public TriggerAction() {
+        }
+
+        public TriggerAction(TriggerActionType type, int slotIndex, String message, int delayTicks, int durationTicks) {
+            this.type = type;
+            this.slotIndex = slotIndex;
+            this.message = message;
+            this.delayTicks = delayTicks;
+            this.durationTicks = durationTicks;
+        }
+    }
+
+    public static class ChatTrigger {
         public String pattern;
         public boolean isRegex;
         public String soundId;
@@ -72,15 +119,16 @@ public class ConfigManager {
         public boolean enabled;
         public String title = "";
         public String subtitle = "";
-        public int durationSeconds = 2;
+        public float durationSeconds = 2.0f;
         public boolean collapsed = true;
+        public List<TriggerAction> actions = new ArrayList<>();
 
-        public SoundAlert() {
+        public ChatTrigger() {
         }
 
-        public SoundAlert(String pattern, boolean isRegex, String soundId, float volume, float pitch, boolean enabled,
+        public ChatTrigger(String pattern, boolean isRegex, String soundId, float volume, float pitch, boolean enabled,
                 String title,
-                String subtitle, int durationSeconds) {
+                String subtitle, float durationSeconds) {
             this.pattern = pattern;
             this.isRegex = isRegex;
             this.soundId = soundId;
@@ -169,14 +217,14 @@ public class ConfigManager {
         public boolean disableUnsecureChatToast = true;
 
         // Chat triggers defaults
-        public List<SoundAlert> chatSoundAlerts = new ArrayList<>(List.of(
-                new SoundAlert(
+        public List<ChatTrigger> chatTriggers = new ArrayList<>(List.of(
+                new ChatTrigger(
                         "(?s).*?(?:\\[.*?\\] )?([A-Za-z0-9_]+) has invited you to join their party!.*You have 60 seconds to accept.*",
                         true,
-                        "entity.cat.ambient", 1.0f, 1.0f, true, "&cParty Invite!", "&6From: &e{1}", 2),
-                new SoundAlert("Party Finder > ([A-Za-z0-9_]+) joined the dungeon group! \\((.*)\\)", true,
+                        "entity.cat.ambient", 1.0f, 1.0f, true, "&cParty Invite!", "&6From: &e{1}", 2.0f),
+                new ChatTrigger("Party Finder > ([A-Za-z0-9_]+) joined the dungeon group! \\((.*)\\)", true,
                         "entity.experience_orb.pickup",
-                        1.0f, 1.0f, true, "&a{1} Joined!", "&7Class: &b{2}", 3)));
+                        1.0f, 1.0f, true, "&a{1} Joined!", "&7Class: &b{2}", 3.0f)));
 
         // Command aliases
         public Map<String, String> knownAliases = new HashMap<>();

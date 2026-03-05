@@ -207,7 +207,7 @@ public abstract class BaseScreen extends Screen {
                     widget.updateHoverState(mouseX, (int) (mouseY + scrollOffset));
                     mouseCaptured = true;
                 } else {
-                    widget.setHovered(false);
+                    widget.updateHoverState(-1, -1);
                 }
             }
         }

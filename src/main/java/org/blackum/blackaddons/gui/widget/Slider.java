@@ -110,6 +110,11 @@ public class Slider extends Widget {
         return this;
     }
 
+    public Slider onValueChange(Consumer<Float> onValueChange) {
+        this.onValueChange = onValueChange;
+        return this;
+    }
+
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (dragging) {

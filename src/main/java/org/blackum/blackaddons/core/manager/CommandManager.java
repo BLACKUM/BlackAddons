@@ -23,7 +23,7 @@ import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import org.blackum.blackaddons.gui.screen.PartyFinderScreen;
 import org.blackum.blackaddons.gui.screen.IrcScreen;
 import org.blackum.blackaddons.gui.screen.ImagePreviewScreen;
-import org.blackum.blackaddons.feature.chat.ChatSoundAlertManager;
+import org.blackum.blackaddons.feature.chat.ChatTriggerManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import net.fabricmc.loader.api.FabricLoader;
 import java.util.UUID;
@@ -214,7 +214,7 @@ public class CommandManager {
                                                                                 .addMessage(component);
                                                                 DungeonJoinHandler
                                                                                 .onChatMessage(component);
-                                                                ChatSoundAlertManager
+                                                                ChatTriggerManager
                                                                                 .getInstance()
                                                                                 .onChatMessage(component);
                                                                 return 1;
@@ -232,7 +232,7 @@ public class CommandManager {
                                                                                 .literal(fakeMessage);
                                                                 Minecraft.getInstance().gui.getChat()
                                                                                 .addMessage(component);
-                                                                ChatSoundAlertManager.getInstance()
+                                                                ChatTriggerManager.getInstance()
                                                                                 .onChatMessage(component);
                                                                 return 1;
                                                         })));
