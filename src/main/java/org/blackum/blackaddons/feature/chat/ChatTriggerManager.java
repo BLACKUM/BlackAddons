@@ -3,7 +3,7 @@ package org.blackum.blackaddons.feature.chat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 
@@ -66,9 +66,9 @@ public class ChatTriggerManager {
                 client.execute(() -> {
                     if (trigger.soundId != null && !trigger.soundId.isEmpty()) {
                         try {
-                            Identifier location = Identifier.tryParse(trigger.soundId);
+                            ResourceLocation location = ResourceLocation.tryParse(trigger.soundId);
                             if (location == null)
-                                location = Identifier.fromNamespaceAndPath("minecraft", trigger.soundId);
+                                location = ResourceLocation.fromNamespaceAndPath("minecraft", trigger.soundId);
                             SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                             client.getSoundManager().play(SimpleSoundInstance.forUI(event, trigger.pitch, trigger.volume));
                         } catch (Exception e) {
