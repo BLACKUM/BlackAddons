@@ -5,7 +5,7 @@ import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.widget.*;
 
 public class LegitTabController extends SimpleTabController {
-    private ResizableCard fullbrightCard;
+    private ResizableCard visualsCard;
 
     public LegitTabController(BlackAddonsGUI screen) {
         super(screen);
@@ -19,7 +19,7 @@ public class LegitTabController extends SimpleTabController {
 
         if (ConfigManager.data.useCardLayout) {
             Button resetLayout = new Button(contentX + 10, contentY, contentWidth - 20, "Reset Layout", () -> {
-                screen.resetCardStates("fullbright");
+                screen.resetCardStates("legit_visuals");
             });
             legitTab.addWidget(resetLayout);
 
@@ -27,13 +27,13 @@ public class LegitTabController extends SimpleTabController {
             legitTab.addWidget(legitCardContainer);
 
             int currentY = contentY + 50;
-            fullbrightCard = createFullbrightCard(contentX + 20, currentY);
+            visualsCard = createVisualsCard(contentX + 20, currentY);
 
-            legitCardContainer.addCard(fullbrightCard);
+            legitCardContainer.addCard(visualsCard);
             return;
         }
 
-        legitTab.addWidget(new Label(contentX, contentY, "Fullbright", Label.Style.TITLE));
+        legitTab.addWidget(new Label(contentX, contentY, "Visuals", Label.Style.TITLE));
 
         ToggleSwitch fullbrightToggle = new ToggleSwitch(contentX, contentY + 30, contentWidth - 20,
                 "Enable Fullbright",
@@ -43,12 +43,21 @@ public class LegitTabController extends SimpleTabController {
                     ConfigManager.save();
                 });
         legitTab.addWidget(fullbrightToggle);
+
+        ToggleSwitch fireOverlayToggle = new ToggleSwitch(contentX, contentY + 60, contentWidth - 20,
+                "Remove Fire Overlay",
+                "Hides the fire overlay when on fire",
+                ConfigManager.data.removeFireOverlay, value -> {
+                    ConfigManager.data.removeFireOverlay = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(fireOverlayToggle);
     }
 
-    private ResizableCard createFullbrightCard(int x, int y) {
-        fullbrightCard = screen.createResizableCard("fullbright", x, y, 300, 100, "Fullbright");
-        int contentX = fullbrightCard.getContentX();
-        int contentY = fullbrightCard.getContentY();
+    private ResizableCard createVisualsCard(int x, int y) {
+        visualsCard = screen.createResizableCard("legit_visuals", x, y, 300, 100, "Visuals");
+        int contentX = visualsCard.getContentX();
+        int contentY = visualsCard.getContentY();
 
         ToggleSwitch fullbrightToggle = new ToggleSwitch(contentX, contentY, 260,
                 "Enable Fullbright",
@@ -57,9 +66,18 @@ public class LegitTabController extends SimpleTabController {
                     ConfigManager.data.legitFullbrightEnabled = value;
                     ConfigManager.save();
                 });
-        fullbrightCard.addChild(fullbrightToggle);
+        visualsCard.addChild(fullbrightToggle);
 
-        fullbrightCard.updateLayout();
-        return fullbrightCard;
+        ToggleSwitch fireOverlayToggle = new ToggleSwitch(contentX, contentY + 30, 260,
+                "Remove Fire Overlay",
+                "Hides the fire overlay when on fire",
+                ConfigManager.data.removeFireOverlay, value -> {
+                    ConfigManager.data.removeFireOverlay = value;
+                    ConfigManager.save();
+                });
+        visualsCard.addChild(fireOverlayToggle);
+
+        visualsCard.updateLayout();
+        return visualsCard;
     }
 }

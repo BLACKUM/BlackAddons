@@ -17,6 +17,7 @@
     "core.ClientPacketListenerAccessor",
     "render.FullbrightMixin",
     "render.GameRendererMixin",
+    "render.ScreenEffectRendererMixin",
     "gui.ChatComponentMixin",
     "gui.ScreenMixin",
     "core.FontMixin",

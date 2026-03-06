@@ -237,6 +237,7 @@ public class ConfigManager {
 
         // Legit
         public boolean legitFullbrightEnabled = false;
+        public boolean removeFireOverlay = false;
 
         // Settings
         public int notificationDuration = 4000;
