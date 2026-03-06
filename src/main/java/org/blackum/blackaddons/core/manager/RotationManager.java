@@ -1,0 +1,406 @@
+package org.blackum.blackaddons.core.manager;
+
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.Mth;
+import net.minecraft.ChatFormatting;
+import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.gui.render.Theme;
+import org.blackum.blackaddons.mixin.core.GameRendererAccessor;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
+import org.joml.Vector4f;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+public class RotationManager {
+    private static final float STOP_THRESHOLD = 0.05f;
+    private static final int OVERLAY_BAR_WIDTH = 100;
+    private static final int COLOR_BAR_BG = 0xFF333333;
+    private static final int COLOR_BAR_FILL = 0xFF00AAFF;
+    private static final int COLOR_WHITE = 0xFFFFFFFF;
+    private static final int COLOR_GRAY = 0xFF999999;
+    private static final int WAYPOINT_DOT = 6;
+
+    private static RotationManager instance;
+    private final Random random = new Random();
+
+    private float startYaw;
+    private float startPitch;
+    private float targetYawUnwrapped;
+    private float targetPitch;
+    
+    private float cp1Yaw, cp1Pitch;
+    private float cp2Yaw, cp2Pitch;
+    
+    private float durationTicks;
+    private float currentTicks;
+
+    private boolean active;
+
+    private double targetX = Double.NaN;
+    private double targetY = Double.NaN;
+    private double targetZ = Double.NaN;
+
+    private Matrix4f lastProjMatrix = new Matrix4f();
+    private Matrix4f lastViewMatrix = new Matrix4f();
+
+    private RotationManager() {
+        HudRenderCallback.EVENT.register(this::onFrame);
+        ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
+    }
+
+    public static RotationManager getInstance() {
+        if (instance == null) {
+            instance = new RotationManager();
+        }
+        return instance;
+    }
+
+    public void rotateTo(float yaw, float pitch) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        this.active = true;
+        this.targetX = Double.NaN;
+        this.targetY = Double.NaN;
+        this.targetZ = Double.NaN;
+        
+        setupBezier(mc, normalizeYaw(yaw), Mth.clamp(pitch, -90f, 90f));
+    }
+
+    public void rotateToBlock(double x, double y, double z) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        this.active = true;
+        
+        float randX = 0;
+        float randY = 0;
+        float randZ = 0;
+        
+        if (ConfigManager.data.rotationHumanizerEnabled) {
+            float r = ConfigManager.data.rotationTargetRandomness;
+            randX = (random.nextFloat() * 2 - 1) * r;
+            randY = (random.nextFloat() * 2 - 1) * r;
+            randZ = (random.nextFloat() * 2 - 1) * r;
+        }
+
+        this.targetX = x + 0.5 + randX;
+        this.targetY = y + 0.5 + randY;
+        this.targetZ = z + 0.5 + randZ;
+
+        updateBlockAngles(mc);
+        setupBezier(mc, this.targetYawUnwrapped, this.targetPitch);
+    }
+
+    private void setupBezier(Minecraft mc, float targetY, float targetP) {
+        this.startYaw = mc.player.getYRot();
+        this.startPitch = mc.player.getXRot();
+
+        float dy = yawDiff(this.startYaw, targetY);
+        float dp = targetP - this.startPitch;
+
+        this.targetYawUnwrapped = this.startYaw + dy;
+        this.targetPitch = targetP;
+
+        float distance = (float) Math.sqrt(dy * dy + dp * dp);
+
+        float speed = Math.max(0.1f, ConfigManager.data.rotationSpeed);
+        this.durationTicks = Math.max(1.0f, distance / speed);
+        
+        this.currentTicks = 0.0f;
+
+        if (ConfigManager.data.rotationHumanizerEnabled) {
+            float curveStrength = ConfigManager.data.rotationJitter;
+
+            float perpYaw = -dp;
+            float perpPitch = dy;
+            float perpLen = (float) Math.sqrt(perpYaw * perpYaw + perpPitch * perpPitch);
+            
+            if (perpLen > 0.001f) {
+                perpYaw /= perpLen;
+                perpPitch /= perpLen;
+            } else {
+                perpYaw = 1.0f;
+                perpPitch = 0.0f;
+            }
+
+            float curveScale = distance * curveStrength * 0.5f;
+
+            float r1 = (random.nextFloat() * 2.0f - 1.0f) * curveScale;
+            float r2 = (random.nextFloat() * 2.0f - 1.0f) * curveScale;
+
+            this.cp1Yaw = this.startYaw + dy * 0.33f + perpYaw * r1;
+            this.cp1Pitch = this.startPitch + dp * 0.33f + perpPitch * r1;
+
+            this.cp2Yaw = this.startYaw + dy * 0.66f + perpYaw * r2;
+            this.cp2Pitch = this.startPitch + dp * 0.66f + perpPitch * r2;
+        } else {
+            this.cp1Yaw = this.startYaw + dy * 0.333f;
+            this.cp1Pitch = this.startPitch + dp * 0.333f;
+
+            this.cp2Yaw = this.startYaw + dy * 0.666f;
+            this.cp2Pitch = this.startPitch + dp * 0.666f;
+        }
+    }
+
+    private void updateBlockAngles(Minecraft mc) {
+        if (mc.player == null || Double.isNaN(targetX)) return;
+        double dx = targetX - mc.player.getX();
+        double dy = targetY - (mc.player.getY() + mc.player.getEyeHeight());
+        double dz = targetZ - mc.player.getZ();
+        double dist = Math.sqrt(dx * dx + dz * dz);
+        
+        float rawTargetYaw = normalizeYaw((float) Math.toDegrees(Math.atan2(dz, dx)) - 90f);
+        this.targetPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(dy, dist)), -90f, 90f);
+        this.targetYawUnwrapped = this.startYaw + yawDiff(this.startYaw, rawTargetYaw);
+    }
+
+    private static float normalizeYaw(float yaw) {
+        yaw = yaw % 360f;
+        if (yaw > 180f) yaw -= 360f;
+        if (yaw < -180f) yaw += 360f;
+        return yaw;
+    }
+
+    private static float yawDiff(float from, float to) {
+        float diff = (to - from) % 360f;
+        if (diff > 180f) diff -= 360f;
+        if (diff < -180f) diff += 360f;
+        return diff;
+    }
+
+    private void onTick(Minecraft mc) {
+    }
+
+    private void onFrame(GuiGraphics graphics, DeltaTracker tracker) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        if (active) {
+            if (mc.screen != null) {
+                active = false;
+            } else {
+                float dt = tracker.getGameTimeDeltaTicks();
+
+                if (!Double.isNaN(targetX)) {
+                    updateBlockAngles(mc);
+                }
+
+                if (ConfigManager.data.rotationHumanizerEnabled && !Double.isNaN(targetX)) {
+                    float currentYawDiff = yawDiff(mc.player.getYRot(), targetYawUnwrapped);
+                    float currentPitchDiff = targetPitch - mc.player.getXRot();
+                    float currentAngDist = (float) Math.sqrt(currentYawDiff * currentYawDiff + currentPitchDiff * currentPitchDiff);
+
+                    if (currentAngDist <= ConfigManager.data.rotationFovSlowdown) {
+                        double physicalDist = Math.sqrt(
+                                Math.pow(this.targetX - mc.player.getX(), 2) +
+                                Math.pow(this.targetY - mc.player.getY(), 2) +
+                                Math.pow(this.targetZ - mc.player.getZ(), 2)
+                        );
+
+                        float maxRadius = Math.max(1.0f, ConfigManager.data.rotationDistanceRadius);
+                        float distRatio = (float) Math.min(1.0, physicalDist / maxRadius);
+                        float addedDurationMultiplier = distRatio * ConfigManager.data.rotationDistanceSlowdown;
+                        
+                        dt /= (1.0f + addedDurationMultiplier);
+                    }
+                }
+
+                this.currentTicks += dt;
+                if (this.currentTicks >= this.durationTicks) {
+                    this.currentTicks = this.durationTicks;
+                    this.active = false;
+                }
+
+                float t = this.currentTicks / this.durationTicks;
+
+                float easedT = t;
+                if (ConfigManager.data.rotationSmoothness > 0) {
+                    float sineInOut = (float) (0.5 * (1 - Math.cos(Math.PI * t)));
+                    easedT = t + (sineInOut - t) * ConfigManager.data.rotationSmoothness;
+                }
+
+                float u = 1.0f - easedT;
+                float tt = easedT * easedT;
+                float uu = u * u;
+                float uuu = uu * u;
+                float ttt = tt * easedT;
+
+                float currentTargetYaw = uuu * startYaw
+                                       + 3 * uu * easedT * cp1Yaw
+                                       + 3 * u * tt * cp2Yaw
+                                       + ttt * targetYawUnwrapped;
+
+                float currentTargetPitch = uuu * startPitch
+                                         + 3 * uu * easedT * cp1Pitch
+                                         + 3 * u * tt * cp2Pitch
+                                         + ttt * targetPitch;
+
+                float stepYaw = currentTargetYaw - mc.player.getYRot();
+                float stepPitch = currentTargetPitch - mc.player.getXRot();
+
+
+                mc.player.turn(stepYaw / 0.15f, stepPitch / 0.15f);
+            }
+        }
+
+        if (ConfigManager.data.showRotationDebug) {
+            renderOverlay(graphics, tracker);
+            if (!Double.isNaN(targetX)) {
+                renderWaypoint(graphics, tracker);
+            }
+        }
+    }
+
+    private void renderOverlay(GuiGraphics g, DeltaTracker tracker) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        int screenW = mc.getWindow().getGuiScaledWidth();
+        int overlayX = ConfigManager.data.rotationOverlayX < 0
+                ? screenW - 145
+                : ConfigManager.data.rotationOverlayX;
+        int screenH = mc.getWindow().getGuiScaledHeight();
+        int overlayY = ConfigManager.data.rotationOverlayY < 0
+                ? screenH - 80
+                : ConfigManager.data.rotationOverlayY;
+        int y = overlayY;
+        int lineH = 10;
+
+        float curYaw = normalizeYaw(mc.player.getYRot());
+        float curPitch = mc.player.getXRot();
+
+        g.drawString(mc.font,
+                ChatFormatting.GOLD + "[Rotation] " + (active ? ChatFormatting.GREEN + "ACTIVE" : ChatFormatting.GRAY + "IDLE"),
+                overlayX, y, COLOR_WHITE);
+        y += lineH;
+
+        if (active) {
+            g.drawString(mc.font, String.format("Yaw:   %.1f -> %.1f", curYaw, targetYawUnwrapped), overlayX, y, COLOR_WHITE);
+            y += lineH;
+            g.drawString(mc.font, String.format("Pitch: %.1f -> %.1f", curPitch, targetPitch), overlayX, y, COLOR_WHITE);
+            y += lineH;
+
+            float progress = durationTicks > 0 ? Math.max(0, currentTicks / durationTicks) : 1.0f;
+
+            if (!Double.isNaN(targetX)) {
+                g.drawString(mc.font, String.format("Pos: %.0f %.0f %.0f", targetX, targetY, targetZ), overlayX, y, COLOR_GRAY);
+                y += lineH;
+            }
+
+            String extra = String.format("Spd: %.1f Curve: %.0f%%%s", ConfigManager.data.rotationSpeed, ConfigManager.data.rotationJitter * 100, ConfigManager.data.rotationHumanizerEnabled
+                    ? String.format("  Hum: ON")
+                    : "");
+            g.drawString(mc.font, extra, overlayX, y, COLOR_GRAY);
+            y += lineH;
+
+            g.fill(overlayX, y, overlayX + OVERLAY_BAR_WIDTH, y + 4, COLOR_BAR_BG);
+            g.fill(overlayX, y, overlayX + (int) (OVERLAY_BAR_WIDTH * progress), y + 4, COLOR_BAR_FILL);
+            g.drawString(mc.font, String.format(" %.0f%%", progress * 100), overlayX + OVERLAY_BAR_WIDTH, y - 2, COLOR_GRAY);
+        }
+    }
+
+    private void renderWaypoint(GuiGraphics g, DeltaTracker tracker) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.gameRenderer == null) return;
+
+        Vec3 cam = mc.gameRenderer.getMainCamera().position();
+        double relX = targetX - cam.x;
+        double relY = targetY - cam.y;
+        double relZ = targetZ - cam.z;
+
+        int screenW = mc.getWindow().getGuiScaledWidth();
+        int screenH = mc.getWindow().getGuiScaledHeight();
+        
+        float partialTicks = tracker.getGameTimeDeltaTicks();
+        float fov = (float) Math.toRadians(((GameRendererAccessor) mc.gameRenderer).invokeGetFov(mc.gameRenderer.getMainCamera(), partialTicks, true));
+        float aspect = (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight();
+        Matrix4f proj = new Matrix4f().perspective(fov, aspect, 0.05f, mc.gameRenderer.getRenderDistance() * 4.0f);
+
+        org.joml.Quaternionf camRot = new org.joml.Quaternionf(mc.gameRenderer.getMainCamera().rotation());
+        camRot.conjugate();
+        Matrix4f view = new Matrix4f().rotation(camRot);
+        Vector4f pos = new Vector4f((float) relX, (float) relY, (float) relZ, 1.0f);
+        
+        pos.mul(view).mul(proj);
+
+        if (pos.w <= 0.0f) return;
+
+        float ndcX = pos.x / pos.w;
+        float ndcY = pos.y / pos.w;
+
+        float sx = (ndcX + 1.0f) * 0.5f * screenW;
+        float sy = (1.0f - ndcY) * 0.5f * screenH;
+
+        int ix = (int) sx;
+        int iy = (int) sy;
+        int half = WAYPOINT_DOT / 2;
+
+        ix = Mth.clamp(ix, half + 1, screenW - half - 1);
+        iy = Mth.clamp(iy, half + 1, screenH - half - 1);
+
+        int cx = screenW / 2;
+        int cy = screenH / 2;
+        drawLine2D(g, cx, cy, ix, iy, Theme.withAlpha(Theme.ACCENT, 0.5f));
+
+        g.fill(ix - half, iy - half, ix + half, iy + half, Theme.ACCENT);
+        g.fill(ix - half - 1, iy - half - 1, ix + half + 1, iy - half, 0xFFFFFFFF);
+        g.fill(ix - half - 1, iy + half, ix + half + 1, iy + half + 1, 0xFFFFFFFF);
+        g.fill(ix - half - 1, iy - half - 1, ix - half, iy + half + 1, 0xFFFFFFFF);
+        g.fill(ix + half, iy - half - 1, ix + half + 1, iy + half + 1, 0xFFFFFFFF);
+
+        double dist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+        String label = String.format("%.1fm", dist);
+        g.drawString(mc.font, label, ix - mc.font.width(label) / 2, iy + half + 3, Theme.ACCENT);
+    }
+
+    private void drawLine2D(GuiGraphics g, int x1, int y1, int x2, int y2, int color) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        if (dist == 0) return;
+        
+        float stepX = dx / dist;
+        float stepY = dy / dist;
+        
+        for (int i = 0; i < dist; i += 2) {
+            int px = x1 + (int) (stepX * i);
+            int py = y1 + (int) (stepY * i);
+            g.fill(px, py, px + 1, py + 1, color);
+        }
+    }
+
+    public static List<String> getDebugInfo() {
+        List<String> info = new ArrayList<>();
+        if (!ConfigManager.data.showRotationDebug) return info;
+
+        RotationManager rm = getInstance();
+        if (rm.active) {
+            Minecraft mc = Minecraft.getInstance();
+            info.add("");
+            info.add(ChatFormatting.GOLD + "[Rotation Manager]");
+            info.add("Status: ACTIVE");
+            if (mc.player != null) {
+                float curYaw = normalizeYaw(mc.player.getYRot());
+                info.add(String.format("Yaw: %.2f -> %.2f (diff %.2f°)", curYaw, rm.targetYawUnwrapped, yawDiff(curYaw, rm.targetYawUnwrapped)));
+                info.add(String.format("Pitch: %.2f -> %.2f", mc.player.getXRot(), rm.targetPitch));
+            }
+            if (!Double.isNaN(rm.targetX)) {
+                info.add(String.format("Target: %.1f %.1f %.1f", rm.targetX, rm.targetY, rm.targetZ));
+            }
+            info.add(String.format("Spd: %.1f | Smooth: %.2f | Curve: %.0f%%",
+                    ConfigManager.data.rotationSpeed, ConfigManager.data.rotationSmoothness, ConfigManager.data.rotationJitter * 100));
+            info.add(String.format("Hum: %s | Ticks: %.1f/%.1f",
+                    ConfigManager.data.rotationHumanizerEnabled ? "ON" : "OFF",
+                    rm.currentTicks, rm.durationTicks));
+        }
+        return info;
+    }
+}

@@ -26,6 +26,7 @@ import org.blackum.blackaddons.gui.screen.ImagePreviewScreen;
 import org.blackum.blackaddons.feature.chat.ChatTriggerManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import net.fabricmc.loader.api.FabricLoader;
+import org.blackum.blackaddons.core.manager.RotationManager;
 import java.util.UUID;
 
 public class CommandManager {
@@ -53,6 +54,35 @@ public class CommandManager {
                                                         Blackaddons.testMenuOpener.run();
                                                 return 1;
                                         }));
+
+                        testNode.then(ClientCommandManager.literal("rotate")
+                                        .then(ClientCommandManager
+                                                        .argument("yaw", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(-180, 180))
+                                                        .then(ClientCommandManager
+                                                                        .argument("pitch", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(-90, 90))
+                                                                        .executes(ctx -> {
+                                                                                float yaw = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "yaw");
+                                                                                float pitch = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "pitch");
+                                                                                RotationManager.getInstance().rotateTo(yaw, pitch);
+                                                                                ctx.getSource().sendFeedback(Component.literal("Rotating to yaw=" + yaw + " pitch=" + pitch));
+                                                                                return 1;
+                                                                        }))));
+
+                        testNode.then(ClientCommandManager.literal("rotateTo")
+                                        .then(ClientCommandManager
+                                                        .argument("x", com.mojang.brigadier.arguments.FloatArgumentType.floatArg())
+                                                        .then(ClientCommandManager
+                                                                        .argument("y", com.mojang.brigadier.arguments.FloatArgumentType.floatArg())
+                                                                        .then(ClientCommandManager
+                                                                                        .argument("z", com.mojang.brigadier.arguments.FloatArgumentType.floatArg())
+                                                                                        .executes(ctx -> {
+                                                                                                float x = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "x");
+                                                                                                float y = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "y");
+                                                                                                float z = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "z");
+                                                                                                RotationManager.getInstance().rotateToBlock(x, y, z);
+                                                                                                ctx.getSource().sendFeedback(Component.literal("Rotating to block " + x + " " + y + " " + z));
+                                                                                                return 1;
+                                                                                        })))));
 
                         testNode.then(ClientCommandManager.literal("rng")
                                         .then(ClientCommandManager

@@ -141,6 +141,59 @@ public class TriggerActionEditScreen extends BaseScreen {
                     ConfigManager.save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
+            } else if (action.type == ConfigManager.TriggerActionType.ROTATE) {
+                if (!action.useCoordinates) {
+                    SettingWrapper yawWrap = new SettingWrapper(0, 0, itemWidth, "Yaw", "Target horizontal rotation", null);
+                    Slider yawSlider = new Slider(0, 0, itemWidth, -180, 180, action.yaw, val -> {
+                        action.yaw = val;
+                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
+                        ConfigManager.save();
+                    });
+                    yawWrap.setControl(yawSlider);
+                    yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
+                    group.addChild(yawWrap);
+
+                    SettingWrapper pitchWrap = new SettingWrapper(0, 0, itemWidth, "Pitch", "Target vertical rotation", null);
+                    Slider pitchSlider = new Slider(0, 0, itemWidth, -90, 90, action.pitch, val -> {
+                        action.pitch = val;
+                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
+                        ConfigManager.save();
+                    });
+                    pitchWrap.setControl(pitchSlider);
+                    pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
+                    group.addChild(pitchWrap);
+                }
+
+                ToggleSwitch coordToggle = new ToggleSwitch(0, 0, itemWidth, "Use Coordinates",
+                        "Rotate to specific X, Y, Z instead of Yaw/Pitch", action.useCoordinates, val -> {
+                    action.useCoordinates = val;
+                    ConfigManager.save();
+                    rebuildActions();
+                });
+                group.addChild(coordToggle);
+
+                if (action.useCoordinates) {
+                    TextField xField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "X...");
+                    xField.setText(String.valueOf(action.targetX));
+                    xField.setOnValueChange(val -> {
+                        try { action.targetX = Double.parseDouble(val); ConfigManager.save(); } catch (Exception e) {}
+                    });
+                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target X", "X Coordinate", xField));
+
+                    TextField yField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Y...");
+                    yField.setText(String.valueOf(action.targetY));
+                    yField.setOnValueChange(val -> {
+                        try { action.targetY = Double.parseDouble(val); ConfigManager.save(); } catch (Exception e) {}
+                    });
+                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target Y", "Y Coordinate", yField));
+
+                    TextField zField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Z...");
+                    zField.setText(String.valueOf(action.targetZ));
+                    zField.setOnValueChange(val -> {
+                        try { action.targetZ = Double.parseDouble(val); ConfigManager.save(); } catch (Exception e) {}
+                    });
+                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target Z", "Z Coordinate", zField));
+                }
             }
 
             GridRow moveRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);

@@ -6,6 +6,7 @@ import net.minecraft.client.KeyMapping;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.mixin.core.InventoryAccessor;
 import org.blackum.blackaddons.mixin.core.KeyBindingAccessor;
+import org.blackum.blackaddons.core.manager.RotationManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,6 @@ public class TriggerActionExecutor {
             if (queue.isEmpty()) return;
         }
 
-        // Handle held keys
         List<KeyMapping> toRelease = new ArrayList<>();
         activeKeybinds.forEach((key, ticks) -> {
             if (ticks > 0) {
@@ -113,6 +113,13 @@ public class TriggerActionExecutor {
                         }
                         break;
                     }
+                }
+                break;
+            case ROTATE:
+                if (action.useCoordinates) {
+                    RotationManager.getInstance().rotateToBlock(action.targetX, action.targetY, action.targetZ);
+                } else {
+                    RotationManager.getInstance().rotateTo(action.yaw, action.pitch);
                 }
                 break;
         }

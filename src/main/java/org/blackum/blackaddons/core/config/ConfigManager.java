@@ -68,7 +68,8 @@ public class ConfigManager {
         USE_ITEM("Use Item"),
         ATTACK("Attack"),
         SEND_MESSAGE("Send Message"),
-        PRESS_KEYBIND("Press Keybind");
+        PRESS_KEYBIND("Press Keybind"),
+        ROTATE("Rotate Camera");
 
         private final String displayName;
 
@@ -96,6 +97,12 @@ public class ConfigManager {
         public String message = "";
         public int delayTicks;
         public int durationTicks;
+        public float yaw;
+        public float pitch;
+        public boolean useCoordinates = false;
+        public double targetX;
+        public double targetY;
+        public double targetZ;
         public boolean collapsed = false;
 
         public TriggerAction() {
@@ -107,6 +114,13 @@ public class ConfigManager {
             this.message = message;
             this.delayTicks = delayTicks;
             this.durationTicks = durationTicks;
+        }
+
+        public TriggerAction(TriggerActionType type, float yaw, float pitch, int delayTicks) {
+            this.type = type;
+            this.yaw = yaw;
+            this.pitch = pitch;
+            this.delayTicks = delayTicks;
         }
     }
 
@@ -198,6 +212,20 @@ public class ConfigManager {
         public String FastLeapS2Class = "NONE";
         public String FastLeapS3Class = "NONE";
         public String FastLeapS4Class = "NONE";
+
+        public boolean showRotationDebug = false;
+        public int rotationOverlayX = -1;
+        public int rotationOverlayY = 5;
+
+        public boolean rotationHumanizerEnabled = true;
+        public float rotationJitter = 0.35f;
+        public float rotationTargetRandomness = 0.2f;
+        public float rotationSmoothness = 0.5f;
+        public float rotationSpeed = 15.0f;
+        public float rotationDistanceSlowdown = 2.0f;
+        public float rotationDistanceRadius = 50.0f;
+        public float rotationFovSlowdown = 30.0f;
+        public float rotationStopThreshold = 1.00f;
 
         public boolean hideMods() {
             return switch (modHiderSpoofMode) {

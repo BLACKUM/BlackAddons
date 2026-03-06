@@ -12,6 +12,7 @@ import org.blackum.blackaddons.gui.screen.BaseScreen;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.blackum.blackaddons.core.manager.RotationManager;
 
 public class DebugOverlayManager {
     private static final int DEFAULT_COLOR = 0xFFFFFFFF;
@@ -92,6 +93,7 @@ public class DebugOverlayManager {
         addModHiderDetail(debugInfo);
         debugInfo.addAll(AutoTNT.getDebugInfo());
         debugInfo.addAll(FastLeap.getDebugInfo());
+        debugInfo.addAll(RotationManager.getDebugInfo());
 
         return debugInfo;
     }
