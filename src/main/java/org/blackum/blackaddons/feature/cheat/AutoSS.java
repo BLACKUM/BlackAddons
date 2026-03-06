@@ -176,6 +176,7 @@ public class AutoSS {
                 }
                 
                 if (!solution.isEmpty()) {
+                    boolean wasPreAiming = isPreAiming;
                     isSolving = true;
                     isPreAiming = false;
                     solvingIndex = 0;
@@ -192,6 +193,25 @@ public class AutoSS {
                     }
                     
                     applyRotationSettings();
+
+                    if (wasPreAiming) {
+                        List<net.minecraft.world.phys.Vec3> splinePoints = new java.util.ArrayList<>();
+                        for (BlockPos p : solverQueue) {
+                            double tx = p.getX() - 1 + 0.5 + TARGET_X_OFFSET;
+                            double ty = p.getY() + 0.5 + TARGET_Y_OFFSET;
+                            double tz = p.getZ() + 0.5 + TARGET_Z_OFFSET;
+                            splinePoints.add(new net.minecraft.world.phys.Vec3(tx, ty, tz));
+                        }
+                        
+                        RotationManager.getInstance().setSpline(splinePoints, 0);
+                        
+                        List<ConfigManager.TriggerAction> actions = new java.util.ArrayList<>();
+                        actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 1, 0));
+                        TriggerActionExecutor.getInstance().execute(actions, null);
+                        
+                        delayTicksRemaining = Math.max(2, ConfigManager.data.AutoSSDelay);
+                        solvingIndex++;
+                    }
                 }
             }
         }
@@ -207,10 +227,14 @@ public class AutoSS {
                 BlockPos pos = startPos.offset(0, dy, dz);
                 if (client.level.getBlockState(pos).getBlock() == Blocks.SEA_LANTERN && !solution.contains(pos)) {
                     solution.add(pos);
-                    if (!isSolving && !isPreAiming) {
-                        startPreAiming(pos);
-                    }
                 }
+            }
+        }
+        
+        if (!solution.isEmpty() && !isSolving && !isPreAiming) {
+            float maxDist = ConfigManager.data.AutoSSDistanceLimit;
+            if (client.player.distanceToSqr(startPos.getX(), client.player.getY(), startPos.getZ()) <= maxDist * maxDist) {
+                startPreAiming(solution.get(0));
             }
         }
     }

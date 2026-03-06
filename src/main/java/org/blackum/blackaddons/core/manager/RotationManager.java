@@ -47,6 +47,10 @@ public class RotationManager {
     private double targetY = Double.NaN;
     private double targetZ = Double.NaN;
 
+    private double lastTargetX = Double.NaN;
+    private double lastTargetY = Double.NaN;
+    private double lastTargetZ = Double.NaN;
+
     private List<Vec3> splinePoints = null;
     private int currentSplineIndex = 0;
 
@@ -81,8 +85,6 @@ public class RotationManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        this.active = true;
-        
         float randX = 0;
         float randY = 0;
         float randZ = 0;
@@ -94,9 +96,51 @@ public class RotationManager {
             randZ = (random.nextFloat() * 2 - 1) * r;
         }
 
-        this.targetX = x + 0.5 + randX;
-        this.targetY = y + 0.5 + randY;
-        this.targetZ = z + 0.5 + randZ;
+        double newTargetX = x + 0.5 + randX;
+        double newTargetY = y + 0.5 + randY;
+        double newTargetZ = z + 0.5 + randZ;
+
+        double checkX = Double.isNaN(this.targetX) ? this.lastTargetX : this.targetX;
+        double checkY = Double.isNaN(this.targetY) ? this.lastTargetY : this.targetY;
+        double checkZ = Double.isNaN(this.targetZ) ? this.lastTargetZ : this.targetZ;
+
+        if (!Double.isNaN(checkX)) {
+            double distSq = Math.pow(checkX - newTargetX, 2) + Math.pow(checkY - newTargetY, 2) + Math.pow(checkZ - newTargetZ, 2);
+            if (distSq < 1.0) {
+                this.targetX = newTargetX;
+                this.targetY = newTargetY;
+                this.targetZ = newTargetZ;
+                this.lastTargetX = newTargetX;
+                this.lastTargetY = newTargetY;
+                this.lastTargetZ = newTargetZ;
+                updateBlockAngles(mc);
+
+                if (!this.active) {
+                    if (this.currentTicks < this.durationTicks) {
+                        this.active = true;
+                        return;
+                    } else {
+                        float yawDiff = Math.abs(yawDiff(mc.player.getYRot(), this.targetYawUnwrapped));
+                        float pitchDiff = Math.abs(mc.player.getXRot() - this.targetPitch);
+                        if (yawDiff < 5.0f && pitchDiff < 5.0f) {
+                            this.active = true;
+                            this.currentTicks = this.durationTicks;
+                            return;
+                        }
+                    }
+                } else {
+                    return;
+                }
+            }
+        }
+
+        this.active = true;
+        this.targetX = newTargetX;
+        this.targetY = newTargetY;
+        this.targetZ = newTargetZ;
+        this.lastTargetX = newTargetX;
+        this.lastTargetY = newTargetY;
+        this.lastTargetZ = newTargetZ;
 
         updateBlockAngles(mc);
         setupBezier(mc, this.targetYawUnwrapped, this.targetPitch);
@@ -117,10 +161,16 @@ public class RotationManager {
         Minecraft mc = Minecraft.getInstance();
         if (this.splinePoints != null && this.currentSplineIndex < this.splinePoints.size() - 1) {
              this.currentSplineIndex++;
+             this.active = true;
              setupNextSplineSegment(mc);
         } else {
              this.active = false;
         }
+    }
+
+    public void setSpline(List<Vec3> points, int currentIndex) {
+        this.splinePoints = new ArrayList<>(points);
+        this.currentSplineIndex = currentIndex;
     }
 
     public boolean isAtSplineNode() {
@@ -134,6 +184,9 @@ public class RotationManager {
     public void clearSpline() {
         this.splinePoints = null;
         this.active = false;
+        this.lastTargetX = this.targetX;
+        this.lastTargetY = this.targetY;
+        this.lastTargetZ = this.targetZ;
         this.targetX = Double.NaN;
         this.targetY = Double.NaN;
         this.targetZ = Double.NaN;
