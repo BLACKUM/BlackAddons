@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
+import org.blackum.blackaddons.feature.cheat.AutoSS;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.feature.rng.RngTracker;
 import org.blackum.blackaddons.core.manager.CommandManager;
@@ -44,6 +45,7 @@ public class BlackaddonsClient implements ClientModInitializer {
         Blackaddons.LOGGER.info("Initializing client...");
         AutoTNT.register();
         FastLeap.register();
+        AutoSS.register();
 
         ConfigManager.load();
         BotIntegration.fetchVerificationKey();

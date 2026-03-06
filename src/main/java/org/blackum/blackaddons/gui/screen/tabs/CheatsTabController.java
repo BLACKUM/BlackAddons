@@ -9,6 +9,7 @@ import java.util.List;
 
 public class CheatsTabController extends SimpleTabController {
     private ResizableCard autoTntCard;
+    private ResizableCard autoSSCard;
     private ResizableCard fastLeapCard;
     private ResizableCard debugCard;
     private Dropdown s1Dropdown;
@@ -52,11 +53,50 @@ public class CheatsTabController extends SimpleTabController {
                         }
                     });
             cheatsTab.addWidget(tickSlider);
+
+            cheatsTab.addWidget(new Label(contentX, contentY + 140, "AutoSS Solver", Label.Style.TITLE));
+
+            ToggleSwitch ssEnableToggle = new ToggleSwitch(contentX, contentY + 170, contentWidth - 20,
+                    "Enable AutoSS",
+                    "Automatically solves F7 devices",
+                    ConfigManager.data.AutoSSEnabled, value -> {
+                        ConfigManager.data.AutoSSEnabled = value;
+                        ConfigManager.save();
+                    });
+            cheatsTab.addWidget(ssEnableToggle);
+
+            Label ssTickLabel = new Label(contentX, contentY + 220,
+                    "Action Delay: " + ConfigManager.data.AutoSSDelay + " ticks", Label.Style.BODY);
+            cheatsTab.addWidget(ssTickLabel);
+
+            Slider ssTickSlider = new Slider(contentX, contentY + 240, contentWidth - 20, 0, 20,
+                    ConfigManager.data.AutoSSDelay, val -> {
+                        int ticks = Math.round(val);
+                        if (ticks != ConfigManager.data.AutoSSDelay) {
+                            ConfigManager.data.AutoSSDelay = ticks;
+                            ssTickLabel.setText("Action Delay: " + ticks + " ticks");
+                            ConfigManager.save();
+                        }
+                    });
+            cheatsTab.addWidget(ssTickSlider);
+
+            Label ssDistLabel = new Label(contentX, contentY + 290,
+                    String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
+            cheatsTab.addWidget(ssDistLabel);
+
+            Slider ssDistSlider = new Slider(contentX, contentY + 310, contentWidth - 20, 2.0f, 10.0f,
+                    ConfigManager.data.AutoSSDistanceLimit, val -> {
+                        ConfigManager.data.AutoSSDistanceLimit = val;
+                        ssDistLabel.setText(String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", val));
+                        ConfigManager.save();
+                    });
+            cheatsTab.addWidget(ssDistSlider);
+
             return;
         }
 
         Button resetLayout = new Button(contentX + 10, contentY, contentWidth - 20, "Reset Layout", () -> {
-            screen.resetCardStates("autoTnt", "fastLeap", "debug");
+            screen.resetCardStates("autoTnt", "autoSS", "fastLeap", "debug");
         });
         cheatsTab.addWidget(resetLayout);
 
@@ -67,10 +107,13 @@ public class CheatsTabController extends SimpleTabController {
         autoTntCard = createAutoTntCard(contentX + 20, currentY);
         cheatsCardContainer.addCard(autoTntCard);
 
-        fastLeapCard = createFastLeapCard(contentX + 340, currentY);
+        autoSSCard = createAutoSSCard(contentX + 340, currentY);
+        cheatsCardContainer.addCard(autoSSCard);
+
+        fastLeapCard = createFastLeapCard(contentX + 20, currentY + 300);
         cheatsCardContainer.addCard(fastLeapCard);
 
-        debugCard = createRotationCard(contentX + 20, currentY + 350);
+        debugCard = createRotationCard(contentX + 340, currentY + 300);
         cheatsCardContainer.addCard(debugCard);
     }
 
@@ -130,6 +173,85 @@ public class CheatsTabController extends SimpleTabController {
 
         autoTntCard.updateLayout();
         return autoTntCard;
+    }
+
+    private ResizableCard createAutoSSCard(int x, int y) {
+        autoSSCard = screen.createResizableCard("autoSS", x, y, 300, 310, "AutoSS Solver");
+
+        int contentX = autoSSCard.getContentX();
+        int contentY = autoSSCard.getContentY();
+
+        ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
+                "Enable AutoSS",
+                "Automatically solves F7 devices",
+                ConfigManager.data.AutoSSEnabled, value -> {
+            ConfigManager.data.AutoSSEnabled = value;
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(enableToggle);
+
+        Label tickLabel = new Label(contentX, contentY + 50,
+                "Action Delay: " + ConfigManager.data.AutoSSDelay + " ticks", Label.Style.BODY);
+        autoSSCard.addChild(tickLabel);
+
+        Slider tickSlider = new Slider(contentX, contentY + 70, 260, 0, 20,
+                ConfigManager.data.AutoSSDelay, val -> {
+            int ticks = Math.round(val);
+            if (ticks != ConfigManager.data.AutoSSDelay) {
+                ConfigManager.data.AutoSSDelay = ticks;
+                tickLabel.setText("Action Delay: " + ticks + " ticks");
+                ConfigManager.save();
+            }
+        });
+        autoSSCard.addChild(tickSlider);
+
+        Label distLabel = new Label(contentX, contentY + 100,
+                String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
+        autoSSCard.addChild(distLabel);
+
+        Slider distSlider = new Slider(contentX, contentY + 120, 260, 2.0f, 10.0f,
+                ConfigManager.data.AutoSSDistanceLimit, val -> {
+            ConfigManager.data.AutoSSDistanceLimit = val;
+            distLabel.setText(String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", val));
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(distSlider);
+
+        Label speedLabel = new Label(contentX, contentY + 150,
+                String.format(java.util.Locale.ROOT, "Rotation Speed: %.1f", ConfigManager.data.AutoSSRotationSpeed), Label.Style.BODY);
+        autoSSCard.addChild(speedLabel);
+
+        Slider speedSlider = new Slider(contentX, contentY + 170, 260, 1.0f, 50.0f,
+                ConfigManager.data.AutoSSRotationSpeed, val -> {
+            ConfigManager.data.AutoSSRotationSpeed = val;
+            speedLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Speed: %.1f", val));
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(speedSlider);
+
+        Label curveLabel = new Label(contentX, contentY + 200,
+                String.format(java.util.Locale.ROOT, "Rotation Curve: %.2f", ConfigManager.data.AutoSSRotationCurve), Label.Style.BODY);
+        autoSSCard.addChild(curveLabel);
+
+        Slider curveSlider = new Slider(contentX, contentY + 220, 260, 0.0f, 1.0f,
+                ConfigManager.data.AutoSSRotationCurve, val -> {
+            ConfigManager.data.AutoSSRotationCurve = val;
+            curveLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Curve: %.2f", val));
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(curveSlider);
+
+        ToggleSwitch instantToggle = new ToggleSwitch(contentX, contentY + 260, 260,
+                "Instant Snap",
+                "Instantly snaps to targets",
+                ConfigManager.data.AutoSSInstantSnap, value -> {
+            ConfigManager.data.AutoSSInstantSnap = value;
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(instantToggle);
+
+        autoSSCard.updateLayout();
+        return autoSSCard;
     }
 
     private ResizableCard createFastLeapCard(int x, int y) {

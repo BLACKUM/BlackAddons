@@ -47,6 +47,9 @@ public class RotationManager {
     private double targetY = Double.NaN;
     private double targetZ = Double.NaN;
 
+    private List<Vec3> splinePoints = null;
+    private int currentSplineIndex = 0;
+
     private Matrix4f lastProjMatrix = new Matrix4f();
     private Matrix4f lastViewMatrix = new Matrix4f();
 
@@ -99,6 +102,58 @@ public class RotationManager {
         setupBezier(mc, this.targetYawUnwrapped, this.targetPitch);
     }
 
+    public void rotateToSpline(List<Vec3> points) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || points.isEmpty()) return;
+
+        this.splinePoints = new ArrayList<>(points);
+        this.currentSplineIndex = 0;
+        this.active = true;
+
+        setupNextSplineSegment(mc);
+    }
+
+    public void advanceSpline() {
+        Minecraft mc = Minecraft.getInstance();
+        if (this.splinePoints != null && this.currentSplineIndex < this.splinePoints.size() - 1) {
+             this.currentSplineIndex++;
+             setupNextSplineSegment(mc);
+        } else {
+             this.active = false;
+        }
+    }
+
+    public boolean isAtSplineNode() {
+        return this.active && this.splinePoints != null && this.currentTicks >= this.durationTicks;
+    }
+
+    public boolean isActive() {
+        return this.active;
+    }
+
+    public void clearSpline() {
+        this.splinePoints = null;
+        this.active = false;
+        this.targetX = Double.NaN;
+        this.targetY = Double.NaN;
+        this.targetZ = Double.NaN;
+    }
+
+    private void setupNextSplineSegment(Minecraft mc) {
+        if (splinePoints == null || currentSplineIndex >= splinePoints.size()) {
+            this.active = false;
+            return;
+        }
+
+        Vec3 nextPoint = splinePoints.get(currentSplineIndex);
+        this.targetX = nextPoint.x;
+        this.targetY = nextPoint.y;
+        this.targetZ = nextPoint.z;
+
+        updateBlockAngles(mc);
+        setupBezier(mc, this.targetYawUnwrapped, this.targetPitch);
+    }
+
     private void setupBezier(Minecraft mc, float targetY, float targetP) {
         this.startYaw = mc.player.getYRot();
         this.startPitch = mc.player.getXRot();
@@ -139,14 +194,50 @@ public class RotationManager {
             this.cp1Yaw = this.startYaw + dy * 0.33f + perpYaw * r1;
             this.cp1Pitch = this.startPitch + dp * 0.33f + perpPitch * r1;
 
-            this.cp2Yaw = this.startYaw + dy * 0.66f + perpYaw * r2;
-            this.cp2Pitch = this.startPitch + dp * 0.66f + perpPitch * r2;
+            if (this.splinePoints != null && this.currentSplineIndex < this.splinePoints.size() - 1) {
+                Vec3 nextNextPoint = this.splinePoints.get(this.currentSplineIndex + 1);
+                
+                double nextDx = nextNextPoint.x - mc.player.getX();
+                double nextDy = nextNextPoint.y - (mc.player.getY() + mc.player.getEyeHeight());
+                double nextDz = nextNextPoint.z - mc.player.getZ();
+                double nextDist = Math.sqrt(nextDx * nextDx + nextDz * nextDz);
+
+                float nextRawTargetYaw = normalizeYaw((float) Math.toDegrees(Math.atan2(nextDz, nextDx)) - 90f);
+                float nextTargetPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(nextDy, nextDist)), -90f, 90f);
+
+                float nextDyaw = yawDiff(targetY, this.startYaw + yawDiff(this.startYaw, nextRawTargetYaw));
+                float nextDpitch = nextTargetPitch - targetP;
+
+                this.cp2Yaw = targetY - nextDyaw * 0.2f + perpYaw * r2;
+                this.cp2Pitch = targetP - nextDpitch * 0.2f + perpPitch * r2;
+            } else {
+                this.cp2Yaw = this.startYaw + dy * 0.66f + perpYaw * r2;
+                this.cp2Pitch = this.startPitch + dp * 0.66f + perpPitch * r2;
+            }
         } else {
             this.cp1Yaw = this.startYaw + dy * 0.333f;
             this.cp1Pitch = this.startPitch + dp * 0.333f;
 
-            this.cp2Yaw = this.startYaw + dy * 0.666f;
-            this.cp2Pitch = this.startPitch + dp * 0.666f;
+            if (this.splinePoints != null && this.currentSplineIndex < this.splinePoints.size() - 1) {
+                Vec3 nextNextPoint = this.splinePoints.get(this.currentSplineIndex + 1);
+                
+                double nextDx = nextNextPoint.x - mc.player.getX();
+                double nextDy = nextNextPoint.y - (mc.player.getY() + mc.player.getEyeHeight());
+                double nextDz = nextNextPoint.z - mc.player.getZ();
+                double nextDist = Math.sqrt(nextDx * nextDx + nextDz * nextDz);
+
+                float nextRawTargetYaw = normalizeYaw((float) Math.toDegrees(Math.atan2(nextDz, nextDx)) - 90f);
+                float nextTargetPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(nextDy, nextDist)), -90f, 90f);
+
+                float nextDyaw = yawDiff(targetY, this.startYaw + yawDiff(this.startYaw, nextRawTargetYaw));
+                float nextDpitch = nextTargetPitch - targetP;
+
+                this.cp2Yaw = targetY - nextDyaw * 0.2f;
+                this.cp2Pitch = targetP - nextDpitch * 0.2f;
+            } else {
+                this.cp2Yaw = this.startYaw + dy * 0.666f;
+                this.cp2Pitch = this.startPitch + dp * 0.666f;
+            }
         }
     }
 
@@ -193,6 +284,10 @@ public class RotationManager {
                     updateBlockAngles(mc);
                 }
 
+                if (ConfigManager.data.AutoSSInstantSnap && active) {
+                    this.currentTicks = this.durationTicks;
+                }
+
                 if (ConfigManager.data.rotationHumanizerEnabled && !Double.isNaN(targetX)) {
                     float currentYawDiff = yawDiff(mc.player.getYRot(), targetYawUnwrapped);
                     float currentPitchDiff = targetPitch - mc.player.getXRot();
@@ -214,9 +309,13 @@ public class RotationManager {
                 }
 
                 this.currentTicks += dt;
+
                 if (this.currentTicks >= this.durationTicks) {
                     this.currentTicks = this.durationTicks;
-                    this.active = false;
+                    
+                    if (this.splinePoints == null) {
+                        this.active = false;
+                    }
                 }
 
                 float t = this.currentTicks / this.durationTicks;

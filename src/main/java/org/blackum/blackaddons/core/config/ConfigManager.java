@@ -205,6 +205,14 @@ public class ConfigManager {
 
         public AutoTNT.FeatureConfig autoTntConfig = new AutoTNT.FeatureConfig();
 
+        public boolean AutoSSEnabled = false;
+        public int AutoSSDelay = 0;
+        public float AutoSSDistanceLimit = 4.5f;
+        
+        public float AutoSSRotationSpeed = 15.0f;
+        public float AutoSSRotationCurve = 0.35f;
+        public boolean AutoSSInstantSnap = false;
+
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;
         public boolean FastLeapPositional = false;
