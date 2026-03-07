@@ -208,10 +208,14 @@ public class ConfigManager {
         public boolean AutoSSEnabled = false;
         public int AutoSSDelay = 0;
         public float AutoSSDistanceLimit = 4.5f;
+        public boolean AutoSSAlerts = true;
         
         public float AutoSSRotationSpeed = 15.0f;
         public float AutoSSRotationCurve = 0.35f;
         public boolean AutoSSInstantSnap = false;
+        public boolean AutoSSSkip = false;
+        public boolean AutoSSAutoStart = false;
+        public boolean AutoSSTrySkip = false;
 
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;

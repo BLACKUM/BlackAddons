@@ -250,6 +250,25 @@ public class CheatsTabController extends SimpleTabController {
         });
         autoSSCard.addChild(instantToggle);
 
+        ToggleSwitch autoStartToggle = new ToggleSwitch(contentX, contentY + 300, 260,
+                "Auto SS Start",
+                "Automatically aims and clicks the start button",
+                ConfigManager.data.AutoSSAutoStart, value -> {
+            ConfigManager.data.AutoSSAutoStart = value;
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(autoStartToggle);
+
+        ToggleSwitch trySkipToggle = new ToggleSwitch(contentX, contentY + 340, 260,
+                "Try SS Skip",
+                "Clicks start button 3 times for potential skip",
+                ConfigManager.data.AutoSSTrySkip, value -> {
+            ConfigManager.data.AutoSSTrySkip = value;
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(trySkipToggle);
+
+        autoSSCard.setExpandedHeight(autoSSCard.getExpandedHeight() + 80);
         autoSSCard.updateLayout();
         return autoSSCard;
     }

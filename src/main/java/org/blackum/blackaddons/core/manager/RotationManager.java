@@ -173,6 +173,26 @@ public class RotationManager {
         this.currentSplineIndex = currentIndex;
     }
 
+    public void resumeWithSpline(List<Vec3> points) {
+        if (points == null || points.isEmpty()) return;
+        this.splinePoints = new ArrayList<>(points);
+        this.currentSplineIndex = 0;
+        this.active = true;
+    }
+
+    public void snapToTarget() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || !active) return;
+        
+        updateBlockAngles(mc);
+        
+        if (!Double.isNaN(targetYawUnwrapped)) {
+            mc.player.setYRot(targetYawUnwrapped);
+            mc.player.setXRot(targetPitch);
+            this.currentTicks = this.durationTicks;
+        }
+    }
+
     public boolean isAtSplineNode() {
         return this.active && this.splinePoints != null && this.currentTicks >= this.durationTicks;
     }
@@ -184,12 +204,14 @@ public class RotationManager {
     public void clearSpline() {
         this.splinePoints = null;
         this.active = false;
-        this.lastTargetX = this.targetX;
-        this.lastTargetY = this.targetY;
-        this.lastTargetZ = this.targetZ;
+        this.lastTargetX = Double.NaN;
+        this.lastTargetY = Double.NaN;
+        this.lastTargetZ = Double.NaN;
         this.targetX = Double.NaN;
         this.targetY = Double.NaN;
         this.targetZ = Double.NaN;
+        this.targetYawUnwrapped = Float.NaN;
+        this.targetPitch = Float.NaN;
     }
 
     private void setupNextSplineSegment(Minecraft mc) {
@@ -337,9 +359,6 @@ public class RotationManager {
                     updateBlockAngles(mc);
                 }
 
-                if (ConfigManager.data.AutoSSInstantSnap && active) {
-                    this.currentTicks = this.durationTicks;
-                }
 
                 if (ConfigManager.data.rotationHumanizerEnabled && !Double.isNaN(targetX)) {
                     float currentYawDiff = yawDiff(mc.player.getYRot(), targetYawUnwrapped);
@@ -395,11 +414,11 @@ public class RotationManager {
                                          + 3 * u * tt * cp2Pitch
                                          + ttt * targetPitch;
 
-                float stepYaw = currentTargetYaw - mc.player.getYRot();
-                float stepPitch = currentTargetPitch - mc.player.getXRot();
-
-
-                mc.player.turn(stepYaw / 0.15f, stepPitch / 0.15f);
+                if (!Float.isNaN(currentTargetYaw) && !Float.isNaN(currentTargetPitch)) {
+                    float stepYaw = currentTargetYaw - mc.player.getYRot();
+                    float stepPitch = currentTargetPitch - mc.player.getXRot();
+                    mc.player.turn(stepYaw / 0.15f, stepPitch / 0.15f);
+                }
             }
         }
 
