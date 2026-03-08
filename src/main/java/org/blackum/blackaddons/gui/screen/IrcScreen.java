@@ -5,17 +5,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
-import org.blackum.blackaddons.core.config.ConfigManager;
-import org.blackum.blackaddons.gui.render.Theme;
-import org.blackum.blackaddons.gui.widget.*;
-import org.blackum.blackaddons.feature.chat.IrcClient;
-import org.blackum.blackaddons.core.util.MinecraftInstance;
-import org.blackum.blackaddons.feature.chat.ChatImageHandler;
-import org.blackum.blackaddons.core.util.Constants;
-import net.minecraft.network.chat.HoverEvent;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -24,6 +17,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.core.util.Constants;
+import org.blackum.blackaddons.core.util.MinecraftInstance;
+import org.blackum.blackaddons.feature.chat.ChatImageHandler;
+import org.blackum.blackaddons.feature.chat.IrcClient;
+import org.blackum.blackaddons.feature.chat.IrcPrefixManager;
+import org.blackum.blackaddons.gui.render.Theme;
+import org.blackum.blackaddons.gui.widget.*;
 
 public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
 
@@ -59,7 +61,7 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
             if (channel.equalsIgnoreCase("admin") && !IrcClient.getInstance().isAdmin()) {
                 continue;
             }
-            String label = "#" + channel;
+            String label = IrcPrefixManager.getPrefix() + channel;
             int tabWidth = MinecraftInstance.mc.font.width(label) + 20;
             Button tabBtn = new Button(tabX, tabY, tabWidth, 20, label, () -> {
                 this.currentChannel = channel;
@@ -87,7 +89,7 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
 
         int inputY = listY + listHeight + 10;
         inputField = new TextField(contentX, inputY, contentWidth - 90,
-                "Type a message in #" + currentChannel + "...");
+                "Type a message in " + IrcPrefixManager.getPrefix() + currentChannel + "...");
         inputField.setMaxLength(256);
         widgets.add(inputField);
 
