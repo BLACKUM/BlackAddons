@@ -109,6 +109,24 @@ public class AutoSS {
         if (!ConfigManager.data.AutoSSEnabled || client.player == null || client.level == null) return;
         if (!LocationUtils.inDungeons()) return;
 
+        boolean deviceActive = false;
+        for (net.minecraft.world.entity.Entity entity : client.level.getEntities(null, new net.minecraft.world.phys.AABB(startButton).inflate(3.0))) {
+            if (entity.hasCustomName()) {
+                String name = entity.getCustomName().getString();
+                if (name.contains("Device Active")) {
+                    deviceActive = true;
+                    break;
+                }
+            }
+        }
+
+        if (deviceActive) {
+            if (isSolving || isPreAiming || skipClicksRemaining > 0 || ssStartTime > 0 || lastExisted) {
+                resetSolver();
+            }
+            return;
+        }
+
         boolean buttonsExist = client.level.getBlockState(buttonCheckPos).getBlock() == Blocks.STONE_BUTTON;
 
         boolean isGameActive = false;
