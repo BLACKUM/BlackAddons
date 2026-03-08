@@ -217,6 +217,9 @@ public class ConfigManager {
         public boolean AutoSSSkip = false;
         public boolean AutoSSAutoStart = false;
         public boolean AutoSSTrySkip = false;
+        public boolean AutoSSDebug = false;
+        public int AutoSSOverlayX = -1;
+        public int AutoSSOverlayY = 5;
 
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;

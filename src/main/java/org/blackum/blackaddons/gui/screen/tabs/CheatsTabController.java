@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
+import org.blackum.blackaddons.gui.screen.AutoSSOverlayPositionScreen;
 import org.blackum.blackaddons.gui.screen.RotationOverlayPositionScreen;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
@@ -268,7 +269,23 @@ public class CheatsTabController extends SimpleTabController {
         });
         autoSSCard.addChild(trySkipToggle);
 
-        autoSSCard.setExpandedHeight(autoSSCard.getExpandedHeight() + 80);
+        ToggleSwitch debugToggle = new ToggleSwitch(contentX, contentY + 380, 260,
+                "Debug Mode",
+                "Shows debug overlay and logs to a file",
+                ConfigManager.data.AutoSSDebug, value -> {
+            ConfigManager.data.AutoSSDebug = value;
+            ConfigManager.save();
+        });
+        autoSSCard.addChild(debugToggle);
+
+        Button moveOverlayButton = new Button(contentX, contentY + 420, 260, 20, "Set Overlay Position", () -> {
+            net.minecraft.client.Minecraft.getInstance().execute(() -> {
+                net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen));
+            });
+        });
+        autoSSCard.addChild(moveOverlayButton);
+
+        autoSSCard.setExpandedHeight(autoSSCard.getExpandedHeight() + 160);
         autoSSCard.updateLayout();
         return autoSSCard;
     }
