@@ -45,7 +45,6 @@ public class AutoSS {
     private static final List<BlockPos> solution = new ArrayList<>();
     private static final List<BlockPos> solverQueue = new ArrayList<>();
     private static boolean lastExisted = false;
-    private static boolean skipOver = false;
     private static boolean firstPatternOfRound = true;
     private static boolean allObi = true;
     private static boolean hasReturnPoint = false;
@@ -71,6 +70,7 @@ public class AutoSS {
     private static final java.util.Set<BlockPos> lastLitPositions = new java.util.HashSet<>();
     private static final java.util.Set<BlockPos> brokenPositions = new java.util.HashSet<>();
     private static int skipClicksRemaining = 0;
+    private static String lastCompletionTime = "None";
 
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(AutoSS::onClientTick);
@@ -107,7 +107,10 @@ public class AutoSS {
                     if (playerName.equals(client.player.getName().getString()) || playerName.equals(client.player.getScoreboardName())) {
                         if (ssStartTime > 0) {
                             long time = System.currentTimeMillis() - ssStartTime;
-                            org.blackum.blackaddons.feature.chat.ChatUtils.send_debug(String.format(java.util.Locale.US, "§aSS completed in %.3fs", time / 1000.0f));
+                            lastCompletionTime = String.format(java.util.Locale.US, "%.3fs", time / 1000.0f);
+                            String logMsg = "SS completed in " + lastCompletionTime;
+                            org.blackum.blackaddons.feature.chat.ChatUtils.send_debug("§a" + logMsg);
+                            AutoSSLogger.log(logMsg);
                             ssStartTime = 0;
                             canBreak = false;
                         }
@@ -133,7 +136,7 @@ public class AutoSS {
         }
 
         if (deviceActive) {
-            if (isSolving || isPreAiming || skipClicksRemaining > 0 || ssStartTime > 0 || lastExisted) {
+            if (isSolving || isPreAiming || skipClicksRemaining > 0 || ssStartTime > 0 || lastExisted || !solution.isEmpty()) {
                 resetSolver();
             }
             return;
@@ -193,7 +196,7 @@ public class AutoSS {
             }
             
             if (!isGameActive && !canBreak) {
-                if (lastExisted || isSolving) {
+                if (isSolving || !solution.isEmpty()) {
                     resetSolver();
                 }
                 
@@ -207,6 +210,7 @@ public class AutoSS {
                                 } else if (ConfigManager.data.AutoSSAutoStart) {
                                     skipClicksRemaining = 1;
                                 }
+                                if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
                                 autoStartTriggered = false;
                                 isPreAiming = false;
                                 preAimTarget = null;
@@ -224,6 +228,7 @@ public class AutoSS {
 
         if (skipClicksRemaining > 0) {
             if (isLookingAtTarget(startButton.east())) {
+                if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
                 List<ConfigManager.TriggerAction> actions = new java.util.ArrayList<>();
                 actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 0, 0));
                 TriggerActionExecutor.getInstance().execute(actions, null);
@@ -234,6 +239,19 @@ public class AutoSS {
         }
 
         if (isSolving) {
+            boolean playerInFront = false;
+            if (client.hitResult != null && client.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                if (((net.minecraft.world.phys.EntityHitResult) client.hitResult).getEntity() instanceof net.minecraft.world.entity.player.Player) {
+                    playerInFront = true;
+                }
+            }
+
+            if (playerInFront) {
+                RotationManager.getInstance().clearSpline();
+                waitingForRotation = false;
+                return;
+            }
+
             if (!buttonsExist || solverQueue.isEmpty() || solvingIndex >= solverQueue.size()) {
                 endSolving();
                 return;
@@ -312,8 +330,11 @@ public class AutoSS {
 
         if (buttonsExist && !lastExisted) {
             lastExisted = true;
-            skipOver = false; 
-            if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
+            firstPatternOfRound = true; 
+            if (ssStartTime == 0) {
+                ssStartTime = System.currentTimeMillis();
+                AutoSSLogger.log("SS Started");
+            }
             
             brokenPositions.clear();
             lastLitPositions.clear();
@@ -389,7 +410,9 @@ public class AutoSS {
                 boolean isLantern = client.level.getBlockState(pos).is(Blocks.SEA_LANTERN);
                 if (isLantern) {
                     currentLit.add(pos);
-                    if (buttonsExist && !isSolving) {
+                    if (ssStartTime == 0) {
+                        brokenPositions.add(pos);
+                    } else if (buttonsExist && !isSolving) {
                         brokenPositions.add(pos);
                     } else if (!buttonsExist) {
                         if (!brokenPositions.contains(pos) && !lastLitPositions.contains(pos) && !solution.contains(pos)) {
@@ -398,7 +421,6 @@ public class AutoSS {
                             if (firstPatternOfRound && solution.size() == 3) {
                                 solution.remove(0);
                                 AutoSSLogger.log("Applied Skip Over - removed first lantern");
-                                skipOver = true;
                                 firstPatternOfRound = false;
                             }
                         }
@@ -409,7 +431,7 @@ public class AutoSS {
         lastLitPositions.clear();
         lastLitPositions.addAll(currentLit);
         
-        if (!solution.isEmpty() && !isSolving) {
+        if (!solution.isEmpty() && !isSolving && !autoStartTriggered && skipClicksRemaining == 0) {
             float maxDist = ConfigManager.data.AutoSSDistanceLimit;
             if (client.player.distanceToSqr(startPos.getX(), client.player.getY(), startPos.getZ()) <= maxDist * maxDist) {
                 BlockPos target = null;
@@ -442,7 +464,13 @@ public class AutoSS {
         debugInfo.add("Solving: " + isSolving + (waitingForRotation ? " (Waiting Rot)" : ""));
         debugInfo.add("Solution Size: " + solution.size());
         debugInfo.add("Solving Index: " + solvingIndex + "/" + solverQueue.size());
-        
+
+        if (ssStartTime > 0) {
+            long current = System.currentTimeMillis() - ssStartTime;
+            debugInfo.add(String.format(java.util.Locale.US, "Current Time: %.3fs", current / 1000.0f));
+        }
+        debugInfo.add("Last Time: " + lastCompletionTime);
+
         if (isSolving && solvingIndex < solverQueue.size()) {
             BlockPos target = solverQueue.get(solvingIndex);
             boolean onTarget = isLookingAtTarget(target);
@@ -592,7 +620,6 @@ public class AutoSS {
         if (clickedPos.getX() == 110 && clickedPos.getY() == 121 && clickedPos.getZ() == 91) {
             if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
             solution.clear();
-            skipOver = false;
             return;
         }
 
@@ -601,8 +628,6 @@ public class AutoSS {
         if (client.level == null) return;
         if (client.level.getBlockState(clickedPos).getBlock() != Blocks.STONE_BUTTON) return;
         
-        skipOver = true;
-
         long currentTime = System.currentTimeMillis();
         if (lastClick == currentTime) return;
         lastClick = currentTime;
@@ -618,7 +643,6 @@ public class AutoSS {
         if (solution.size() >= 2 && checkPos.equals(solution.get(1))) {
             solution.remove(0);
             solution.remove(0);
-            skipOver = true;
         }
     }
 
@@ -637,7 +661,6 @@ public class AutoSS {
         if (isSolving || isPreAiming) AutoSSLogger.log("Resetting solver (Solving: " + isSolving + ", PreAim: " + isPreAiming + ")");
         endSolving();
         lastExisted = false;
-        skipOver = false;
         firstPatternOfRound = true;
         preAimTarget = null;
         solution.clear();
