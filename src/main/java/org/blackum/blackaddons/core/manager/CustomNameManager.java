@@ -191,17 +191,20 @@ public class CustomNameManager {
         if (customNames.isEmpty() || text == null || text.isEmpty()) return text;
         String lower = text.toLowerCase();
         if (!containsAnyIgn(lower)) return text;
+        
+        String result = text;
         for (String ign : customNames.keySet()) {
             if (lower.contains(ign)) {
                 CustomName custom = customNames.get(ign);
-                text = text.replaceAll("(?i)" + Pattern.quote(ign), custom.display());
+                result = result.replaceAll("(?i)" + Pattern.quote(ign), custom.display());
             }
         }
-        return text;
+        return result;
     }
 
     public FormattedCharSequence replaceInSequence(FormattedCharSequence sequence) {
         if (customNames.isEmpty() || sequence == null) return sequence;
+        
         StringBuilder sb = new StringBuilder();
         sequence.accept((index, style, codePoint) -> {
             sb.appendCodePoint(codePoint);
@@ -211,27 +214,25 @@ public class CustomNameManager {
         if (!containsAnyIgn(plain.toLowerCase())) return sequence;
 
         MutableComponent rebuilt = Component.literal("");
-        Style[] currentStyle = new Style[]{null};
-        StringBuilder buffer = new StringBuilder();
-
+        List<TextNode> nodes = new ArrayList<>();
+        
         sequence.accept((index, style, codePoint) -> {
-            if (!java.util.Objects.equals(style, currentStyle[0])) {
-                if (buffer.length() > 0) {
-                    rebuilt.append(Component.literal(buffer.toString()).withStyle(currentStyle[0] != null ? currentStyle[0] : Style.EMPTY));
-                    buffer.setLength(0);
-                }
-                currentStyle[0] = style;
+            if (nodes.isEmpty() || !java.util.Objects.equals(nodes.get(nodes.size() - 1).style, style)) {
+                nodes.add(new TextNode(new StringBuilder().appendCodePoint(codePoint), style));
+            } else {
+                nodes.get(nodes.size() - 1).content.appendCodePoint(codePoint);
             }
-            buffer.appendCodePoint(codePoint);
             return true;
         });
 
-        if (buffer.length() > 0) {
-            rebuilt.append(Component.literal(buffer.toString()).withStyle(currentStyle[0] != null ? currentStyle[0] : Style.EMPTY));
+        for (TextNode node : nodes) {
+            rebuilt.append(Component.literal(node.content.toString()).withStyle(node.style));
         }
 
         return net.minecraft.locale.Language.getInstance().getVisualOrder(replaceNames(rebuilt));
     }
+
+    private record TextNode(StringBuilder content, Style style) {}
 
     private boolean containsAnyIgn(String lowerText) {
         for (String ign : customNames.keySet()) {
