@@ -16,7 +16,22 @@ public class Theme {
 
     public static int BACKGROUND_SECONDARY = 0xAA222222;
     public static int BACKGROUND_TERTIARY = 0xAA333333;
-    public static int ACCENT_PRIMARY = 0xFF00A8FF;
+    public static int ACCENT_PRIMARY = ACCENT;
+
+    public static void refreshColors() {
+        ACCENT_PRIMARY = ACCENT;
+        
+        int r = (ACCENT >> 16) & 0xFF;
+        int g = (ACCENT >> 8) & 0xFF;
+        int b = ACCENT & 0xFF;
+        
+        float factor = 0.85f;
+        r = (int) (r * factor);
+        g = (int) (g * factor);
+        b = (int) (b * factor);
+        
+        ACCENT_HOVER = 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
 
     public static int GLASS_FILL = 0x801A1A1A;
     public static int GLASS_BORDER = 0x40FFFFFF;

@@ -12,7 +12,7 @@ public class CheatsTabController extends SimpleTabController {
     private ResizableCard autoTntCard;
     private ResizableCard autoSSCard;
     private ResizableCard fastLeapCard;
-    private ResizableCard debugCard;
+    private ResizableCard rotationCard;
     private Dropdown s1Dropdown;
     private Dropdown s2Dropdown;
     private Dropdown s3Dropdown;
@@ -97,25 +97,48 @@ public class CheatsTabController extends SimpleTabController {
         }
 
         Button resetLayout = new Button(contentX + 10, contentY, contentWidth - 20, "Reset Layout", () -> {
-            screen.resetCardStates("autoTnt", "autoSS", "fastLeap", "debug");
+            screen.resetCardStates("autoTnt", "autoSS", "fastLeap", "rotationSet");
         });
         cheatsTab.addWidget(resetLayout);
 
         CardContainer cheatsCardContainer = new CardContainer(contentX, contentY + 30, contentWidth, 570);
         cheatsTab.addWidget(cheatsCardContainer);
 
-        int currentY = contentY + 50;
-        autoTntCard = createAutoTntCard(contentX + 20, currentY);
+        int containerY = contentY + 30;
+        boolean isSingleColumn = contentWidth < 680;
+        int col1X = contentX + 20;
+        int col2X = contentX + 340;
+
+        if (isSingleColumn) {
+            autoTntCard = createAutoTntCard(col1X, containerY + 20);
+            int currentY = containerY + 20 + autoTntCard.getHeight() + 10;
+
+            autoSSCard = createAutoSSCard(col1X, currentY);
+            currentY += autoSSCard.getHeight() + 10;
+
+            fastLeapCard = createFastLeapCard(col1X, currentY);
+            currentY += fastLeapCard.getHeight() + 10;
+
+            rotationCard = createRotationCard(col1X, currentY);
+        } else {
+            int currentY1 = containerY + 20;
+            int currentY2 = containerY + 20;
+
+            autoTntCard = createAutoTntCard(col1X, currentY1);
+            currentY1 += autoTntCard.getHeight() + 10;
+
+            fastLeapCard = createFastLeapCard(col1X, currentY1);
+
+            autoSSCard = createAutoSSCard(col2X, currentY2);
+            currentY2 += autoSSCard.getHeight() + 10;
+
+            rotationCard = createRotationCard(col2X, currentY2);
+        }
+
         cheatsCardContainer.addCard(autoTntCard);
-
-        autoSSCard = createAutoSSCard(contentX + 340, currentY);
         cheatsCardContainer.addCard(autoSSCard);
-
-        fastLeapCard = createFastLeapCard(contentX + 20, currentY + 300);
         cheatsCardContainer.addCard(fastLeapCard);
-
-        debugCard = createRotationCard(contentX + 340, currentY + 300);
-        cheatsCardContainer.addCard(debugCard);
+        cheatsCardContainer.addCard(rotationCard);
     }
 
     private ResizableCard createAutoTntCard(int x, int y) {
@@ -231,13 +254,13 @@ public class CheatsTabController extends SimpleTabController {
         autoSSCard.addChild(speedSlider);
 
         Label curveLabel = new Label(contentX, contentY + 200,
-                String.format(java.util.Locale.ROOT, "Rotation Curve: %.2f", ConfigManager.data.AutoSSRotationCurve), Label.Style.BODY);
+                String.format(java.util.Locale.ROOT, "Rotation Curve: %.0f%%", ConfigManager.data.AutoSSRotationCurve * 100), Label.Style.BODY);
         autoSSCard.addChild(curveLabel);
 
-        Slider curveSlider = new Slider(contentX, contentY + 220, 260, 0.0f, 1.0f,
-                ConfigManager.data.AutoSSRotationCurve, val -> {
-            ConfigManager.data.AutoSSRotationCurve = val;
-            curveLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Curve: %.2f", val));
+        Slider curveSlider = new Slider(contentX, contentY + 220, 260, 0.0f, 200.0f,
+                ConfigManager.data.AutoSSRotationCurve * 100, val -> {
+            ConfigManager.data.AutoSSRotationCurve = val / 100f;
+            curveLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Curve: %.0f%%", val));
             ConfigManager.save();
         });
         autoSSCard.addChild(curveSlider);
@@ -373,9 +396,9 @@ public class CheatsTabController extends SimpleTabController {
     }
 
     private ResizableCard createRotationCard(int x, int y) {
-        debugCard = screen.createResizableCard("rotationSet", x, y, 300, 310, "Rotation Settings");
-        int contentX = debugCard.getContentX();
-        int contentY = debugCard.getContentY();
+        rotationCard = screen.createResizableCard("rotationSet", x, y, 300, 310, "Rotation Settings (custom actions)");
+        int contentX = rotationCard.getContentX();
+        int contentY = rotationCard.getContentY();
 
         ListView listView = new ListView(contentX, contentY, 260, 260);
 
@@ -404,13 +427,13 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(humanizerToggle);
 
         Label curveLabel = new Label(0, 0,
-                String.format("Curve Strength: %.0f%%", ConfigManager.data.rotationJitter * 100),
+                String.format("Rotation Curve: %.0f%%", ConfigManager.data.rotationJitter * 100),
                 Label.Style.BODY);
         listView.addItem(curveLabel);
         Slider curveSlider = new Slider(0, 0, 260, 0, 200,
                 ConfigManager.data.rotationJitter * 100, val -> {
                     ConfigManager.data.rotationJitter = val / 100f;
-                    curveLabel.setText(String.format("Curve Strength: %.0f%%", val));
+                    curveLabel.setText(String.format("Rotation Curve: %.0f%%", val));
                     ConfigManager.save();
                 });
         listView.addItem(curveSlider);
@@ -499,9 +522,9 @@ public class CheatsTabController extends SimpleTabController {
                 });
         listView.addItem(thresholdSlider);
 
-        debugCard.addChild(listView);
-        debugCard.updateLayout();
-        return debugCard;
+        rotationCard.addChild(listView);
+        rotationCard.updateLayout();
+        return rotationCard;
     }
 
 

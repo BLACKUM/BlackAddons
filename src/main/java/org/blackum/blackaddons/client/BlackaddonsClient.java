@@ -17,6 +17,7 @@ import org.blackum.blackaddons.core.manager.CommandManager;
 import org.blackum.blackaddons.core.manager.CustomNameManager;
 import org.blackum.blackaddons.core.manager.DebugOverlayManager;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
+import org.blackum.blackaddons.core.manager.UpdateManager;
 import org.blackum.blackaddons.feature.chat.ChatImageHandler;
 import org.blackum.blackaddons.feature.chat.ChatTriggerManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
@@ -24,6 +25,7 @@ import org.blackum.blackaddons.feature.chat.IrcPrefixManager;
 import org.blackum.blackaddons.feature.cheat.AutoSS;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
+import org.blackum.blackaddons.core.util.Scheduler;
 import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import org.blackum.blackaddons.feature.rng.RngTracker;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
@@ -51,6 +53,7 @@ public class BlackaddonsClient implements ClientModInitializer {
         AutoTNT.register();
         FastLeap.register();
         AutoSS.register();
+        Scheduler.register();
 
         ConfigManager.load();
         BotIntegration.fetchVerificationKey();
@@ -59,6 +62,7 @@ public class BlackaddonsClient implements ClientModInitializer {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             IrcPrefixManager.resetCache();
             IrcClient.getInstance().connect();
+            UpdateManager.check();
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {

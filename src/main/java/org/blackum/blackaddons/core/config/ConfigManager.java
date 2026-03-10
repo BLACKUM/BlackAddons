@@ -207,12 +207,12 @@ public class ConfigManager {
         public AutoTNT.FeatureConfig autoTntConfig = new AutoTNT.FeatureConfig();
 
         public boolean AutoSSEnabled = false;
-        public int AutoSSDelay = 0;
+        public int AutoSSDelay = 2;
         public float AutoSSDistanceLimit = 4.5f;
         public boolean AutoSSAlerts = true;
         
-        public float AutoSSRotationSpeed = 15.0f;
-        public float AutoSSRotationCurve = 0.35f;
+        public float AutoSSRotationSpeed = 12.0f;
+        public float AutoSSRotationCurve = 0.08f;
         public boolean AutoSSInstantSnap = false;
         public boolean AutoSSSkip = false;
         public boolean AutoSSAutoStart = false;
@@ -234,10 +234,10 @@ public class ConfigManager {
         public int rotationOverlayY = 5;
 
         public boolean rotationHumanizerEnabled = true;
-        public float rotationJitter = 0.35f;
+        public float rotationJitter = 0.08f;
         public float rotationTargetRandomness = 0.2f;
         public float rotationSmoothness = 0.5f;
-        public float rotationSpeed = 15.0f;
+        public float rotationSpeed = 12.0f;
         public float rotationDistanceSlowdown = 2.0f;
         public float rotationDistanceRadius = 50.0f;
         public float rotationFovSlowdown = 30.0f;
@@ -254,6 +254,8 @@ public class ConfigManager {
         // Legit
         public boolean legitFullbrightEnabled = false;
         public boolean removeFireOverlay = false;
+        public boolean hideStatusEffects = false;
+        public boolean disableNearbyParticles = false;
 
         // Settings
         public int notificationDuration = 4000;
@@ -310,6 +312,8 @@ public class ConfigManager {
                     loadedData.modHiderAllowedMods.addAll(DEFAULT_ALLOWED_MODS);
                 }
                 data = loadedData;
+                Theme.ACCENT = data.accentColor;
+                Theme.refreshColors();
             }
         } catch (IOException e) {
             e.printStackTrace();

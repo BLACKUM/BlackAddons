@@ -52,6 +52,24 @@ public class LegitTabController extends SimpleTabController {
                     ConfigManager.save();
                 });
         legitTab.addWidget(fireOverlayToggle);
+
+        ToggleSwitch hideStatusEffectsToggle = new ToggleSwitch(contentX, contentY + 90, contentWidth - 20,
+                "Hide Status Effects",
+                "Hides status effect icons from the HUD and inventory",
+                ConfigManager.data.hideStatusEffects, value -> {
+                    ConfigManager.data.hideStatusEffects = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(hideStatusEffectsToggle);
+
+        ToggleSwitch disableNearbyParticlesToggle = new ToggleSwitch(contentX, contentY + 120, contentWidth - 20,
+                "Disable Nearby Particles",
+                "Visually disables particles within 2 blocks of the player",
+                ConfigManager.data.disableNearbyParticles, value -> {
+                    ConfigManager.data.disableNearbyParticles = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(disableNearbyParticlesToggle);
     }
 
     private ResizableCard createVisualsCard(int x, int y) {
@@ -76,6 +94,24 @@ public class LegitTabController extends SimpleTabController {
                     ConfigManager.save();
                 });
         visualsCard.addChild(fireOverlayToggle);
+
+        ToggleSwitch hideStatusEffectsToggle = new ToggleSwitch(contentX, contentY + 60, 260,
+                "Hide Status Effects",
+                "Hides status effect icons from the HUD and inventory",
+                ConfigManager.data.hideStatusEffects, value -> {
+                    ConfigManager.data.hideStatusEffects = value;
+                    ConfigManager.save();
+                });
+        visualsCard.addChild(hideStatusEffectsToggle);
+
+        ToggleSwitch disableNearbyParticlesToggle = new ToggleSwitch(contentX, contentY + 90, 260,
+                "Disable Nearby Particles",
+                "Visually disables particles within 2 blocks of the player",
+                ConfigManager.data.disableNearbyParticles, value -> {
+                    ConfigManager.data.disableNearbyParticles = value;
+                    ConfigManager.save();
+                });
+        visualsCard.addChild(disableNearbyParticlesToggle);
 
         visualsCard.updateLayout();
         return visualsCard;

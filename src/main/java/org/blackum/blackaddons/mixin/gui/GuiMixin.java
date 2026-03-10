@@ -1,7 +1,10 @@
 package org.blackum.blackaddons.mixin.gui;
 
+import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.manager.CustomNameManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -56,6 +59,13 @@ public class GuiMixin {
             this.blackaddons$modifyingOverlay = true;
             ((Gui) (Object) this).setOverlayMessage(newComp, animate);
             this.blackaddons$modifyingOverlay = false;
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
+    private void onRenderEffects(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
+        if (ConfigManager.data.hideStatusEffects) {
             ci.cancel();
         }
     }

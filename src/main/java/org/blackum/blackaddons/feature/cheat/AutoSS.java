@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Blocks;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.manager.RotationManager;
 import org.blackum.blackaddons.core.util.LocationUtils;
+import org.blackum.blackaddons.core.util.Scheduler;
 import org.blackum.blackaddons.feature.chat.TriggerActionExecutor;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
@@ -229,9 +230,11 @@ public class AutoSS {
         if (skipClicksRemaining > 0) {
             if (isLookingAtTarget(startButton.east())) {
                 if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
-                List<ConfigManager.TriggerAction> actions = new java.util.ArrayList<>();
-                actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 0, 0));
-                TriggerActionExecutor.getInstance().execute(actions, null);
+                Scheduler.schedule(0, 0, () -> {
+                    List<ConfigManager.TriggerAction> actions = new java.util.ArrayList<>();
+                    actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 0, 0));
+                    TriggerActionExecutor.getInstance().execute(actions, null);
+                });
                 skipClicksRemaining--;
             } else {
                 startPreAiming(startButton.east());
@@ -289,9 +292,11 @@ public class AutoSS {
                 if (lookingAtButton || RotationManager.getInstance().isAtSplineNode()) {
                     if (!isReturnPoint) {
                         AutoSSLogger.log("Clicking node " + solvingIndex + " at " + solverQueue.get(solvingIndex).toShortString());
-                        List<ConfigManager.TriggerAction> actions = new ArrayList<>();
-                        actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 1, 0));
-                        TriggerActionExecutor.getInstance().execute(actions, null);
+                        Scheduler.schedule(0, 0, () -> {
+                            List<ConfigManager.TriggerAction> actions = new ArrayList<>();
+                            actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 1, 0));
+                            TriggerActionExecutor.getInstance().execute(actions, null);
+                        });
                         
                         delayTicksRemaining = ConfigManager.data.AutoSSInstantSnap ? 1 : Math.max(1, ConfigManager.data.AutoSSDelay);
                     } else {
@@ -553,12 +558,9 @@ public class AutoSS {
 
             if (ix < -20 || ix > screenW + 20 || iy < -20 || iy > screenH + 20) continue;
 
-            boolean isCurrent = isSolving && (i == solvingIndex);
-            boolean isNext = isSolving && (i == solvingIndex + 1);
-            
             int color;
-            if (isCurrent) color = 0xFF00FF00;      // Green
-            else if (isNext) color = 0xFFFFFF00;   // Yellow
+            if (i == 0) color = 0xFF00FF00;      // Green
+            else if (i == 1) color = 0xFFFFFF00;   // Yellow
             else color = 0xFFFF0000;               // Red
             
             String text = String.valueOf(i + 1);

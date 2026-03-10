@@ -415,9 +415,8 @@ public class RotationManager {
                                          + ttt * targetPitch;
 
                 if (!Float.isNaN(currentTargetYaw) && !Float.isNaN(currentTargetPitch)) {
-                    float stepYaw = currentTargetYaw - mc.player.getYRot();
-                    float stepPitch = currentTargetPitch - mc.player.getXRot();
-                    mc.player.turn(stepYaw / 0.15f, stepPitch / 0.15f);
+                    mc.player.setYRot(currentTargetYaw);
+                    mc.player.setXRot(currentTargetPitch);
                 }
             }
         }

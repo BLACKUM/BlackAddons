@@ -3,24 +3,28 @@ package org.blackum.blackaddons.mixin.gui;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.feature.modhider.ComponentUtils;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignText;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.function.Function;
-import java.util.stream.Stream;
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ServerData;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
 import org.blackum.blackaddons.core.util.Constants;
 
 @Mixin(AbstractSignEditScreen.class)
 public abstract class AbstractSignEditScreenMixin {
+    @Shadow private String[] messages;
+
     public static class Helper {
         private static final Set<String> serversAttemptedReadingMods = new HashSet<>();
 
@@ -42,17 +46,18 @@ public abstract class AbstractSignEditScreenMixin {
         }
     }
 
-    @Redirect(method = "<init>(Lnet/minecraft/world/level/block/entity/SignBlockEntity;ZZLnet/minecraft/network/chat/Component;)V", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;map(Ljava/util/function/Function;)Ljava/util/stream/Stream;"))
-    public Stream<String> init(Stream<Component> instance, Function<Component, String> function) {
-        return instance.map(message -> {
-            if (ConfigManager.data.hideMods()) {
-                String str = ComponentUtils.getString(message);
-                if (!str.equals(message.getString())) {
-                    Helper.showServerAttemptedReadingModsNotification();
-                }
-                return str;
+    @Inject(method = "<init>(Lnet/minecraft/world/level/block/entity/SignBlockEntity;ZZLnet/minecraft/network/chat/Component;)V", at = @At("TAIL"))
+    private void onInit(SignBlockEntity signBlockEntity, boolean front, boolean filtered, Component title, CallbackInfo ci) {
+        if (!ConfigManager.data.hideMods()) return;
+
+        SignText text = signBlockEntity.getText(front);
+        for (int i = 0; i < messages.length; i++) {
+            Component message = text.getMessage(i, filtered);
+            String processed = ComponentUtils.getString(message);
+            if (!processed.equals(message.getString())) {
+                Helper.showServerAttemptedReadingModsNotification();
+                messages[i] = processed;
             }
-            return message.getString();
-        });
+        }
     }
 }

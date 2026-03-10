@@ -59,6 +59,10 @@ public final class Constants {
         public static final String BOT_API_PARTY_UPDATE = "/v1/party/update";
         public static final String BOT_API_PARTY_LIST = "/v1/party/list";
         public static final String BOT_API_NAMES = "/v1/names";
+        
+        // GitHub
+        public static final String GITHUB_RELEASES_URL = "https://github.com/BLACKUM/BlackAddons/releases";
+        public static final String GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/BLACKUM/BlackAddons/releases/latest";
 
         // External URLs
         public static final String GITHUB_NAMES_URL = "https://raw.githubusercontent.com/BLACKUM/rtca-bot-hypixel/refs/heads/main/data/custom_names.json";

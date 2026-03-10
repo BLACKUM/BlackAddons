@@ -32,6 +32,7 @@ repositories {
     maven { url "https://repo.hypixel.net/repository/Hypixel/" }
     maven { url "https://repo.nea.moe/releases/" }
     maven { url "https://www.cursemaven.com" }
+    maven { url "https://api.modrinth.com/maven" }
     flatDir {
         dirs 'libs'
     }
@@ -58,8 +59,7 @@ dependencies {
 
     modCompileOnly "com.terraformersmc:modmenu:16.0.0"
     modLocalRuntime "com.terraformersmc:modmenu:16.0.0"
-    modLocalRuntime "curse.maven:auth-me-356643:7276745"
-    modLocalRuntime "curse.maven:resourceful-config-714059:7055064"
+    modLocalRuntime "maven.modrinth:in-game-account-switcher:LgfVj4KS"
 }
 
 processResources {
