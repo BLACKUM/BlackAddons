@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(EffectsInInventory.class)
 public class EffectsInInventoryMixin {
 
-    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderEffects", at = @At("HEAD"), cancellable = true)
     private void onRender(GuiGraphics guiGraphics, int i, int j, CallbackInfo ci) {
         if (ConfigManager.data.hideStatusEffects) {
             ci.cancel();
