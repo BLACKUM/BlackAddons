@@ -11,18 +11,18 @@ import org.blackum.blackaddons.core.manager.RotationManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TriggerActionExecutor {
-    private static TriggerActionExecutor instance;
+public class ChatActionExecutor {
+    private static ChatActionExecutor instance;
     private final List<QueuedAction> queue = new ArrayList<>();
     private final java.util.Map<KeyMapping, Integer> activeKeybinds = new java.util.HashMap<>();
 
-    private TriggerActionExecutor() {
+    private ChatActionExecutor() {
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
     }
 
-    public static TriggerActionExecutor getInstance() {
+    public static ChatActionExecutor getInstance() {
         if (instance == null) {
-            instance = new TriggerActionExecutor();
+            instance = new ChatActionExecutor();
         }
         return instance;
     }
@@ -64,15 +64,15 @@ public class TriggerActionExecutor {
         queue.removeAll(toRemove);
     }
 
-    public void execute(List<ConfigManager.TriggerAction> actions, String[] groups) {
+    public void execute(List<ConfigManager.ActionStep> actions, String[] groups) {
         int totalDelay = 0;
-        for (ConfigManager.TriggerAction action : actions) {
+        for (ConfigManager.ActionStep action : actions) {
             totalDelay += action.delayTicks;
             queue.add(new QueuedAction(action, totalDelay, groups));
         }
     }
 
-    private void executeAction(Minecraft client, ConfigManager.TriggerAction action, String[] groups) {
+    private void executeAction(Minecraft client, ConfigManager.ActionStep action, String[] groups) {
         if (client.player == null) return;
 
         switch (action.type) {
@@ -138,11 +138,11 @@ public class TriggerActionExecutor {
     }
 
     private static class QueuedAction {
-        final ConfigManager.TriggerAction action;
+        final ConfigManager.ActionStep action;
         int delay;
         final String[] groups;
 
-        QueuedAction(ConfigManager.TriggerAction action, int delay, String[] groups) {
+        QueuedAction(ConfigManager.ActionStep action, int delay, String[] groups) {
             this.action = action;
             this.delay = delay;
             this.groups = groups;

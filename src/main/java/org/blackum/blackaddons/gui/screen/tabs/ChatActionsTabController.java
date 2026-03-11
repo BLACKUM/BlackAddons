@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
-import org.blackum.blackaddons.gui.screen.TriggerActionEditScreen;
+import org.blackum.blackaddons.gui.screen.ChatActionEditScreen;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -14,11 +14,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.List;
 import java.util.ArrayList;
 
-public class ChatTriggersTabController extends SimpleTabController {
+public class ChatActionsTabController extends SimpleTabController {
     private static int lastScrollOffset = 0;
     private ListView listView;
 
-    public ChatTriggersTabController(BlackAddonsGUI screen) {
+    public ChatActionsTabController(BlackAddonsGUI screen) {
         super(screen);
     }
 
@@ -34,19 +34,19 @@ public class ChatTriggersTabController extends SimpleTabController {
         listView.setScrollOffset(lastScrollOffset);
         tab.addWidget(listView);
 
-        listView.addItem(new Label(0, 0, "Chat Triggers", Label.Style.TITLE));
+        listView.addItem(new Label(0, 0, "Chat Actions", Label.Style.TITLE));
 
         Label description = new Label(0, 0, "Trigger custom sounds and actions when chat matches text or regex.",
                 Label.Style.BODY);
         listView.addItem(description);
 
-        for (int i = 0; i < ConfigManager.data.chatTriggers.size(); i++) {
+        for (int i = 0; i < ConfigManager.data.chatActions.size(); i++) {
             final int index = i;
-            ConfigManager.ChatTrigger trigger = ConfigManager.data.chatTriggers.get(i);
+            ConfigManager.ChatAction trigger = ConfigManager.data.chatActions.get(i);
 
             String headerTitle = trigger.title != null && !trigger.title.isEmpty()
                     ? trigger.title.replace("&", "§")
-                    : "Trigger " + (i + 1);
+                    : "Action " + (i + 1);
 
             SectionHeader header = new SectionHeader(itemWidth, headerTitle);
             ExpandableGroup group = new ExpandableGroup(0, 0, itemWidth, header, !trigger.collapsed);
@@ -184,20 +184,20 @@ public class ChatTriggersTabController extends SimpleTabController {
             triggerWidgets.add(regexToggle);
 
             ToggleSwitch enabledToggle = new ToggleSwitch(0, 0, itemWidth, "Enabled",
-                    "Enable this chat trigger", trigger.enabled, val -> {
+                    "Enable this chat action", trigger.enabled, val -> {
                         trigger.enabled = val;
                         ConfigManager.save();
                     });
             triggerWidgets.add(enabledToggle);
 
-            Button editActionsBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Edit Trigger Actions", () -> {
-                Minecraft.getInstance().setScreen(new TriggerActionEditScreen(screen, trigger));
+            Button editActionsBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Edit Action Steps", () -> {
+                Minecraft.getInstance().setScreen(new ChatActionEditScreen(screen, trigger));
             });
             triggerWidgets.add(editActionsBtn);
 
-            Button deleteBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Delete Trigger",
+            Button deleteBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Delete Action",
                     () -> {
-                        ConfigManager.data.chatTriggers.remove(index);
+                        ConfigManager.data.chatActions.remove(index);
                         ConfigManager.save();
                         screen.init();
                     });
@@ -208,10 +208,10 @@ public class ChatTriggersTabController extends SimpleTabController {
             }
         }
 
-        Button addBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Add New Trigger",
+        Button addBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Add New Action",
                 () -> {
-                    ConfigManager.data.chatTriggers
-                            .add(new ConfigManager.ChatTrigger("", true, "entity.experience_orb.pickup", 1.0f, 1.0f,
+                    ConfigManager.data.chatActions
+                            .add(new ConfigManager.ChatAction("", true, "entity.experience_orb.pickup", 1.0f, 1.0f,
                                     true, "",
                                     "", 2.0f));
                     ConfigManager.save();

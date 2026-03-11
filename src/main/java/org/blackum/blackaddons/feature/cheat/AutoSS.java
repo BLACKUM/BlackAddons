@@ -12,7 +12,7 @@ import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.manager.RotationManager;
 import org.blackum.blackaddons.core.util.LocationUtils;
 import org.blackum.blackaddons.core.util.Scheduler;
-import org.blackum.blackaddons.feature.chat.TriggerActionExecutor;
+import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -231,9 +231,9 @@ public class AutoSS {
             if (isLookingAtTarget(startButton.east())) {
                 if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
                 Scheduler.schedule(0, 0, () -> {
-                    List<ConfigManager.TriggerAction> actions = new java.util.ArrayList<>();
-                    actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 0, 0));
-                    TriggerActionExecutor.getInstance().execute(actions, null);
+                    List<ConfigManager.ActionStep> actions = new java.util.ArrayList<>();
+                    actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.USE_ITEM, 0, "", 0, 0));
+                    ChatActionExecutor.getInstance().execute(actions, null);
                 });
                 skipClicksRemaining--;
             } else {
@@ -293,9 +293,9 @@ public class AutoSS {
                     if (!isReturnPoint) {
                         AutoSSLogger.log("Clicking node " + solvingIndex + " at " + solverQueue.get(solvingIndex).toShortString());
                         Scheduler.schedule(0, 0, () -> {
-                            List<ConfigManager.TriggerAction> actions = new ArrayList<>();
-                            actions.add(new ConfigManager.TriggerAction(ConfigManager.TriggerActionType.USE_ITEM, 0, "", 1, 0));
-                            TriggerActionExecutor.getInstance().execute(actions, null);
+                            List<ConfigManager.ActionStep> actions = new ArrayList<>();
+                            actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.USE_ITEM, 0, "", 1, 0));
+                            ChatActionExecutor.getInstance().execute(actions, null);
                         });
                         
                         delayTicksRemaining = ConfigManager.data.AutoSSInstantSnap ? 1 : Math.max(1, ConfigManager.data.AutoSSDelay);

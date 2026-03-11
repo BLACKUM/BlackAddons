@@ -63,7 +63,7 @@ public class ConfigManager {
         }
     }
 
-    public enum TriggerActionType {
+    public enum ActionStepType {
         SWITCH_SLOT("Switch Slot"),
         USE_ITEM("Use Item"),
         ATTACK("Attack"),
@@ -73,7 +73,7 @@ public class ConfigManager {
 
         private final String displayName;
 
-        TriggerActionType(String displayName) {
+        ActionStepType(String displayName) {
             this.displayName = displayName;
         }
 
@@ -81,8 +81,8 @@ public class ConfigManager {
             return displayName;
         }
 
-        public static TriggerActionType fromDisplayName(String displayName) {
-            for (TriggerActionType type : values()) {
+        public static ActionStepType fromDisplayName(String displayName) {
+            for (ActionStepType type : values()) {
                 if (type.displayName.equalsIgnoreCase(displayName)) {
                     return type;
                 }
@@ -91,8 +91,8 @@ public class ConfigManager {
         }
     }
 
-    public static class TriggerAction {
-        public TriggerActionType type;
+    public static class ActionStep {
+        public ActionStepType type;
         public int slotIndex;
         public String message = "";
         public int delayTicks;
@@ -105,10 +105,10 @@ public class ConfigManager {
         public double targetZ;
         public boolean collapsed = false;
 
-        public TriggerAction() {
+        public ActionStep() {
         }
 
-        public TriggerAction(TriggerActionType type, int slotIndex, String message, int delayTicks, int durationTicks) {
+        public ActionStep(ActionStepType type, int slotIndex, String message, int delayTicks, int durationTicks) {
             this.type = type;
             this.slotIndex = slotIndex;
             this.message = message;
@@ -116,7 +116,7 @@ public class ConfigManager {
             this.durationTicks = durationTicks;
         }
 
-        public TriggerAction(TriggerActionType type, float yaw, float pitch, int delayTicks) {
+        public ActionStep(ActionStepType type, float yaw, float pitch, int delayTicks) {
             this.type = type;
             this.yaw = yaw;
             this.pitch = pitch;
@@ -124,7 +124,7 @@ public class ConfigManager {
         }
     }
 
-    public static class ChatTrigger {
+    public static class ChatAction {
         public String pattern;
         public boolean isRegex;
         public String soundId;
@@ -135,12 +135,12 @@ public class ConfigManager {
         public String subtitle = "";
         public float durationSeconds = 2.0f;
         public boolean collapsed = true;
-        public List<TriggerAction> actions = new ArrayList<>();
+        public List<ActionStep> actions = new ArrayList<>();
 
-        public ChatTrigger() {
+        public ChatAction() {
         }
 
-        public ChatTrigger(String pattern, boolean isRegex, String soundId, float volume, float pitch, boolean enabled,
+        public ChatAction(String pattern, boolean isRegex, String soundId, float volume, float pitch, boolean enabled,
                 String title,
                 String subtitle, float durationSeconds) {
             this.pattern = pattern;
@@ -263,13 +263,13 @@ public class ConfigManager {
         public boolean disableCommandConfirmation = true;
         public boolean disableUnsecureChatToast = true;
 
-        // Chat triggers defaults
-        public List<ChatTrigger> chatTriggers = new ArrayList<>(List.of(
-                new ChatTrigger(
+        // Chat actions defaults
+        public List<ChatAction> chatActions = new ArrayList<>(List.of(
+                new ChatAction(
                         "(?s).*?(?:\\[.*?\\] )?([A-Za-z0-9_]+) has invited you to join their party!.*You have 60 seconds to accept.*",
                         true,
                         "entity.cat.ambient", 1.0f, 1.0f, true, "&cParty Invite!", "&6From: &e{1}", 2.0f),
-                new ChatTrigger("Party Finder > ([A-Za-z0-9_]+) joined the dungeon group! \\((.*)\\)", true,
+                new ChatAction("Party Finder > ([A-Za-z0-9_]+) joined the dungeon group! \\((.*)\\)", true,
                         "entity.experience_orb.pickup",
                         1.0f, 1.0f, true, "&a{1} Joined!", "&7Class: &b{2}", 3.0f)));
 

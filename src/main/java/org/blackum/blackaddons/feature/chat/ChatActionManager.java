@@ -10,15 +10,15 @@ import org.blackum.blackaddons.core.config.ConfigManager;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-public class ChatTriggerManager {
-    private static ChatTriggerManager instance;
+public class ChatActionManager {
+    private static ChatActionManager instance;
 
-    private ChatTriggerManager() {
+    private ChatActionManager() {
     }
 
-    public static ChatTriggerManager getInstance() {
+    public static ChatActionManager getInstance() {
         if (instance == null) {
-            instance = new ChatTriggerManager();
+            instance = new ChatActionManager();
         }
         return instance;
     }
@@ -35,7 +35,7 @@ public class ChatTriggerManager {
         if (client == null || client.player == null)
             return;
 
-        for (ConfigManager.ChatTrigger trigger : ConfigManager.data.chatTriggers) {
+        for (ConfigManager.ChatAction trigger : ConfigManager.data.chatActions) {
             if (!trigger.enabled || trigger.pattern == null || trigger.pattern.isEmpty())
                 continue;
 
@@ -97,7 +97,7 @@ public class ChatTriggerManager {
                     }
 
                     if (!trigger.actions.isEmpty()) {
-                        TriggerActionExecutor.getInstance().execute(trigger.actions, finalGroups);
+                        ChatActionExecutor.getInstance().execute(trigger.actions, finalGroups);
                     }
                 });
             }

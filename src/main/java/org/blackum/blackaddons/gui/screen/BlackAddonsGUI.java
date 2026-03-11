@@ -38,7 +38,7 @@ public class BlackAddonsGUI extends BaseScreen {
     private CheatsTabController cheatsController;
     private LegitTabController legitController;
     private AboutTabController aboutController;
-    private ChatTriggersTabController chatTriggersController;
+    private ChatActionsTabController chatActionsController;
     private final List<SimpleTabController> controllers = new ArrayList<>();
 
     public BlackAddonsGUI() {
@@ -66,7 +66,7 @@ public class BlackAddonsGUI extends BaseScreen {
         cheatsController = new CheatsTabController(this);
         legitController = new LegitTabController(this);
         aboutController = new AboutTabController(this);
-        chatTriggersController = new ChatTriggersTabController(this);
+        chatActionsController = new ChatActionsTabController(this);
 
         controllers.clear();
         controllers.add(settingsController);
@@ -74,7 +74,7 @@ public class BlackAddonsGUI extends BaseScreen {
         controllers.add(payloadsController);
         controllers.add(cheatsController);
         controllers.add(legitController);
-        controllers.add(chatTriggersController);
+        controllers.add(chatActionsController);
         controllers.add(aboutController);
 
         settingsController.init(tabPanel.addTab("Settings"));
@@ -82,7 +82,7 @@ public class BlackAddonsGUI extends BaseScreen {
         payloadsController.init(tabPanel.addTab("Payloads"));
         cheatsController.init(tabPanel.addTab("Cheats"));
         legitController.init(tabPanel.addTab("Legit"));
-        chatTriggersController.init(tabPanel.addTab("Chat Triggers"));
+        chatActionsController.init(tabPanel.addTab("Chat Actions"));
         aboutController.init(tabPanel.addTab("About"));
 
         tabPanel.selectTab(lastTabIndex);

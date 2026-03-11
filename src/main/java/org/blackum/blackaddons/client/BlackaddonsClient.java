@@ -19,7 +19,7 @@ import org.blackum.blackaddons.core.manager.DebugOverlayManager;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
 import org.blackum.blackaddons.core.manager.UpdateManager;
 import org.blackum.blackaddons.feature.chat.ChatImageHandler;
-import org.blackum.blackaddons.feature.chat.ChatTriggerManager;
+import org.blackum.blackaddons.feature.chat.ChatActionManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import org.blackum.blackaddons.feature.chat.IrcPrefixManager;
 import org.blackum.blackaddons.feature.cheat.AutoSS;
@@ -131,7 +131,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             RngTracker.onChatMessage(handled);
             DungeonJoinHandler.onChatMessage(handled);
             PartyFinderManager.getInstance().onChatMessage(handled);
-            ChatTriggerManager.getInstance().onChatMessage(handled);
+            ChatActionManager.getInstance().onChatMessage(handled);
         });
 
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
@@ -140,7 +140,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             RngTracker.onChatMessage(handled);
             DungeonJoinHandler.onChatMessage(handled);
             PartyFinderManager.getInstance().onChatMessage(handled);
-            ChatTriggerManager.getInstance().onChatMessage(handled);
+            ChatActionManager.getInstance().onChatMessage(handled);
         });
 
         Blackaddons.LOGGER.info("Client initialization completed");
