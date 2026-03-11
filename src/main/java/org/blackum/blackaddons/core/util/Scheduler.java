@@ -2,8 +2,9 @@ package org.blackum.blackaddons.core.util;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 public class Scheduler {
     private static long currentTicks = 0;
@@ -43,7 +44,7 @@ public class Scheduler {
         ));
     }
 
-    private static void process(java.util.function.Consumer<Task> updateState) {
+    private static void process(Consumer<Task> updateState) {
         if (tasks.isEmpty()) return;
 
         for (Task task : tasks) {

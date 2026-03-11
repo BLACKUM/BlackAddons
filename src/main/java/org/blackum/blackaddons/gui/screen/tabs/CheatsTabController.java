@@ -59,7 +59,7 @@ public class CheatsTabController extends SimpleTabController {
 
             ToggleSwitch ssEnableToggle = new ToggleSwitch(contentX, contentY + 170, contentWidth - 20,
                     "Enable AutoSS",
-                    "Automatically solves F7 devices",
+                    "Automatically solves F7/M7 Simon Says",
                     ConfigManager.data.AutoSSEnabled, value -> {
                         ConfigManager.data.AutoSSEnabled = value;
                         ConfigManager.save();
@@ -67,7 +67,7 @@ public class CheatsTabController extends SimpleTabController {
             cheatsTab.addWidget(ssEnableToggle);
 
             Label ssTickLabel = new Label(contentX, contentY + 220,
-                    "Action Delay: " + ConfigManager.data.AutoSSDelay + " ticks", Label.Style.BODY);
+                    delayLabel(ConfigManager.data.AutoSSDelay), Label.Style.BODY);
             cheatsTab.addWidget(ssTickLabel);
 
             Slider ssTickSlider = new Slider(contentX, contentY + 240, contentWidth - 20, 0, 20,
@@ -75,7 +75,7 @@ public class CheatsTabController extends SimpleTabController {
                         int ticks = Math.round(val);
                         if (ticks != ConfigManager.data.AutoSSDelay) {
                             ConfigManager.data.AutoSSDelay = ticks;
-                            ssTickLabel.setText("Action Delay: " + ticks + " ticks");
+                            ssTickLabel.setText(delayLabel(ticks));
                             ConfigManager.save();
                         }
                     });
@@ -205,110 +205,105 @@ public class CheatsTabController extends SimpleTabController {
         int contentX = autoSSCard.getContentX();
         int contentY = autoSSCard.getContentY();
 
-        ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
+        ListView listView = new ListView(contentX, contentY, 260, 260);
+
+        ToggleSwitch enableToggle = new ToggleSwitch(0, 0, 260,
                 "Enable AutoSS",
                 "Automatically solves F7 devices",
                 ConfigManager.data.AutoSSEnabled, value -> {
             ConfigManager.data.AutoSSEnabled = value;
             ConfigManager.save();
         });
-        autoSSCard.addChild(enableToggle);
+        listView.addItem(enableToggle);
 
-        Label tickLabel = new Label(contentX, contentY + 50,
-                "Action Delay: " + ConfigManager.data.AutoSSDelay + " ticks", Label.Style.BODY);
-        autoSSCard.addChild(tickLabel);
+        Label tickLabel = new Label(0, 0,
+                delayLabel(ConfigManager.data.AutoSSDelay), Label.Style.BODY);
+        listView.addItem(tickLabel);
 
-        Slider tickSlider = new Slider(contentX, contentY + 70, 260, 0, 20,
+        Slider tickSlider = new Slider(0, 0, 260, 0, 20,
                 ConfigManager.data.AutoSSDelay, val -> {
             int ticks = Math.round(val);
             if (ticks != ConfigManager.data.AutoSSDelay) {
                 ConfigManager.data.AutoSSDelay = ticks;
-                tickLabel.setText("Action Delay: " + ticks + " ticks");
+                tickLabel.setText(delayLabel(ticks));
                 ConfigManager.save();
             }
         });
-        autoSSCard.addChild(tickSlider);
+        listView.addItem(tickSlider);
 
-        Label distLabel = new Label(contentX, contentY + 100,
+        Label distLabel = new Label(0, 0,
                 String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
-        autoSSCard.addChild(distLabel);
+        listView.addItem(distLabel);
 
-        Slider distSlider = new Slider(contentX, contentY + 120, 260, 2.0f, 10.0f,
+        Slider distSlider = new Slider(0, 0, 260, 2.0f, 10.0f,
                 ConfigManager.data.AutoSSDistanceLimit, val -> {
             ConfigManager.data.AutoSSDistanceLimit = val;
             distLabel.setText(String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", val));
             ConfigManager.save();
         });
-        autoSSCard.addChild(distSlider);
+        listView.addItem(distSlider);
 
-        Label speedLabel = new Label(contentX, contentY + 150,
+        Label speedLabel = new Label(0, 0,
                 String.format(java.util.Locale.ROOT, "Rotation Speed: %.1f", ConfigManager.data.AutoSSRotationSpeed), Label.Style.BODY);
-        autoSSCard.addChild(speedLabel);
+        listView.addItem(speedLabel);
 
-        Slider speedSlider = new Slider(contentX, contentY + 170, 260, 1.0f, 50.0f,
+        Slider speedSlider = new Slider(0, 0, 260, 1.0f, 50.0f,
                 ConfigManager.data.AutoSSRotationSpeed, val -> {
             ConfigManager.data.AutoSSRotationSpeed = val;
             speedLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Speed: %.1f", val));
             ConfigManager.save();
         });
-        autoSSCard.addChild(speedSlider);
+        listView.addItem(speedSlider);
 
-        Label curveLabel = new Label(contentX, contentY + 200,
+        Label curveLabel = new Label(0, 0,
                 String.format(java.util.Locale.ROOT, "Rotation Curve: %.0f%%", ConfigManager.data.AutoSSRotationCurve * 100), Label.Style.BODY);
-        autoSSCard.addChild(curveLabel);
+        listView.addItem(curveLabel);
 
-        Slider curveSlider = new Slider(contentX, contentY + 220, 260, 0.0f, 200.0f,
+        Slider curveSlider = new Slider(0, 0, 260, 0.0f, 200.0f,
                 ConfigManager.data.AutoSSRotationCurve * 100, val -> {
             ConfigManager.data.AutoSSRotationCurve = val / 100f;
             curveLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Curve: %.0f%%", val));
             ConfigManager.save();
         });
-        autoSSCard.addChild(curveSlider);
+        listView.addItem(curveSlider);
 
-        ToggleSwitch instantToggle = new ToggleSwitch(contentX, contentY + 260, 260,
-                "Instant Snap",
-                "Instantly snaps to targets",
-                ConfigManager.data.AutoSSInstantSnap, value -> {
-            ConfigManager.data.AutoSSInstantSnap = value;
-            ConfigManager.save();
-        });
-        autoSSCard.addChild(instantToggle);
-
-        ToggleSwitch autoStartToggle = new ToggleSwitch(contentX, contentY + 300, 260,
-                "Auto SS Start",
-                "Automatically aims and clicks the start button",
-                ConfigManager.data.AutoSSAutoStart, value -> {
-            ConfigManager.data.AutoSSAutoStart = value;
-            ConfigManager.save();
-        });
-        autoSSCard.addChild(autoStartToggle);
-
-        ToggleSwitch trySkipToggle = new ToggleSwitch(contentX, contentY + 340, 260,
+        ToggleSwitch trySkipToggle = new ToggleSwitch(0, 0, 260,
                 "Try SS Skip",
                 "Clicks start button 3 times for potential skip",
                 ConfigManager.data.AutoSSTrySkip, value -> {
             ConfigManager.data.AutoSSTrySkip = value;
             ConfigManager.save();
         });
-        autoSSCard.addChild(trySkipToggle);
+        trySkipToggle.setVisible(ConfigManager.data.AutoSSAutoStart);
 
-        ToggleSwitch debugToggle = new ToggleSwitch(contentX, contentY + 380, 260,
+        ToggleSwitch autoStartToggle = new ToggleSwitch(0, 0, 260,
+                "Auto SS Start",
+                "Automatically aims and clicks the start button",
+                ConfigManager.data.AutoSSAutoStart, value -> {
+            ConfigManager.data.AutoSSAutoStart = value;
+            trySkipToggle.setVisible(value);
+            ConfigManager.save();
+        });
+        listView.addItem(autoStartToggle);
+        listView.addItem(trySkipToggle);
+
+        ToggleSwitch debugToggle = new ToggleSwitch(0, 0, 260,
                 "Debug Mode",
                 "Shows debug overlay and logs to a file",
                 ConfigManager.data.AutoSSDebug, value -> {
             ConfigManager.data.AutoSSDebug = value;
             ConfigManager.save();
         });
-        autoSSCard.addChild(debugToggle);
+        listView.addItem(debugToggle);
 
-        Button moveOverlayButton = new Button(contentX, contentY + 420, 260, 20, "Set Overlay Position", () -> {
+        Button moveOverlayButton = new Button(0, 0, 260, 20, "Set Overlay Position", () -> {
             net.minecraft.client.Minecraft.getInstance().execute(() -> {
                 net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen));
             });
         });
-        autoSSCard.addChild(moveOverlayButton);
+        listView.addItem(moveOverlayButton);
 
-        autoSSCard.setExpandedHeight(autoSSCard.getExpandedHeight() + 160);
+        autoSSCard.addChild(listView);
         autoSSCard.updateLayout();
         return autoSSCard;
     }
@@ -526,6 +521,9 @@ public class CheatsTabController extends SimpleTabController {
         rotationCard.updateLayout();
         return rotationCard;
     }
-
+    private static String delayLabel(int ticks) {
+        String base = "Action Delay: " + ticks + (ticks == 1 ? " tick" : " ticks");
+        return ticks <= 1 ? base + " (can be broken)" : base;
+    }
 
 }

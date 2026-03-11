@@ -2,49 +2,76 @@ package org.blackum.blackaddons.feature.cheat;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.manager.RotationManager;
 import org.blackum.blackaddons.core.util.LocationUtils;
 import org.blackum.blackaddons.core.util.Scheduler;
 import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Vector4f;
-import net.minecraft.util.Mth;
-import org.blackum.blackaddons.mixin.core.GameRendererAccessor;
+import org.blackum.blackaddons.feature.chat.ChatUtils;
 import org.blackum.blackaddons.gui.render.Theme;
+import org.blackum.blackaddons.mixin.core.GameRendererAccessor;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector4f;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AutoSS {
-    private static final BlockPos startButton = new BlockPos(110, 121, 91);
-    private static final BlockPos buttonCheckPos = new BlockPos(110, 120, 92);
-    private static final BlockPos startPos = new BlockPos(111, 120, 92);
+    private static final BlockPos START_BUTTON = new BlockPos(110, 121, 91);
+    private static final BlockPos BUTTON_CHECK_POS = new BlockPos(110, 120, 92);
+    private static final BlockPos START_POS = new BlockPos(111, 120, 92);
     private static final int MAX_SS_ROUNDS = 5;
-    
-    private static final Pattern startRegex = Pattern.compile("^\\[BOSS\\] Goldor: Who dares trespass into my domain\\?$");
-    private static final Pattern completeRegex = Pattern.compile("^([A-Za-z0-9_]+) completed a device! \\(\\d/7\\)$");
-    
+
+    private static final Pattern START_REGEX = Pattern.compile("^\\[BOSS\\] Goldor: Who dares trespass into my domain\\?$");
+    private static final Pattern COMPLETE_REGEX = Pattern.compile("^([A-Za-z0-9_]+) completed a device! \\(\\d/7\\)$");
+
     private static final float TARGET_X_OFFSET = 0.50f;
     private static final float TARGET_Y_OFFSET = -0.05f;
     private static final float TARGET_Z_OFFSET = 0.00f;
 
+    private static final int BREAK_TICKS_THRESHOLD = 12;
+    private static final int RETURN_POINT_DELAY_TICKS = 20;
+    private static final float AUTO_SS_FORCED_RANDOMNESS = 0.05f;
+    private static final double DEVICE_SEARCH_RADIUS = 3.0;
+    private static final int NODE_MARKER_HALF_SIZE = 6;
+
+    private static final int COLOR_CURRENT_NODE = 0xFF00FF00;
+    private static final int COLOR_NEXT_NODE = 0xFFFFFF00;
+    private static final int COLOR_OTHER_NODE = 0xFFFF0000;
+    private static final int COLOR_MARKER_BG = 0xAA000000;
+    private static final int COLOR_TEXT_WHITE = 0xFFFFFFFF;
+
+    private static final int DELAY_JITTER_MAX = 2;
+    private static final Random RANDOM = new Random();
+
     private static final List<BlockPos> solution = new ArrayList<>();
     private static final List<BlockPos> solverQueue = new ArrayList<>();
+    private static final Set<BlockPos> lastLitPositions = new HashSet<>();
+    private static final Set<BlockPos> brokenPositions = new HashSet<>();
+    private static final Set<BlockPos> permanentBrokenLamps = new HashSet<>();
+
     private static boolean lastExisted = false;
     private static boolean firstPatternOfRound = true;
     private static boolean allObi = true;
@@ -56,8 +83,8 @@ public class AutoSS {
     private static boolean settingsOverridden = false;
     private static int solvingIndex = 0;
     private static BlockPos preAimTarget = null;
-    private static int delayTicksRemaining = 0;
     private static boolean waitingForRotation = false;
+    private static boolean waitingForDelay = false;
     private static float originalRandomness = 0f;
     private static float originalSpeed = 0f;
     private static float originalCurve = 0f;
@@ -68,8 +95,6 @@ public class AutoSS {
     private static boolean canBreak = false;
     private static boolean wasBroken = false;
     private static long ssStartTime = 0;
-    private static final java.util.Set<BlockPos> lastLitPositions = new java.util.HashSet<>();
-    private static final java.util.Set<BlockPos> brokenPositions = new java.util.HashSet<>();
     private static int skipClicksRemaining = 0;
     private static String lastCompletionTime = "None";
 
@@ -95,22 +120,34 @@ public class AutoSS {
         String text = message.getString();
         if (text == null) return;
 
-        if (startRegex.matcher(text).find()) {
+        if (START_REGEX.matcher(text).find()) {
             resetSolver();
             autoStartTriggered = true;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null) {
+                permanentBrokenLamps.clear();
+                for (int dy = 0; dy <= 3; dy++) {
+                    for (int dz = 0; dz <= 3; dz++) {
+                        BlockPos p = START_POS.offset(0, dy, dz);
+                        if (mc.level.getBlockState(p).is(Blocks.SEA_LANTERN)) {
+                            permanentBrokenLamps.add(p);
+                        }
+                    }
+                }
+            }
         } else {
-            java.util.regex.Matcher completeMatcher = completeRegex.matcher(text);
+            Matcher completeMatcher = COMPLETE_REGEX.matcher(text);
             if (completeMatcher.matches()) {
                 String playerName = completeMatcher.group(1);
-                
+
                 Minecraft client = Minecraft.getInstance();
                 if (client != null && client.player != null) {
                     if (playerName.equals(client.player.getName().getString()) || playerName.equals(client.player.getScoreboardName())) {
                         if (ssStartTime > 0) {
                             long time = System.currentTimeMillis() - ssStartTime;
-                            lastCompletionTime = String.format(java.util.Locale.US, "%.3fs", time / 1000.0f);
+                            lastCompletionTime = String.format(Locale.US, "%.3fs", time / 1000.0f);
                             String logMsg = "SS completed in " + lastCompletionTime;
-                            org.blackum.blackaddons.feature.chat.ChatUtils.send_debug("§a" + logMsg);
+                            ChatUtils.send_debug("§a" + logMsg);
                             AutoSSLogger.log(logMsg);
                             ssStartTime = 0;
                             canBreak = false;
@@ -126,7 +163,7 @@ public class AutoSS {
         if (!LocationUtils.inDungeons()) return;
 
         boolean deviceActive = false;
-        for (net.minecraft.world.entity.Entity entity : client.level.getEntities(null, new net.minecraft.world.phys.AABB(startButton).inflate(3.0))) {
+        for (net.minecraft.world.entity.Entity entity : client.level.getEntities(null, new net.minecraft.world.phys.AABB(START_BUTTON).inflate(DEVICE_SEARCH_RADIUS))) {
             if (entity.hasCustomName()) {
                 String name = entity.getCustomName().getString();
                 if (name.contains("Device Active")) {
@@ -143,13 +180,13 @@ public class AutoSS {
             return;
         }
 
-        boolean buttonsExist = client.level.getBlockState(buttonCheckPos).getBlock() == Blocks.STONE_BUTTON;
+        boolean buttonsExist = client.level.getBlockState(BUTTON_CHECK_POS).getBlock() == Blocks.STONE_BUTTON;
 
         boolean isGameActive = false;
         for (int dy = 0; dy <= 3; dy++) {
             for (int dz = 0; dz <= 3; dz++) {
-                BlockPos p = startPos.offset(0, dy, dz);
-                if (client.level.getBlockState(p).getBlock() != Blocks.OBSIDIAN) {
+                BlockPos p = START_POS.offset(0, dy, dz);
+                if (client.level.getBlockState(p).getBlock() != Blocks.OBSIDIAN && !permanentBrokenLamps.contains(p)) {
                     isGameActive = true;
                     break;
                 }
@@ -158,13 +195,13 @@ public class AutoSS {
         }
 
         if (isGameActive) {
-            breakTicks = 12;
+            breakTicks = BREAK_TICKS_THRESHOLD;
             canBreak = true;
             if (wasBroken) {
                 wasBroken = false;
                 AutoSSLogger.log("SS Started/Resumed (isGameActive=true)");
                 if (ConfigManager.data.AutoSSAlerts) {
-                    org.blackum.blackaddons.feature.chat.ChatUtils.send_debug("§aSS started");
+                    ChatUtils.send_debug("§aSS started");
                 }
             }
         } else {
@@ -175,7 +212,7 @@ public class AutoSS {
                     boolean allButtonsMissing = true;
                     for (int dy = 0; dy <= 3; dy++) {
                         for (int dz = 0; dz <= 3; dz++) {
-                            BlockPos p = buttonCheckPos.offset(0, dy, dz);
+                            BlockPos p = BUTTON_CHECK_POS.offset(0, dy, dz);
                             if (client.level.getBlockState(p).getBlock() != Blocks.AIR) {
                                 allButtonsMissing = false;
                                 break;
@@ -184,40 +221,48 @@ public class AutoSS {
                         if (!allButtonsMissing) break;
                     }
 
-                    if (allButtonsMissing) {
+                    if (allButtonsMissing && solution.isEmpty()) {
                         canBreak = false;
                         wasBroken = true;
+                        permanentBrokenLamps.clear();
+                        for (int dy2 = 0; dy2 <= 3; dy2++) {
+                            for (int dz2 = 0; dz2 <= 3; dz2++) {
+                                BlockPos p = START_POS.offset(0, dy2, dz2);
+                                if (client.level.getBlockState(p).is(Blocks.SEA_LANTERN)) {
+                                    permanentBrokenLamps.add(p);
+                                }
+                            }
+                        }
+                        if (!permanentBrokenLamps.isEmpty()) {
+                            AutoSSLogger.log("Permanent broken lamps detected: " + permanentBrokenLamps.size());
+                        }
                         if (ConfigManager.data.AutoSSAlerts) {
-                            org.blackum.blackaddons.feature.chat.ChatUtils.send_debug("§cSS broke");
+                            ChatUtils.send_debug("§cSS broke");
                             client.player.playSound(net.minecraft.sounds.SoundEvents.ANVIL_LAND, 5f, 0f);
                         }
                         ssStartTime = 0;
                     }
                 }
             }
-            
+
             if (!isGameActive && !canBreak) {
-                if (isSolving || !solution.isEmpty()) {
+                if (isSolving || (!solution.isEmpty() && !isPreAiming)) {
                     resetSolver();
                 }
-                
-                if (autoStartTriggered && client.level.getBlockState(startButton).getBlock() == Blocks.STONE_BUTTON) {
+
+                if (autoStartTriggered && client.level.getBlockState(START_BUTTON).getBlock() == Blocks.STONE_BUTTON) {
                     float maxDist = ConfigManager.data.AutoSSDistanceLimit;
-                    if (client.player.distanceToSqr(startButton.getX() + 0.5, client.player.getY(), startButton.getZ() + 0.5) <= maxDist * maxDist) {
-                        if (ConfigManager.data.AutoSSAutoStart || ConfigManager.data.AutoSSTrySkip) {
-                            if (isLookingAtTarget(startButton.east())) {
-                                if (ConfigManager.data.AutoSSTrySkip) {
-                                    skipClicksRemaining = 3;
-                                } else if (ConfigManager.data.AutoSSAutoStart) {
-                                    skipClicksRemaining = 1;
-                                }
+                    if (client.player.distanceToSqr(START_BUTTON.getX() + 0.5, client.player.getY(), START_BUTTON.getZ() + 0.5) <= maxDist * maxDist) {
+                        if (ConfigManager.data.AutoSSAutoStart) {
+                            if (isLookingAtTarget(START_BUTTON.east())) {
+                                skipClicksRemaining = ConfigManager.data.AutoSSTrySkip ? 3 : 1;
                                 if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
                                 autoStartTriggered = false;
                                 isPreAiming = false;
                                 preAimTarget = null;
                                 RotationManager.getInstance().clearSpline();
                             } else {
-                                startPreAiming(startButton.east());
+                                startPreAiming(START_BUTTON.east());
                             }
                         } else {
                             autoStartTriggered = false;
@@ -228,23 +273,19 @@ public class AutoSS {
         }
 
         if (skipClicksRemaining > 0) {
-            if (isLookingAtTarget(startButton.east())) {
+            if (isLookingAtTarget(START_BUTTON.east())) {
                 if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
-                Scheduler.schedule(0, 0, () -> {
-                    List<ConfigManager.ActionStep> actions = new java.util.ArrayList<>();
-                    actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.USE_ITEM, 0, "", 0, 0));
-                    ChatActionExecutor.getInstance().execute(actions, null);
-                });
+                performClick();
                 skipClicksRemaining--;
             } else {
-                startPreAiming(startButton.east());
+                startPreAiming(START_BUTTON.east());
             }
         }
 
         if (isSolving) {
             boolean playerInFront = false;
-            if (client.hitResult != null && client.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
-                if (((net.minecraft.world.phys.EntityHitResult) client.hitResult).getEntity() instanceof net.minecraft.world.entity.player.Player) {
+            if (client.hitResult != null && client.hitResult.getType() == HitResult.Type.ENTITY) {
+                if (((EntityHitResult) client.hitResult).getEntity() instanceof net.minecraft.world.entity.player.Player) {
                     playerInFront = true;
                 }
             }
@@ -260,21 +301,7 @@ public class AutoSS {
                 return;
             }
 
-            if (delayTicksRemaining > 0) {
-                delayTicksRemaining--;
-                if (delayTicksRemaining == 0) {
-                    if (solvingIndex < solverQueue.size()) {
-                        RotationManager.getInstance().advanceSpline();
-                        if (ConfigManager.data.AutoSSInstantSnap) {
-                            RotationManager.getInstance().snapToTarget();
-                        }
-                        waitingForRotation = true;
-                    } else {
-                        endSolving();
-                    }
-                }
-                return;
-            }
+            if (waitingForDelay) return;
 
             if (solvingIndex >= solverQueue.size()) {
                 endSolving();
@@ -282,26 +309,23 @@ public class AutoSS {
             }
 
             if (waitingForRotation) {
-                boolean lookingAtButton = false;
                 boolean isReturnPoint = hasReturnPoint && (solvingIndex == solverQueue.size() - 1);
 
+                boolean lookingAtButton = false;
                 if (solvingIndex < solverQueue.size() && !isReturnPoint) {
                     lookingAtButton = isLookingAtTarget(solverQueue.get(solvingIndex));
                 }
 
                 if (lookingAtButton || RotationManager.getInstance().isAtSplineNode()) {
+                    int capturedIndex = solvingIndex;
                     if (!isReturnPoint) {
-                        AutoSSLogger.log("Clicking node " + solvingIndex + " at " + solverQueue.get(solvingIndex).toShortString());
-                        Scheduler.schedule(0, 0, () -> {
-                            List<ConfigManager.ActionStep> actions = new ArrayList<>();
-                            actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.USE_ITEM, 0, "", 1, 0));
-                            ChatActionExecutor.getInstance().execute(actions, null);
-                        });
-                        
-                        delayTicksRemaining = ConfigManager.data.AutoSSInstantSnap ? 1 : Math.max(1, ConfigManager.data.AutoSSDelay);
+                        AutoSSLogger.log("Clicking node " + capturedIndex + " at " + solverQueue.get(capturedIndex).toShortString());
+                        int tickDelay = ConfigManager.data.AutoSSDelay + RANDOM.nextInt(DELAY_JITTER_MAX + 1);
+                        performClick();
+                        scheduleAdvance(tickDelay);
                     } else {
-                        AutoSSLogger.log("Reached return point " + solverQueue.get(solvingIndex).toShortString());
-                        delayTicksRemaining = 20;
+                        AutoSSLogger.log("Reached return point " + solverQueue.get(capturedIndex).toShortString());
+                        scheduleAdvance(RETURN_POINT_DELAY_TICKS);
                     }
 
                     solvingIndex++;
@@ -312,41 +336,47 @@ public class AutoSS {
 
             if (solvingIndex < solverQueue.size()) {
                 if (!waitingForRotation) {
-                    List<net.minecraft.world.phys.Vec3> splinePoints = new java.util.ArrayList<>();
-                    
-                    for (BlockPos p : solverQueue) {
-                        double tx = p.getX() - 1 + 0.5 + TARGET_X_OFFSET;
-                        double ty = p.getY() + 0.5 + TARGET_Y_OFFSET;
-                        double tz = p.getZ() + 0.5 + TARGET_Z_OFFSET;
-                        splinePoints.add(new net.minecraft.world.phys.Vec3(tx, ty, tz));
-                    }
-
+                    List<Vec3> splinePoints = buildSplinePoints(solverQueue);
                     RotationManager.getInstance().rotateToSpline(splinePoints);
-                    if (ConfigManager.data.AutoSSInstantSnap) {
-                        RotationManager.getInstance().snapToTarget();
-                    }
                     waitingForRotation = true;
                 }
             } else {
                 endSolving();
             }
+
+            Set<BlockPos> currentLitWhileSolving = new HashSet<>();
+            for (int dy = 0; dy <= 3; dy++) {
+                for (int dz = 0; dz <= 3; dz++) {
+                    BlockPos pos = START_POS.offset(0, dy, dz);
+                    if (client.level.getBlockState(pos).is(Blocks.SEA_LANTERN)) {
+                        currentLitWhileSolving.add(pos);
+                    } else if (lastLitPositions.contains(pos) && client.level.getBlockState(pos).is(Blocks.OBSIDIAN)) {
+                        AutoSSLogger.log("Last chain node confirmed (lantern->obsidian): " + pos.toShortString());
+                        brokenPositions.add(pos);
+                    }
+                }
+            }
+            lastLitPositions.clear();
+            lastLitPositions.addAll(currentLitWhileSolving);
             return;
         }
 
         if (buttonsExist && !lastExisted) {
             lastExisted = true;
-            firstPatternOfRound = true; 
+            firstPatternOfRound = true;
+            canBreak = true;
+            breakTicks = BREAK_TICKS_THRESHOLD;
             if (ssStartTime == 0) {
                 ssStartTime = System.currentTimeMillis();
                 AutoSSLogger.log("SS Started");
             }
-            
+
             brokenPositions.clear();
             lastLitPositions.clear();
-            
+
             for (int dy = 0; dy <= 3; dy++) {
                 for (int dz = 0; dz <= 3; dz++) {
-                    BlockPos p = startPos.offset(0, dy, dz);
+                    BlockPos p = START_POS.offset(0, dy, dz);
                     if (client.level.getBlockState(p).is(Blocks.SEA_LANTERN)) {
                         brokenPositions.add(p);
                     }
@@ -354,20 +384,20 @@ public class AutoSS {
             }
 
             float maxDist = ConfigManager.data.AutoSSDistanceLimit;
-            if (client.player.distanceToSqr(startPos.getX(), client.player.getY(), startPos.getZ()) > maxDist * maxDist) {
+            if (client.player.distanceToSqr(START_POS.getX(), client.player.getY(), START_POS.getZ()) > maxDist * maxDist) {
                 lastExisted = false;
                 return;
             }
-            
+
             if (!solution.isEmpty() && !isSolving) {
                 boolean wasPreAiming = isPreAiming;
                 isSolving = true;
                 isPreAiming = false;
                 firstPatternOfRound = false;
                 solvingIndex = 0;
-                delayTicksRemaining = 0;
                 waitingForRotation = false;
-                
+                waitingForDelay = false;
+
                 solverQueue.clear();
                 solverQueue.addAll(solution);
 
@@ -376,23 +406,14 @@ public class AutoSS {
                     solverQueue.add(solution.get(0));
                     hasReturnPoint = true;
                 }
-                
+
                 applyRotationSettings();
 
                 if (wasPreAiming) {
-                    List<net.minecraft.world.phys.Vec3> splinePoints = new java.util.ArrayList<>();
-                    for (BlockPos p : solverQueue) {
-                        double tx = p.getX() - 1 + 0.5 + TARGET_X_OFFSET;
-                        double ty = p.getY() + 0.5 + TARGET_Y_OFFSET;
-                        double tz = p.getZ() + 0.5 + TARGET_Z_OFFSET;
-                        splinePoints.add(new net.minecraft.world.phys.Vec3(tx, ty, tz));
-                    }
-                    
+                    List<Vec3> splinePoints = buildSplinePoints(solverQueue);
+
                     if (isLookingAtTarget(solverQueue.get(0))) {
                         RotationManager.getInstance().resumeWithSpline(splinePoints);
-                        if (ConfigManager.data.AutoSSInstantSnap) {
-                            RotationManager.getInstance().snapToTarget();
-                        }
                     } else {
                         RotationManager.getInstance().rotateToSpline(splinePoints);
                     }
@@ -405,13 +426,12 @@ public class AutoSS {
             lastExisted = false;
             endSolving();
             solution.clear();
-            lastLitPositions.clear();
         }
 
-        java.util.Set<BlockPos> currentLit = new java.util.HashSet<>();
+        Set<BlockPos> currentLit = new HashSet<>();
         for (int dy = 0; dy <= 3; dy++) {
             for (int dz = 0; dz <= 3; dz++) {
-                BlockPos pos = startPos.offset(0, dy, dz);
+                BlockPos pos = START_POS.offset(0, dy, dz);
                 boolean isLantern = client.level.getBlockState(pos).is(Blocks.SEA_LANTERN);
                 if (isLantern) {
                     currentLit.add(pos);
@@ -430,24 +450,34 @@ public class AutoSS {
                             }
                         }
                     }
+                } else if (lastLitPositions.contains(pos) && client.level.getBlockState(pos).is(Blocks.OBSIDIAN)) {
+                    AutoSSLogger.log("Last chain node confirmed (lantern->obsidian): " + pos.toShortString());
+                    if (permanentBrokenLamps.contains(pos) && !solution.contains(pos)) {
+                        solution.add(pos);
+                        permanentBrokenLamps.remove(pos);
+                        AutoSSLogger.log("Permanent broken lamp is last node, added to solution: " + pos.toShortString());
+                    }
+                    brokenPositions.add(pos);
                 }
             }
         }
         lastLitPositions.clear();
         lastLitPositions.addAll(currentLit);
-        
+
         if (!solution.isEmpty() && !isSolving && !autoStartTriggered && skipClicksRemaining == 0) {
             float maxDist = ConfigManager.data.AutoSSDistanceLimit;
-            if (client.player.distanceToSqr(startPos.getX(), client.player.getY(), startPos.getZ()) <= maxDist * maxDist) {
+            if (client.player.distanceToSqr(START_POS.getX(), client.player.getY(), START_POS.getZ()) <= maxDist * maxDist) {
                 BlockPos target = null;
                 if (firstPatternOfRound) {
                     if (solution.size() >= 2) {
                         target = solution.get(1);
+                    } else if (solution.size() == 1) {
+                        target = solution.get(0);
                     }
                 } else {
                     target = solution.get(0);
                 }
-                
+
                 if (target != null) {
                     startPreAiming(target);
                 } else if (isPreAiming) {
@@ -459,6 +489,40 @@ public class AutoSS {
         }
     }
 
+    private static List<Vec3> buildSplinePoints(List<BlockPos> positions) {
+        List<Vec3> splinePoints = new ArrayList<>();
+        for (BlockPos p : positions) {
+            double tx = p.getX() - 1 + 0.5 + TARGET_X_OFFSET;
+            double ty = p.getY() + 0.5 + TARGET_Y_OFFSET;
+            double tz = p.getZ() + 0.5 + TARGET_Z_OFFSET;
+            splinePoints.add(new Vec3(tx, ty, tz));
+        }
+        return splinePoints;
+    }
+
+    private static void performClick() {
+        List<ConfigManager.ActionStep> actions = new ArrayList<>();
+        actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.USE_ITEM, 0, "", 0, 0));
+        ChatActionExecutor.getInstance().execute(actions, null);
+    }
+
+    private static void scheduleAdvance(int tickDelay) {
+        waitingForDelay = true;
+        Scheduler.schedule(0, tickDelay, () -> {
+            waitingForDelay = false;
+            if (!isSolving) return;
+            if (solvingIndex < solverQueue.size()) {
+                RotationManager.getInstance().advanceSpline();
+                if (ConfigManager.data.AutoSSInstantSnap) {
+                    RotationManager.getInstance().snapToTarget();
+                }
+                waitingForRotation = true;
+            } else {
+                endSolving();
+            }
+        });
+    }
+
     private static void onRenderHud(GuiGraphics graphics, net.minecraft.client.DeltaTracker tracker) {
         if (!ConfigManager.data.AutoSSDebug || !ConfigManager.data.AutoSSEnabled) return;
         Minecraft client = Minecraft.getInstance();
@@ -466,13 +530,13 @@ public class AutoSS {
 
         List<String> debugInfo = new ArrayList<>();
         debugInfo.add(ChatFormatting.GOLD + "[AutoSS Debug]");
-        debugInfo.add("Solving: " + isSolving + (waitingForRotation ? " (Waiting Rot)" : ""));
+        debugInfo.add("Solving: " + isSolving + (waitingForRotation ? " (Waiting Rot)" : "") + (waitingForDelay ? " (Waiting Delay)" : ""));
         debugInfo.add("Solution Size: " + solution.size());
         debugInfo.add("Solving Index: " + solvingIndex + "/" + solverQueue.size());
 
         if (ssStartTime > 0) {
             long current = System.currentTimeMillis() - ssStartTime;
-            debugInfo.add(String.format(java.util.Locale.US, "Current Time: %.3fs", current / 1000.0f));
+            debugInfo.add(String.format(Locale.US, "Current Time: %.3fs", current / 1000.0f));
         }
         debugInfo.add("Last Time: " + lastCompletionTime);
 
@@ -481,11 +545,11 @@ public class AutoSS {
             boolean onTarget = isLookingAtTarget(target);
             debugInfo.add("Target: " + target.toShortString());
             debugInfo.add("On Target: " + (onTarget ? ChatFormatting.GREEN + "YES" : ChatFormatting.RED + "NO"));
-            
+
             RotationManager rm = RotationManager.getInstance();
             boolean rotDone = rm.isAtSplineNode();
             debugInfo.add("Rot Done: " + (rotDone ? ChatFormatting.GREEN + "YES" : ChatFormatting.RED + "NO"));
-            
+
             if (rm.isActive()) {
                 debugInfo.add(String.format("Rot: %.1f, %.1f", client.player.getYRot(), client.player.getXRot()));
             }
@@ -496,19 +560,18 @@ public class AutoSS {
             }
         }
 
-        int screenW = client.getWindow().getGuiScaledWidth();
         int overlayX = ConfigManager.data.AutoSSOverlayX < 0 ? 10 : ConfigManager.data.AutoSSOverlayX;
         int overlayY = ConfigManager.data.AutoSSOverlayY;
 
         int y = overlayY;
         for (String line : debugInfo) {
-            graphics.drawString(client.font, line, overlayX, y, 0xFFFFFFFF);
+            graphics.drawString(client.font, line, overlayX, y, COLOR_TEXT_WHITE);
             y += 10;
         }
-        graphics.drawString(client.font, ChatFormatting.YELLOW + "Solution:", overlayX, y, 0xFFFFFFFF);
+        graphics.drawString(client.font, ChatFormatting.YELLOW + "Solution:", overlayX, y, COLOR_TEXT_WHITE);
         y += 10;
         for (int i = 0; i < solution.size(); i++) {
-            graphics.drawString(client.font, (i + 1) + ". " + solution.get(i).toShortString(), overlayX + 10, y, 0xFFFFFFFF);
+            graphics.drawString(client.font, (i + 1) + ". " + solution.get(i).toShortString(), overlayX + 10, y, COLOR_TEXT_WHITE);
             y += 10;
         }
 
@@ -528,7 +591,7 @@ public class AutoSS {
         float aspect = (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight();
         Matrix4f proj = new Matrix4f().perspective(fov, aspect, 0.05f, mc.gameRenderer.getRenderDistance() * 4.0f);
 
-        org.joml.Quaternionf camRot = new org.joml.Quaternionf(mc.gameRenderer.getMainCamera().rotation());
+        Quaternionf camRot = new Quaternionf(mc.gameRenderer.getMainCamera().rotation());
         camRot.conjugate();
         Matrix4f view = new Matrix4f().rotation(camRot);
 
@@ -559,14 +622,14 @@ public class AutoSS {
             if (ix < -20 || ix > screenW + 20 || iy < -20 || iy > screenH + 20) continue;
 
             int color;
-            if (i == 0) color = 0xFF00FF00;      // Green
-            else if (i == 1) color = 0xFFFFFF00;   // Yellow
-            else color = 0xFFFF0000;               // Red
-            
+            if (i == 0) color = COLOR_CURRENT_NODE;
+            else if (i == 1) color = COLOR_NEXT_NODE;
+            else color = COLOR_OTHER_NODE;
+
             String text = String.valueOf(i + 1);
             int textW = mc.font.width(text);
 
-            g.fill(ix - 6, iy - 6, ix + 6, iy + 6, 0xAA000000);
+            g.fill(ix - NODE_MARKER_HALF_SIZE, iy - NODE_MARKER_HALF_SIZE, ix + NODE_MARKER_HALF_SIZE, iy + NODE_MARKER_HALF_SIZE, COLOR_MARKER_BG);
             g.drawString(mc.font, text, ix - textW / 2, iy - 4, color, true);
         }
     }
@@ -574,22 +637,22 @@ public class AutoSS {
     private static void startPreAiming(BlockPos pos) {
         if (isSolving) return;
         if (isPreAiming && pos.equals(preAimTarget)) return;
-        
+
         isPreAiming = true;
         preAimTarget = pos;
         applyRotationSettings();
-        
+
         double tx = pos.getX() - 1 + TARGET_X_OFFSET;
         double ty = pos.getY() + TARGET_Y_OFFSET;
         double tz = pos.getZ() + TARGET_Z_OFFSET;
-        
+
         RotationManager.getInstance().rotateToBlock(tx, ty, tz);
     }
 
     private static void applyRotationSettings() {
         if (settingsOverridden) return;
         originalRandomness = ConfigManager.data.rotationTargetRandomness;
-        ConfigManager.data.rotationTargetRandomness = 0.05f;
+        ConfigManager.data.rotationTargetRandomness = AUTO_SS_FORCED_RANDOMNESS;
 
         originalSpeed = ConfigManager.data.rotationSpeed;
         ConfigManager.data.rotationSpeed = ConfigManager.data.AutoSSRotationSpeed;
@@ -609,8 +672,8 @@ public class AutoSS {
 
     private static boolean isLookingAtTarget(BlockPos expectedLantern) {
         Minecraft client = Minecraft.getInstance();
-        if (client.hitResult != null && client.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-            BlockPos hitBlock = ((net.minecraft.world.phys.BlockHitResult) client.hitResult).getBlockPos();
+        if (client.hitResult != null && client.hitResult.getType() == HitResult.Type.BLOCK) {
+            BlockPos hitBlock = ((BlockHitResult) client.hitResult).getBlockPos();
             return hitBlock.equals(expectedLantern.west());
         }
         return false;
@@ -619,7 +682,7 @@ public class AutoSS {
     private static void handleClick(BlockPos clickedPos) {
         if (!LocationUtils.inDungeons()) return;
 
-        if (clickedPos.getX() == 110 && clickedPos.getY() == 121 && clickedPos.getZ() == 91) {
+        if (clickedPos.getX() == START_BUTTON.getX() && clickedPos.getY() == START_BUTTON.getY() && clickedPos.getZ() == START_BUTTON.getZ()) {
             if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
             solution.clear();
             return;
@@ -629,14 +692,14 @@ public class AutoSS {
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) return;
         if (client.level.getBlockState(clickedPos).getBlock() != Blocks.STONE_BUTTON) return;
-        
+
         long currentTime = System.currentTimeMillis();
         if (lastClick == currentTime) return;
         lastClick = currentTime;
 
         BlockPos checkPos = clickedPos.east();
         if (solution.isEmpty()) return;
-        
+
         if (checkPos.equals(solution.get(0))) {
             solution.remove(0);
             return;
@@ -655,6 +718,7 @@ public class AutoSS {
         preAimTarget = null;
         solvingIndex = 0;
         waitingForRotation = false;
+        waitingForDelay = false;
         solverQueue.clear();
         RotationManager.getInstance().clearSpline();
     }
@@ -662,6 +726,7 @@ public class AutoSS {
     private static void resetSolver() {
         if (isSolving || isPreAiming) AutoSSLogger.log("Resetting solver (Solving: " + isSolving + ", PreAim: " + isPreAiming + ")");
         endSolving();
+        autoStartTriggered = false;
         lastExisted = false;
         firstPatternOfRound = true;
         preAimTarget = null;

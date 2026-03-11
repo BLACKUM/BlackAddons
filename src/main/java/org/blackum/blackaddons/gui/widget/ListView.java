@@ -49,13 +49,15 @@ public class ListView extends Widget {
         graphics.enableScissor(x, y, x + width, y + height);
         int currentY = y - scrollOffset;
         for (Widget item : items) {
-            item.setX(x);
-            item.setY(currentY);
-            item.setWidth(width - scrollbarWidth - 12);
+            if (item.isVisible()) {
+                item.setX(x);
+                item.setY(currentY);
+                item.setWidth(width - scrollbarWidth - 12);
 
-            item.render(graphics, mouseX, mouseY, partialTick);
+                item.render(graphics, mouseX, mouseY, partialTick);
 
-            currentY += item.getHeight() + itemSpacing;
+                currentY += item.getHeight() + itemSpacing;
+            }
         }
         graphics.disableScissor();
 
@@ -70,13 +72,15 @@ public class ListView extends Widget {
 
         int currentY = y - scrollOffset;
         for (Widget item : items) {
-            item.setX(x);
-            item.setY(currentY);
-            item.setWidth(width - scrollbarWidth - 12);
+            if (item.isVisible()) {
+                item.setX(x);
+                item.setY(currentY);
+                item.setWidth(width - scrollbarWidth - 12);
 
-            item.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+                item.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
 
-            currentY += item.getHeight() + itemSpacing;
+                currentY += item.getHeight() + itemSpacing;
+            }
         }
     }
 
@@ -137,7 +141,7 @@ public class ListView extends Widget {
         draggingScrollbar = false;
 
         for (Widget item : items) {
-            if (item.mouseReleased(mouseX, mouseY, button)) {
+            if (item.isVisible() && item.mouseReleased(mouseX, mouseY, button)) {
                 return true;
             }
         }
@@ -153,7 +157,7 @@ public class ListView extends Widget {
         }
 
         for (Widget item : items) {
-            if (item.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            if (item.isVisible() && item.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
                 return true;
             }
         }
