@@ -14,11 +14,9 @@ public class ChatImageHandler {
     public static final Pattern DISCORD_IMAGE_PATTERN = Pattern.compile(Constants.DISCORD_IMAGE_REGEX);
 
     public static Component handleMessage(Component message) {
-        Component customNamedMessage = CustomNameManager.getInstance().replaceNames(message);
-
-        String text = customNamedMessage.getString();
+        String text = message.getString();
         if (text.contains(Constants.PREVIEW_LABEL.trim())) {
-            return customNamedMessage;
+            return message;
         }
 
         Matcher matcher = DISCORD_IMAGE_PATTERN.matcher(text);
@@ -26,7 +24,7 @@ public class ChatImageHandler {
 
         while (matcher.find()) {
             if (mutableMessage == null) {
-                mutableMessage = customNamedMessage.copy();
+                mutableMessage = message.copy();
             }
 
             String url = matcher.group();
@@ -38,6 +36,6 @@ public class ChatImageHandler {
             mutableMessage.append(previewComponent);
         }
 
-        return mutableMessage != null ? mutableMessage : customNamedMessage;
+        return mutableMessage != null ? mutableMessage : message;
     }
 }

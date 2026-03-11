@@ -23,7 +23,6 @@
     "gui.ChatComponentMixin",
     "gui.ScreenMixin",
     "core.FontMixin",
-    "gui.PlayerTabListMixin",
     "gui.GuiMixin",
     "gui.EffectsInInventoryMixin",
     "core.TextColorMixin",
