@@ -56,7 +56,7 @@ public class AutoSS {
 
     private static final int BREAK_TICKS_THRESHOLD = 12;
     private static final int RETURN_POINT_DELAY_TICKS = 20;
-    private static final float AUTO_SS_FORCED_RANDOMNESS = 0.05f;
+    private static final float AUTO_SS_FORCED_RANDOMNESS = 0.07f;
     private static final double DEVICE_SEARCH_RADIUS = 3.0;
     private static final int NODE_MARKER_HALF_SIZE = 6;
 
