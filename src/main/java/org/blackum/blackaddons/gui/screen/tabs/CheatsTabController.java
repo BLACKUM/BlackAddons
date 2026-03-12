@@ -17,6 +17,8 @@ public class CheatsTabController extends SimpleTabController {
     private Dropdown s2Dropdown;
     private Dropdown s3Dropdown;
     private Dropdown s4Dropdown;
+    private Label startDelayLabel;
+    private Slider startDelaySlider;
 
     public CheatsTabController(BlackAddonsGUI screen) {
         super(screen);
@@ -282,10 +284,49 @@ public class CheatsTabController extends SimpleTabController {
                 ConfigManager.data.AutoSSAutoStart, value -> {
             ConfigManager.data.AutoSSAutoStart = value;
             trySkipToggle.setVisible(value);
+            startDelayLabel.setVisible(value);
+            startDelaySlider.setVisible(value);
             ConfigManager.save();
         });
         listView.addItem(autoStartToggle);
+
+        startDelayLabel = new Label(0, 0,
+                startDelayLabel(ConfigManager.data.AutoSSAutoStartDelay), Label.Style.BODY);
+        startDelayLabel.setVisible(ConfigManager.data.AutoSSAutoStart);
+        listView.addItem(startDelayLabel);
+
+        startDelaySlider = new Slider(0, 0, 260, 0, 40,
+                ConfigManager.data.AutoSSAutoStartDelay, val -> {
+            int ticks = Math.round(val);
+            if (ticks != ConfigManager.data.AutoSSAutoStartDelay) {
+                ConfigManager.data.AutoSSAutoStartDelay = ticks;
+                startDelayLabel.setText(startDelayLabel(ticks));
+                ConfigManager.save();
+            }
+        });
+        startDelaySlider.setVisible(ConfigManager.data.AutoSSAutoStart);
+        listView.addItem(startDelaySlider);
+
         listView.addItem(trySkipToggle);
+
+        ToggleSwitch swapToItemToggle = new ToggleSwitch(0, 0, 260,
+                "Swap to InfiniLeap on Complete",
+                "Swaps to a specific item when device is finished",
+                ConfigManager.data.AutoSSSwapToItem, value -> {
+            ConfigManager.data.AutoSSSwapToItem = value;
+            ConfigManager.save();
+        });
+        listView.addItem(swapToItemToggle);
+
+        Dropdown swapModeDropdown = new Dropdown(0, 0, 260,
+                "Select what to do when device is finished",
+                List.of("Swap to InfiniLeap", "Swap and Open"),
+                mode -> {
+                    ConfigManager.data.AutoSSSwapMode = mode.equals("Swap and Open") ? 1 : 0;
+                    ConfigManager.save();
+                });
+        swapModeDropdown.setSelectedIndex(ConfigManager.data.AutoSSSwapMode);
+        listView.addItem(swapModeDropdown);
 
         ToggleSwitch debugToggle = new ToggleSwitch(0, 0, 260,
                 "Debug Mode",
@@ -422,15 +463,15 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(humanizerToggle);
 
         Label curveLabel = new Label(0, 0,
-                String.format("Rotation Curve: %.0f%%", ConfigManager.data.rotationJitter * 100),
+                String.format("Rotation Curve: %.0f%%", ConfigManager.data.rotationVariance * 100),
                 Label.Style.BODY);
         listView.addItem(curveLabel);
-        Slider curveSlider = new Slider(0, 0, 260, 0, 200,
-                ConfigManager.data.rotationJitter * 100, val -> {
-                    ConfigManager.data.rotationJitter = val / 100f;
-                    curveLabel.setText(String.format("Rotation Curve: %.0f%%", val));
-                    ConfigManager.save();
-                });
+        Slider curveSlider = new Slider(0, 0, 260, 0, 50,
+                ConfigManager.data.rotationVariance * 100, val -> {
+            ConfigManager.data.rotationVariance = val / 100f;
+            curveLabel.setText(String.format("Rotation Curve: %.0f%%", val));
+            ConfigManager.save();
+        });
         listView.addItem(curveSlider);
 
         Label randomLabel = new Label(0, 0,
@@ -524,6 +565,15 @@ public class CheatsTabController extends SimpleTabController {
     private static String delayLabel(int ticks) {
         String base = "Action Delay: " + ticks + (ticks == 1 ? " tick" : " ticks");
         return ticks <= 1 ? base + " (can be broken)" : base;
+    }
+
+    private static String startDelayLabel(int ticks) {
+        double seconds = ticks * 0.05;
+        String base = String.format(java.util.Locale.US, "Auto Start Delay: %d ticks (%.3f seconds)", ticks, seconds);
+        if (ticks <= 2) {
+            base += " §c(not safe)";
+        }
+        return base;
     }
 
 }

@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -25,6 +26,8 @@ import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import org.blackum.blackaddons.feature.chat.ChatUtils;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.mixin.core.GameRendererAccessor;
+import org.blackum.blackaddons.mixin.core.InventoryAccessor;
+import org.blackum.blackaddons.mixin.core.KeyBindingAccessor;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector4f;
@@ -63,7 +66,7 @@ public class AutoSS {
     private static final int COLOR_MARKER_BG = 0xAA000000;
     private static final int COLOR_TEXT_WHITE = 0xFFFFFFFF;
 
-    private static final int DELAY_JITTER_MAX = 2;
+    private static final int MAX_RANDOM_DELAY_TICKS = 2;
     private static final Random RANDOM = new Random();
 
     private static final List<BlockPos> solution = new ArrayList<>();
@@ -81,6 +84,7 @@ public class AutoSS {
     private static boolean isPreAiming = false;
     private static boolean autoStartTriggered = false;
     private static boolean settingsOverridden = false;
+    private static boolean wasAutoSSEnabled = false;
     private static int solvingIndex = 0;
     private static BlockPos preAimTarget = null;
     private static boolean waitingForRotation = false;
@@ -92,6 +96,7 @@ public class AutoSS {
     private static long lastClick = 0L;
 
     private static int breakTicks = 0;
+    private static int autoStartDelayTicks = 0;
     private static boolean canBreak = false;
     private static boolean wasBroken = false;
     private static long ssStartTime = 0;
@@ -134,6 +139,7 @@ public class AutoSS {
                         }
                     }
                 }
+                autoStartDelayTicks = ConfigManager.data.AutoSSAutoStartDelay + RANDOM.nextInt(2) + 1;
             }
         } else {
             Matcher completeMatcher = COMPLETE_REGEX.matcher(text);
@@ -159,7 +165,13 @@ public class AutoSS {
     }
 
     private static void onClientTick(Minecraft client) {
-        if (!ConfigManager.data.AutoSSEnabled || client.player == null || client.level == null) return;
+        boolean isEnabled = ConfigManager.data.AutoSSEnabled;
+        if (isEnabled && !wasAutoSSEnabled) {
+            resetSolver();
+        }
+        wasAutoSSEnabled = isEnabled;
+
+        if (!isEnabled || client.player == null || client.level == null) return;
         if (!LocationUtils.inDungeons()) return;
 
         boolean deviceActive = false;
@@ -175,6 +187,24 @@ public class AutoSS {
 
         if (deviceActive) {
             if (isSolving || isPreAiming || skipClicksRemaining > 0 || ssStartTime > 0 || lastExisted || !solution.isEmpty()) {
+                if (ConfigManager.data.AutoSSSwapToItem) {
+                    int swapDelay = RANDOM.nextInt(2) + 1;
+                    Scheduler.schedule(0, swapDelay, () -> {
+                        int slot = findInfiniLeapSlot();
+                        if (slot != -1) {
+                            performSwap(slot);
+                            if (ConfigManager.data.AutoSSSwapMode >= 1) {
+                                int openDelay = RANDOM.nextInt(2) + 1;
+                                Scheduler.schedule(0, openDelay, () -> {
+                                    Minecraft mc = Minecraft.getInstance();
+                                    if (mc.player != null && mc.options != null) {
+                                        KeyMapping.click(((KeyBindingAccessor) mc.options.keyUse).getBoundKey());
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
                 resetSolver();
             }
             return;
@@ -255,6 +285,10 @@ public class AutoSS {
                     if (client.player.distanceToSqr(START_BUTTON.getX() + 0.5, client.player.getY(), START_BUTTON.getZ() + 0.5) <= maxDist * maxDist) {
                         if (ConfigManager.data.AutoSSAutoStart) {
                             if (isLookingAtTarget(START_BUTTON.east())) {
+                                if (autoStartDelayTicks > 0) {
+                                    autoStartDelayTicks--;
+                                    return;
+                                }
                                 skipClicksRemaining = ConfigManager.data.AutoSSTrySkip ? 3 : 1;
                                 if (ssStartTime == 0) ssStartTime = System.currentTimeMillis();
                                 autoStartTriggered = false;
@@ -320,7 +354,7 @@ public class AutoSS {
                     int capturedIndex = solvingIndex;
                     if (!isReturnPoint) {
                         AutoSSLogger.log("Clicking node " + capturedIndex + " at " + solverQueue.get(capturedIndex).toShortString());
-                        int tickDelay = ConfigManager.data.AutoSSDelay + RANDOM.nextInt(DELAY_JITTER_MAX + 1);
+                        int tickDelay = ConfigManager.data.AutoSSDelay + RANDOM.nextInt(2) + 1;
                         performClick();
                         scheduleAdvance(tickDelay);
                     } else {
@@ -382,10 +416,12 @@ public class AutoSS {
                     }
                 }
             }
+        }
 
+        if (buttonsExist) {
             float maxDist = ConfigManager.data.AutoSSDistanceLimit;
             if (client.player.distanceToSqr(START_POS.getX(), client.player.getY(), START_POS.getZ()) > maxDist * maxDist) {
-                lastExisted = false;
+                if (lastExisted) lastExisted = false;
                 return;
             }
 
@@ -657,8 +693,8 @@ public class AutoSS {
         originalSpeed = ConfigManager.data.rotationSpeed;
         ConfigManager.data.rotationSpeed = ConfigManager.data.AutoSSRotationSpeed;
 
-        originalCurve = ConfigManager.data.rotationJitter;
-        ConfigManager.data.rotationJitter = ConfigManager.data.AutoSSRotationCurve;
+        originalCurve = ConfigManager.data.rotationVariance;
+        ConfigManager.data.rotationVariance = ConfigManager.data.AutoSSRotationCurve;
         settingsOverridden = true;
     }
 
@@ -666,7 +702,7 @@ public class AutoSS {
         if (!settingsOverridden) return;
         ConfigManager.data.rotationTargetRandomness = originalRandomness;
         ConfigManager.data.rotationSpeed = originalSpeed;
-        ConfigManager.data.rotationJitter = originalCurve;
+        ConfigManager.data.rotationVariance = originalCurve;
         settingsOverridden = false;
     }
 
@@ -737,5 +773,31 @@ public class AutoSS {
         hasReturnPoint = false;
         ssStartTime = 0;
         skipClicksRemaining = 0;
+    }
+
+    private static int findInfiniLeapSlot() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return -1;
+
+        for (int i = 0; i < 9; i++) {
+            net.minecraft.world.item.ItemStack stack = mc.player.getInventory().getItem(i);
+            if (!stack.isEmpty()) {
+                String name = ChatFormatting.stripFormatting(stack.getHoverName().getString());
+                if (name != null && name.contains("InfiniLeap")) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    private static void performSwap(int slot) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.options == null || slot < 0 || slot >= 9) return;
+
+        KeyMapping[] hotbarKeys = mc.options.keyHotbarSlots;
+        if (hotbarKeys != null && slot < hotbarKeys.length) {
+            KeyMapping.click(((KeyBindingAccessor) hotbarKeys[slot]).getBoundKey());
+        }
     }
 }

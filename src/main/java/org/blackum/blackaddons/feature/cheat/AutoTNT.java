@@ -144,9 +144,14 @@ public class AutoTNT {
     private static void equipTnt(Player player, int slot) {
         if (ConfigManager.data.autoTntConfig.isTntEquipped)
             return;
-        InventoryAccessor inv = (InventoryAccessor) player.getInventory();
-        ConfigManager.data.autoTntConfig.originalItemSlot = inv.getBlackaddonsSelected();
-        inv.setBlackaddonsSelected(slot);
+        Minecraft mc = Minecraft.getInstance();
+        ConfigManager.data.autoTntConfig.originalItemSlot = ((InventoryAccessor) player.getInventory()).getBlackaddonsSelected();
+        
+        KeyMapping[] hotbarKeys = mc.options.keyHotbarSlots;
+        if (hotbarKeys != null && slot >= 0 && slot < hotbarKeys.length) {
+            KeyMapping.click(((KeyBindingAccessor) hotbarKeys[slot]).getBoundKey());
+        }
+        
         ConfigManager.data.autoTntConfig.isTntEquipped = true;
         ConfigManager.data.autoTntConfig.ticksSinceEquip = 0;
         ConfigManager.data.autoTntConfig.ticksSinceStopLooking = 0;
@@ -156,16 +161,18 @@ public class AutoTNT {
         if (!ConfigManager.data.autoTntConfig.isTntEquipped || player == null)
             return;
 
-        InventoryAccessor inv = (InventoryAccessor) player.getInventory();
+        Minecraft mc = Minecraft.getInstance();
+        KeyMapping[] hotbarKeys = mc.options.keyHotbarSlots;
+        
         if (ConfigManager.data.autoTntConfig.SwapBack && ConfigManager.data.autoTntConfig.originalItemSlot != -1) {
-            if (ConfigManager.data.autoTntConfig.originalItemSlot >= 0
-                    && ConfigManager.data.autoTntConfig.originalItemSlot < 9) {
-                inv.setBlackaddonsSelected(ConfigManager.data.autoTntConfig.originalItemSlot);
+            int original = ConfigManager.data.autoTntConfig.originalItemSlot;
+            if (original >= 0 && original < 9 && hotbarKeys != null) {
+                KeyMapping.click(((KeyBindingAccessor) hotbarKeys[original]).getBoundKey());
             }
         } else {
             int nonTnt = findNonTntHotbarSlot(player);
-            if (nonTnt != -1) {
-                inv.setBlackaddonsSelected(nonTnt);
+            if (nonTnt != -1 && hotbarKeys != null) {
+                KeyMapping.click(((KeyBindingAccessor) hotbarKeys[nonTnt]).getBoundKey());
             }
         }
 

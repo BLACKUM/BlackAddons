@@ -247,7 +247,7 @@ public class RotationManager {
         this.currentTicks = 0.0f;
 
         if (ConfigManager.data.rotationHumanizerEnabled) {
-            float curveStrength = ConfigManager.data.rotationJitter;
+            float curveStrength = ConfigManager.data.rotationVariance;
 
             float perpYaw = -dp;
             float perpPitch = dy;
@@ -465,7 +465,7 @@ public class RotationManager {
                 y += lineH;
             }
 
-            String extra = String.format("Spd: %.1f Curve: %.0f%%%s", ConfigManager.data.rotationSpeed, ConfigManager.data.rotationJitter * 100, ConfigManager.data.rotationHumanizerEnabled
+            String extra = String.format("Spd: %.1f Curve: %.0f%%%s", ConfigManager.data.rotationSpeed, ConfigManager.data.rotationVariance * 100, ConfigManager.data.rotationHumanizerEnabled
                     ? String.format("  Hum: ON")
                     : "");
             g.drawString(mc.font, extra, overlayX, y, COLOR_GRAY);
@@ -566,7 +566,7 @@ public class RotationManager {
                 info.add(String.format("Target: %.1f %.1f %.1f", rm.targetX, rm.targetY, rm.targetZ));
             }
             info.add(String.format("Spd: %.1f | Smooth: %.2f | Curve: %.0f%%",
-                    ConfigManager.data.rotationSpeed, ConfigManager.data.rotationSmoothness, ConfigManager.data.rotationJitter * 100));
+                    ConfigManager.data.rotationSpeed, ConfigManager.data.rotationSmoothness, ConfigManager.data.rotationVariance * 100));
             info.add(String.format("Hum: %s | Ticks: %.1f/%.1f",
                     ConfigManager.data.rotationHumanizerEnabled ? "ON" : "OFF",
                     rm.currentTicks, rm.durationTicks));

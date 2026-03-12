@@ -216,8 +216,11 @@ public class ConfigManager {
         public boolean AutoSSInstantSnap = false;
         public boolean AutoSSSkip = false;
         public boolean AutoSSAutoStart = false;
+        public int AutoSSAutoStartDelay = 3;
         public boolean AutoSSTrySkip = false;
         public boolean AutoSSDebug = false;
+        public boolean AutoSSSwapToItem = false;
+        public int AutoSSSwapMode = 0; // 0: Swap, 1: Swap and Open 2: TODO: add Swap and Open and Leap to ... class
         public int AutoSSOverlayX = -1;
         public int AutoSSOverlayY = 5;
 
@@ -234,7 +237,7 @@ public class ConfigManager {
         public int rotationOverlayY = 5;
 
         public boolean rotationHumanizerEnabled = true;
-        public float rotationJitter = 0.08f;
+        public float rotationVariance = 0.08f;
         public float rotationTargetRandomness = 0.2f;
         public float rotationSmoothness = 0.5f;
         public float rotationSpeed = 12.0f;

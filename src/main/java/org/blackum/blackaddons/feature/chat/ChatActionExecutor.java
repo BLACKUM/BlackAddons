@@ -4,7 +4,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import org.blackum.blackaddons.core.config.ConfigManager;
-import org.blackum.blackaddons.mixin.core.InventoryAccessor;
 import org.blackum.blackaddons.mixin.core.KeyBindingAccessor;
 import org.blackum.blackaddons.core.manager.RotationManager;
 
@@ -78,7 +77,10 @@ public class ChatActionExecutor {
         switch (action.type) {
             case SWITCH_SLOT:
                 if (action.slotIndex >= 0 && action.slotIndex < 9) {
-                    ((InventoryAccessor) client.player.getInventory()).setBlackaddonsSelected(action.slotIndex);
+                    KeyMapping[] hotbarKeys = client.options.keyHotbarSlots;
+                    if (hotbarKeys != null && action.slotIndex < hotbarKeys.length) {
+                        clickKey(hotbarKeys[action.slotIndex]);
+                    }
                 }
                 break;
             case USE_ITEM:
