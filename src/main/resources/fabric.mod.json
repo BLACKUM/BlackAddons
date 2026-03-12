@@ -20,9 +20,6 @@
   "icon": "assets/blackaddons/icon.png",
   "environment": "client",
   "entrypoints": {
-    "fabric-datagen": [
-      "org.blackum.blackaddons.client.BlackaddonsDataGenerator"
-    ],
     "main": [
       "org.blackum.blackaddons.Blackaddons"
     ],

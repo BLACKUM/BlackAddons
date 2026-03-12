@@ -46,7 +46,6 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "net.fabricmc:fabric-language-kotlin:1.13.8+kotlin.2.3.0"
-    // modImplementation name: 'firmament-patched'
     modImplementation("me.shedaniel.cloth:cloth-config-fabric:15.0.+") {
         exclude(group: "net.fabricmc.fabric-api")
     }
