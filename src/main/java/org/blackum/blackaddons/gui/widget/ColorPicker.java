@@ -28,8 +28,18 @@ public class ColorPicker extends Widget {
     private boolean isUpdatingFields = false;
 
     public ColorPicker(int x, int y, Consumer<Integer> onColorChange) {
+        this(x, y, 0xFF00A8FF, onColorChange);
+    }
+
+    public ColorPicker(int x, int y, int initialColor, Consumer<Integer> onColorChange) {
         super(x, y, WIDTH, HEIGHT);
         this.onColorChange = onColorChange;
+
+        float[] hsb = ColorUtils.toHSB(initialColor);
+        this.hull = hsb[0];
+        this.saturation = hsb[1];
+        this.brightness = hsb[2];
+        this.alpha = ((initialColor >> 24) & 0xFF) / 255f;
 
         this.rgbaField = new TextField(0, 0, 100, 16, "RGBA");
         this.rgbaField.setMaxLength(16);

@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -18,18 +19,22 @@ import org.blackum.blackaddons.core.manager.CustomNameManager;
 import org.blackum.blackaddons.core.manager.DebugOverlayManager;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
 import org.blackum.blackaddons.core.manager.UpdateManager;
-import org.blackum.blackaddons.feature.chat.ChatImageHandler;
+import org.blackum.blackaddons.core.util.Scheduler;
+import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.blackum.blackaddons.feature.chat.ChatActionManager;
+import org.blackum.blackaddons.feature.chat.ChatImageHandler;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import org.blackum.blackaddons.feature.chat.IrcPrefixManager;
+import org.blackum.blackaddons.feature.cheat.AutoBM;
 import org.blackum.blackaddons.feature.cheat.AutoSS;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
-import org.blackum.blackaddons.core.util.Scheduler;
 import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import org.blackum.blackaddons.feature.rng.RngTracker;
+import org.blackum.blackaddons.feature.waypoint.WaypointActionManager;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
+import org.blackum.blackaddons.gui.render.WaypointRenderer;
 import org.blackum.blackaddons.gui.screen.BaseScreen;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.screen.DemoScreen;
@@ -53,6 +58,7 @@ public class BlackaddonsClient implements ClientModInitializer {
         AutoTNT.register();
         FastLeap.register();
         AutoSS.register();
+        AutoBM.register();
         Scheduler.register();
 
         ConfigManager.load();
@@ -95,11 +101,16 @@ public class BlackaddonsClient implements ClientModInitializer {
             }
         });
 
+        WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
+            WaypointRenderer.render(context.matrices().last().pose(), context.consumers(), 0.0f);
+        });
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             NotificationManager.getInstance().tick();
-            if (BlackaddonsClient.pendingScreen != null) {
-                client.setScreen(BlackaddonsClient.pendingScreen);
-                BlackaddonsClient.pendingScreen = null;
+            WaypointActionManager.getInstance().tick(WaypointManager.getInstance().getWaypoints());
+            if (pendingScreen != null) {
+                client.setScreen(pendingScreen);
+                pendingScreen = null;
             }
         });
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());

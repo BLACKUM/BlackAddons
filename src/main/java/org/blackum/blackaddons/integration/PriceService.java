@@ -25,9 +25,8 @@ public class PriceService {
     private static final AtomicLong priceCacheExpiry = new AtomicLong(0);
     private static volatile boolean isRefreshing = false;
 
-    private static final Path CONFIG_DIR = FabricLoader.getInstance()
-            .getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
-    private static final File PRICES_FILE = CONFIG_DIR.resolve(Constants.PRICES_FILE_NAME).toFile();
+    private static final Path DATA_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME).resolve(Constants.DATA_DIR_NAME);
+    private static final File PRICES_FILE = DATA_DIR.resolve(Constants.PRICES_FILE_NAME).toFile();
 
     private static class PricesData {
         long timestamp;
@@ -158,8 +157,8 @@ public class PriceService {
     }
 
     private static void savePrices(Map<String, Double> prices) {
-        if (!CONFIG_DIR.toFile().exists()) {
-            CONFIG_DIR.toFile().mkdirs();
+        if (!DATA_DIR.toFile().exists()) {
+            DATA_DIR.toFile().mkdirs();
         }
 
         PricesData data = new PricesData();
@@ -174,6 +173,7 @@ public class PriceService {
     }
 
     private static void loadPrices() {
+        migrate();
         if (!PRICES_FILE.exists()) {
             return;
         }
@@ -192,6 +192,25 @@ public class PriceService {
             }
         } catch (Exception e) {
             Blackaddons.LOGGER.error("Failed to load prices: " + e.getMessage());
+        }
+    }
+
+    private static void migrate() {
+        File oldFile = FabricLoader.getInstance().getConfigDir()
+                .resolve(Constants.CONFIG_DIR_NAME)
+                .resolve(Constants.PRICES_FILE_NAME).toFile();
+
+        if (oldFile.exists() && !PRICES_FILE.exists()) {
+            try {
+                if (!DATA_DIR.toFile().exists()) {
+                    DATA_DIR.toFile().mkdirs();
+                }
+                if (oldFile.renameTo(PRICES_FILE)) {
+                    Blackaddons.LOGGER.info("Successfully migrated prices.json to data folder");
+                }
+            } catch (Exception e) {
+                Blackaddons.LOGGER.error("Failed to migrate prices.json", e);
+            }
         }
     }
 }

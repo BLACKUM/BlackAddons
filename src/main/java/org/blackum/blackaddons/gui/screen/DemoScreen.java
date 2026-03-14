@@ -54,7 +54,7 @@ public class DemoScreen extends BaseScreen {
                                 Arrays.asList("Option 1", "Option 2", "Option 3"),
                                 selected -> sendMessage("Selected: " + selected)), 2);
 
-                addToGrid(new ColorPicker(0, 0,
+                addToGrid(new ColorPicker(0, 0, Theme.ACCENT,
                                 color -> sendMessage("Color changed: "
                                                 + ColorUtils.toRGBA(color))),
                                 1);

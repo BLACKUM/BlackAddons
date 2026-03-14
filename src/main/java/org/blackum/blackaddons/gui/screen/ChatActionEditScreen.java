@@ -3,6 +3,7 @@ package org.blackum.blackaddons.gui.screen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -38,7 +39,7 @@ public class ChatActionEditScreen extends BaseScreen {
 
         Button addBtn = new Button(listX, listY - 25, listWidth, 20, "Add New Step", () -> {
             trigger.actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.SWITCH_SLOT, 0, "", 0, 0));
-            ConfigManager.save();
+            ActionManager.getInstance().save();
             int currentScroll = actionsList.getScrollOffset();
             rebuildActions();
             actionsList.setScrollOffset(currentScroll);
@@ -70,14 +71,14 @@ public class ChatActionEditScreen extends BaseScreen {
             header.setToggleCallback(() -> {
                 action.collapsed = !action.collapsed;
                 group.setExpanded(!action.collapsed);
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             List<String> typeOptions = java.util.stream.Stream.of(ConfigManager.ActionStepType.values())
                     .map(ConfigManager.ActionStepType::getDisplayName)
                     .toList();
             Dropdown typeDropdown = new Dropdown(0, 0, itemWidth, "Step Type", typeOptions, selected -> {
                 action.type = ConfigManager.ActionStepType.fromDisplayName(selected);
-                ConfigManager.save();
+                ActionManager.getInstance().save();
                 int currentScroll = actionsList.getScrollOffset();
                 rebuildActions();
                 actionsList.setScrollOffset(currentScroll);
@@ -89,7 +90,7 @@ public class ChatActionEditScreen extends BaseScreen {
             Slider delaySlider = new Slider(0, 0, itemWidth, 0, 100, action.delayTicks, val -> {
                 action.delayTicks = Math.round(val);
                 delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.delayTicks, action.delayTicks / 20.0));
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             delayWrap.setControl(delaySlider);
             delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.delayTicks, action.delayTicks / 20.0));
@@ -100,7 +101,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 Slider durationSlider = new Slider(0, 0, itemWidth, 0, 100, action.durationTicks, val -> {
                     action.durationTicks = Math.round(val);
                     durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.durationTicks, action.durationTicks / 20.0));
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                 });
                 durationWrap.setControl(durationSlider);
                 durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.durationTicks, action.durationTicks / 20.0));
@@ -114,7 +115,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 slotSlider.onValueChange(val -> {
                     action.slotIndex = Math.round(val);
                     slotWrap.setRightLabel("Slot " + (action.slotIndex + 1));
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                 });
                 slotWrap.setControl(slotSlider);
                 slotWrap.setRightLabel("Slot " + (action.slotIndex + 1));
@@ -124,7 +125,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 msgField.setText(action.message);
                 msgField.setOnValueChange(val -> {
                     action.message = val;
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Message", "Chat message or /command", msgField));
             } else if (action.type == ConfigManager.ActionStepType.PRESS_KEYBIND) {
@@ -138,7 +139,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 keyField.setText(action.message);
                 keyField.setOnValueChange(val -> {
                     action.message = val;
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
             } else if (action.type == ConfigManager.ActionStepType.ROTATE) {
@@ -147,7 +148,7 @@ public class ChatActionEditScreen extends BaseScreen {
                     Slider yawSlider = new Slider(0, 0, itemWidth, -180, 180, action.yaw, val -> {
                         action.yaw = val;
                         yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
-                        ConfigManager.save();
+                        ActionManager.getInstance().save();
                     });
                     yawWrap.setControl(yawSlider);
                     yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
@@ -157,7 +158,7 @@ public class ChatActionEditScreen extends BaseScreen {
                     Slider pitchSlider = new Slider(0, 0, itemWidth, -90, 90, action.pitch, val -> {
                         action.pitch = val;
                         pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
-                        ConfigManager.save();
+                        ActionManager.getInstance().save();
                     });
                     pitchWrap.setControl(pitchSlider);
                     pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
@@ -167,7 +168,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 ToggleSwitch coordToggle = new ToggleSwitch(0, 0, itemWidth, "Use Coordinates",
                         "Rotate to specific X, Y, Z instead of Yaw/Pitch", action.useCoordinates, val -> {
                     action.useCoordinates = val;
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                     rebuildActions();
                 });
                 group.addChild(coordToggle);
@@ -201,7 +202,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 if (index > 0) {
                     ConfigManager.ActionStep prev = trigger.actions.remove(index);
                     trigger.actions.add(index - 1, prev);
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                     int currentScroll = actionsList.getScrollOffset();
                     rebuildActions();
                     actionsList.setScrollOffset(currentScroll);
@@ -211,7 +212,7 @@ public class ChatActionEditScreen extends BaseScreen {
                 if (index < trigger.actions.size() - 1) {
                     ConfigManager.ActionStep next = trigger.actions.remove(index);
                     trigger.actions.add(index + 1, next);
-                    ConfigManager.save();
+                    ActionManager.getInstance().save();
                     int currentScroll = actionsList.getScrollOffset();
                     rebuildActions();
                     actionsList.setScrollOffset(currentScroll);
@@ -223,7 +224,7 @@ public class ChatActionEditScreen extends BaseScreen {
 
             Button deleteBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Delete Step", () -> {
                 trigger.actions.remove(index);
-                ConfigManager.save();
+                ActionManager.getInstance().save();
                 int currentScroll = actionsList.getScrollOffset();
                 rebuildActions();
                 actionsList.setScrollOffset(currentScroll);

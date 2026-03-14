@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.screen.ChatActionEditScreen;
@@ -40,9 +41,10 @@ public class ChatActionsTabController extends SimpleTabController {
                 Label.Style.BODY);
         listView.addItem(description);
 
-        for (int i = 0; i < ConfigManager.data.chatActions.size(); i++) {
+        List<ConfigManager.ChatAction> chatActions = ActionManager.getInstance().getChatActions();
+        for (int i = 0; i < chatActions.size(); i++) {
             final int index = i;
-            ConfigManager.ChatAction trigger = ConfigManager.data.chatActions.get(i);
+            ConfigManager.ChatAction trigger = chatActions.get(i);
 
             String headerTitle = trigger.title != null && !trigger.title.isEmpty()
                     ? trigger.title.replace("&", "§")
@@ -55,7 +57,7 @@ public class ChatActionsTabController extends SimpleTabController {
             Runnable onToggle = () -> {
                 trigger.collapsed = !trigger.collapsed;
                 group.setExpanded(!trigger.collapsed);
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             };
 
             header.setCollapsed(trigger.collapsed);
@@ -68,7 +70,7 @@ public class ChatActionsTabController extends SimpleTabController {
             patternField.setMaxLength(256);
             patternField.setOnValueChange(val -> {
                 trigger.pattern = val;
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Pattern",
                     "The text or regex pattern to trigger the alert", patternField));
@@ -89,7 +91,7 @@ public class ChatActionsTabController extends SimpleTabController {
             soundField.setMaxLength(128);
             soundField.setOnValueChange(val -> {
                 trigger.soundId = val;
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             row.addChild(soundField, 0);
 
@@ -129,7 +131,7 @@ public class ChatActionsTabController extends SimpleTabController {
             Slider volumeSlider = new Slider(0, 0, itemWidth, 0.0f, 1.0f, trigger.volume, val -> {
                 trigger.volume = val;
                 volWrap.setRightLabel(String.format("%.2f", val));
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             volWrap.setControl(volumeSlider);
             volWrap.setRightLabel(String.format("%.2f", trigger.volume));
@@ -139,7 +141,7 @@ public class ChatActionsTabController extends SimpleTabController {
             Slider pitchSlider = new Slider(0, 0, itemWidth, 0.1f, 2.0f, trigger.pitch, val -> {
                 trigger.pitch = val;
                 pitchWrap.setRightLabel(String.format("%.2fx", val));
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             pitchWrap.setControl(pitchSlider);
             pitchWrap.setRightLabel(String.format("%.2fx", trigger.pitch));
@@ -150,7 +152,7 @@ public class ChatActionsTabController extends SimpleTabController {
             titleField.setMaxLength(128);
             titleField.setOnValueChange(val -> {
                 trigger.title = val;
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Title",
                     "Optional. Large text to show on screen. Supports & colors.", titleField));
@@ -160,7 +162,7 @@ public class ChatActionsTabController extends SimpleTabController {
             subtitleField.setMaxLength(128);
             subtitleField.setOnValueChange(val -> {
                 trigger.subtitle = val;
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Subtitle",
                     "Optional. Smaller text to show below title. Supports & colors.", subtitleField));
@@ -170,7 +172,7 @@ public class ChatActionsTabController extends SimpleTabController {
             Slider durationSlider = new Slider(0, 0, itemWidth, 0.0f, 10.0f, trigger.durationSeconds, val -> {
                 trigger.durationSeconds = val;
                 durWrap.setRightLabel(String.format("%.2f seconds", val));
-                ConfigManager.save();
+                ActionManager.getInstance().save();
             });
             durWrap.setControl(durationSlider);
             durWrap.setRightLabel(String.format("%.2f seconds", trigger.durationSeconds));
@@ -179,14 +181,14 @@ public class ChatActionsTabController extends SimpleTabController {
             ToggleSwitch regexToggle = new ToggleSwitch(0, 0, itemWidth, "Is Regex",
                     "Evaluate pattern as regular expression", trigger.isRegex, val -> {
                         trigger.isRegex = val;
-                        ConfigManager.save();
+                        ActionManager.getInstance().save();
                     });
             triggerWidgets.add(regexToggle);
 
             ToggleSwitch enabledToggle = new ToggleSwitch(0, 0, itemWidth, "Enabled",
                     "Enable this chat action", trigger.enabled, val -> {
                         trigger.enabled = val;
-                        ConfigManager.save();
+                        ActionManager.getInstance().save();
                     });
             triggerWidgets.add(enabledToggle);
 
@@ -197,8 +199,8 @@ public class ChatActionsTabController extends SimpleTabController {
 
             Button deleteBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Delete Action",
                     () -> {
-                        ConfigManager.data.chatActions.remove(index);
-                        ConfigManager.save();
+                        ActionManager.getInstance().getChatActions().remove(index);
+                        ActionManager.getInstance().save();
                         screen.init();
                     });
             triggerWidgets.add(deleteBtn);
@@ -210,7 +212,7 @@ public class ChatActionsTabController extends SimpleTabController {
 
         Button addBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Add New Action",
                 () -> {
-                    ConfigManager.data.chatActions
+                    ActionManager.getInstance().getChatActions()
                             .add(new ConfigManager.ChatAction("", true, "entity.experience_orb.pickup", 1.0f, 1.0f,
                                     true, "",
                                     "", 2.0f));

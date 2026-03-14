@@ -157,7 +157,7 @@ public class SettingsTabController extends SimpleTabController {
         listView.addItem(new Label(0, 0, "Appearance", Label.Style.TITLE));
         listView.addItem(new Label(0, 0, "Accent Color", Label.Style.BODY));
 
-        ColorPicker accentPicker = new ColorPicker(0, 0, (color) -> {
+        ColorPicker accentPicker = new ColorPicker(0, 0, ConfigManager.data.accentColor, (color) -> {
             ConfigManager.data.accentColor = color;
             Theme.ACCENT = color;
             Theme.refreshColors();

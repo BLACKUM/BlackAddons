@@ -3,6 +3,7 @@ package org.blackum.blackaddons.core.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
+import org.blackum.blackaddons.feature.cheat.AutoBM;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.gui.render.Theme;
 
@@ -19,9 +20,19 @@ import java.util.Map;
 import java.util.Set;
 
 public class ConfigManager {
-    private static final Path CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
-    private static final File CONFIG_FILE = CONFIG_DIR.resolve("config.json").toFile();
+    private static final Path OLD_CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
+    private static final File OLD_CONFIG_FILE = OLD_CONFIG_DIR.resolve("config.json").toFile();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    
+    private static File getConfigFile() {
+        return ProfileManager.getActiveProfileFile(ProfileManager.Category.CONFIG);
+    }
+
+    public static void resetToDefaults() {
+        data = new ConfigData();
+        Theme.ACCENT = data.accentColor;
+        Theme.refreshColors();
+    }
 
     public static final Set<String> FABRIC_DEFAULT_CHANNELS = Set.of(
             "fabric:attachment_sync_v1",
@@ -156,6 +167,23 @@ public class ConfigManager {
         }
     }
 
+    public static class WaypointAction {
+        public boolean enabled = true;
+        public boolean triggerOnEntry = true;
+        public boolean triggerOnExit = false;
+        public String soundId = "";
+        public float volume = 1.0f;
+        public float pitch = 1.0f;
+        public String title = "";
+        public String subtitle = "";
+        public float durationSeconds = 2.0f;
+        public boolean collapsed = true;
+        public List<ActionStep> actions = new ArrayList<>();
+
+        public WaypointAction() {
+        }
+    }
+
     public static enum DataSource {
         BOT, LOCAL
     }
@@ -170,7 +198,7 @@ public class ConfigManager {
         public float overlayScale = 1.0f;
         public boolean showHitboxes = false;
         public boolean showDebugOverlay = false;
-        public int accentColor = Theme.ACCENT;
+        public int accentColor = Theme.DEFAULT_ACCENT;
         public boolean useCardLayout = true;
         public int forcedGuiScale = 2;
         public Map<String, CardState> cardStates = new HashMap<>();
@@ -205,6 +233,7 @@ public class ConfigManager {
         public boolean SwapBack = true;
 
         public AutoTNT.FeatureConfig autoTntConfig = new AutoTNT.FeatureConfig();
+        public AutoBM.FeatureConfig autoBMConfig = new AutoBM.FeatureConfig();
 
         public boolean AutoSSEnabled = false;
         public int AutoSSDelay = 2;
@@ -266,7 +295,7 @@ public class ConfigManager {
         public boolean disableCommandConfirmation = true;
         public boolean disableUnsecureChatToast = true;
 
-        // Chat actions defaults
+        // Chat actions (migration) TODO: Delete migration when enough versions have passed
         public List<ChatAction> chatActions = new ArrayList<>(List.of(
                 new ChatAction(
                         "(?s).*?(?:\\[.*?\\] )?([A-Za-z0-9_]+) has invited you to join their party!.*You have 60 seconds to accept.*",
@@ -287,10 +316,13 @@ public class ConfigManager {
 
     public static void save() {
         try {
-            if (!CONFIG_DIR.toFile().exists())
-                CONFIG_DIR.toFile().mkdirs();
+            File configFile = getConfigFile();
+            File parent = configFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
 
-            try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
+            try (FileWriter writer = new FileWriter(configFile)) {
                 GSON.toJson(data, writer);
             }
         } catch (IOException e) {
@@ -299,12 +331,14 @@ public class ConfigManager {
     }
 
     public static void load() {
-        if (!CONFIG_FILE.exists()) {
+        migrate();
+        File configFile = getConfigFile();
+        if (!configFile.exists()) {
             save();
             return;
         }
 
-        try (FileReader reader = new FileReader(CONFIG_FILE)) {
+        try (FileReader reader = new FileReader(configFile)) {
             ConfigData loadedData = GSON.fromJson(reader, ConfigData.class);
             if (loadedData != null) {
                 // TODO: Delete migration when enough versions have passed
@@ -320,6 +354,23 @@ public class ConfigManager {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void migrate() {
+        File targetFile = getConfigFile();
+        if (OLD_CONFIG_FILE.exists() && !targetFile.exists()) {
+            try {
+                File parent = targetFile.getParentFile();
+                if (parent != null && !parent.exists()) {
+                    parent.mkdirs();
+                }
+                if (OLD_CONFIG_FILE.renameTo(targetFile)) {
+                    org.blackum.blackaddons.Blackaddons.LOGGER.info("Successfully migrated config.json to default profile");
+                }
+            } catch (Exception e) {
+                org.blackum.blackaddons.Blackaddons.LOGGER.error("Failed to migrate config.json", e);
+            }
         }
     }
 }

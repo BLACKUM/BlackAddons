@@ -16,14 +16,14 @@ import net.fabricmc.loader.api.FabricLoader;
 
 public class LocalRngManager {
     private static LocalRngManager instance;
-    private static final Path CONFIG_DIR = FabricLoader.getInstance()
-            .getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
-    private static final File DATA_FILE = CONFIG_DIR.resolve(Constants.RNG_DATA_FILE_NAME).toFile();
+    private static final Path DATA_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME).resolve(Constants.DATA_DIR_NAME);
+    private static final File DATA_FILE = DATA_DIR.resolve(Constants.RNG_DATA_FILE_NAME).toFile();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private JsonObject data = new JsonObject();
 
     private LocalRngManager() {
+        migrate();
         load();
     }
 
@@ -46,6 +46,25 @@ public class LocalRngManager {
             }
         } catch (IOException e) {
             Blackaddons.LOGGER.error("Failed to load local RNG data", e);
+        }
+    }
+
+    private void migrate() {
+        File oldFile = FabricLoader.getInstance().getConfigDir()
+                .resolve(Constants.CONFIG_DIR_NAME)
+                .resolve(Constants.RNG_DATA_FILE_NAME).toFile();
+
+        if (oldFile.exists() && !DATA_FILE.exists()) {
+            try {
+                if (!DATA_DIR.toFile().exists()) {
+                    DATA_DIR.toFile().mkdirs();
+                }
+                if (oldFile.renameTo(DATA_FILE)) {
+                    Blackaddons.LOGGER.info("Successfully migrated rng_data.json to data folder");
+                }
+            } catch (Exception e) {
+                Blackaddons.LOGGER.error("Failed to migrate rng_data.json", e);
+            }
         }
     }
 

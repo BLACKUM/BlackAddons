@@ -7,7 +7,8 @@ public class Theme {
     public static int SURFACE = 0xCC1A1A1A;
     public static int SURFACE_LIGHT = 0xCC2D2D2D;
     public static int SURFACE_PRESSED = 0xCC151515;
-    public static int ACCENT = 0xFF00A8FF;
+    public static final int DEFAULT_ACCENT = 0xFF00A8FF;
+    public static int ACCENT = DEFAULT_ACCENT;
     public static int ACCENT_HOVER = 0xFF0090D9;
     public static int TEXT_PRIMARY = 0xFFFFFFFF;
     public static int TEXT_SECONDARY = 0xFFBBBBBB;

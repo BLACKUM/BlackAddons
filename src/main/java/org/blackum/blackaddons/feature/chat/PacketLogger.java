@@ -16,14 +16,33 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class PacketLogger {
-    private static final Path LOG_DIR = FabricLoader.getInstance().getConfigDir()
-            .resolve(Constants.CONFIG_DIR_NAME);
+    private static final Path LOG_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME).resolve(Constants.LOGS_DIR_NAME);
     private static final File LOG_FILE = LOG_DIR.resolve(Constants.BLOCKED_PACKETS_LOG_NAME).toFile();
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     static {
+        migrate();
         if (!LOG_DIR.toFile().exists()) {
             LOG_DIR.toFile().mkdirs();
+        }
+    }
+
+    private static void migrate() {
+        File oldFile = FabricLoader.getInstance().getConfigDir()
+                .resolve(Constants.CONFIG_DIR_NAME)
+                .resolve(Constants.BLOCKED_PACKETS_LOG_NAME).toFile();
+
+        if (oldFile.exists() && !LOG_FILE.exists()) {
+            try {
+                if (!LOG_DIR.toFile().exists()) {
+                    LOG_DIR.toFile().mkdirs();
+                }
+                if (oldFile.renameTo(LOG_FILE)) {
+                    Blackaddons.LOGGER.info("Successfully migrated blocked_packets.log to logs folder");
+                }
+            } catch (Exception e) {
+                Blackaddons.LOGGER.error("Failed to migrate blocked_packets.log", e);
+            }
         }
     }
 

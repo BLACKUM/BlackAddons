@@ -17,6 +17,7 @@ public class ToggleSwitch extends Widget {
     private static final int EXPAND_ICON_SIZE = 8;
 
     private String label;
+    private int labelColor = Theme.TEXT_PRIMARY;
     private String description;
     private boolean value;
     private boolean expanded = false;
@@ -68,7 +69,7 @@ public class ToggleSwitch extends Widget {
             return;
 
         int textY = y + (SWITCH_HEIGHT - 8) / 2;
-        graphics.drawString(Minecraft.getInstance().font, label, x, textY, Theme.TEXT_PRIMARY);
+        graphics.drawString(Minecraft.getInstance().font, label, x, textY, labelColor);
 
         if (description != null && !description.isEmpty()) {
             int expandX = x + labelWidth + 6;
@@ -221,5 +222,9 @@ public class ToggleSwitch extends Widget {
         if (this.expanded != expanded) {
             toggleExpand();
         }
+    }
+
+    public void setLabelColor(int color) {
+        this.labelColor = color;
     }
 }

@@ -59,6 +59,10 @@ public class ExpandableGroup extends Widget {
         this.expandAnimation.start();
     }
 
+    public boolean isExpanded() {
+        return expanded;
+    }
+
     @Override
     public void setX(int x) {
         super.setX(x);

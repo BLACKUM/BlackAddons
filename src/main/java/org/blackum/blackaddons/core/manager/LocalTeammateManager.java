@@ -23,15 +23,15 @@ import java.util.regex.Pattern;
 
 public class LocalTeammateManager {
     private static LocalTeammateManager instance;
-    private static final Path CONFIG_DIR = FabricLoader.getInstance()
-            .getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
-    private static final File DATA_FILE = CONFIG_DIR.resolve(Constants.TEAMMATES_FILE_NAME).toFile();
+    private static final Path DATA_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME).resolve(Constants.DATA_DIR_NAME);
+    private static final File DATA_FILE = DATA_DIR.resolve(Constants.TEAMMATES_FILE_NAME).toFile();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Pattern FORMATTING_CODE_PATTERN = Pattern.compile("§.");
 
     private JsonObject data = new JsonObject();
 
     private LocalTeammateManager() {
+        migrate();
         load();
     }
 
@@ -54,6 +54,25 @@ public class LocalTeammateManager {
             }
         } catch (IOException e) {
             Blackaddons.LOGGER.error("Failed to load local teammates data", e);
+        }
+    }
+
+    private void migrate() {
+        File oldFile = FabricLoader.getInstance().getConfigDir()
+                .resolve(Constants.CONFIG_DIR_NAME)
+                .resolve(Constants.TEAMMATES_FILE_NAME).toFile();
+
+        if (oldFile.exists() && !DATA_FILE.exists()) {
+            try {
+                if (!DATA_DIR.toFile().exists()) {
+                    DATA_DIR.toFile().mkdirs();
+                }
+                if (oldFile.renameTo(DATA_FILE)) {
+                    Blackaddons.LOGGER.info("Successfully migrated teammates.json to data folder");
+                }
+            } catch (Exception e) {
+                Blackaddons.LOGGER.error("Failed to migrate teammates.json", e);
+            }
         }
     }
 

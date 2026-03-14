@@ -27,9 +27,15 @@ public final class Constants {
         // Mod Metadata
         public static final String MOD_ID = "blackaddons";
         public static final String CONFIG_DIR_NAME = MOD_ID; // bruh
+        public static final String DATA_DIR_NAME = "data";
+        public static final String LOGS_DIR_NAME = "logs";
+        public static final String PROFILES_DIR_NAME = "profiles";
         public static final String PRICES_FILE_NAME = "prices.json";
         public static final String TEAMMATES_FILE_NAME = "teammates.json";
         public static final String RNG_DATA_FILE_NAME = "rng_data.json";
+        public static final String WAYPOINTS_FILE_NAME = "waypoints.json";
+        public static final String ACTIONS_FILE_NAME = "actions.json";
+        public static final String CHAT_ACTIONS_FILE_NAME = "chat_actions.json";
         public static final String BLOCKED_PACKETS_LOG_NAME = "blocked_packets.log";
         public static final long BLOCKED_PACKETS_LOG_MAX_BYTES = 5L * 1024 * 1024;
 

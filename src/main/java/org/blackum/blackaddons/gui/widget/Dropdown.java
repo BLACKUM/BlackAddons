@@ -113,9 +113,10 @@ public class Dropdown extends Widget {
         if (!visible || !expanded)
             return;
 
+        int scrollOffset = mouseY - rawMouseY;
         int totalHeight = options.size() * OPTION_HEIGHT;
         int menuHeight = Math.min(totalHeight, MAX_MENU_HEIGHT);
-        int menuY = y + height + 2;
+        int menuY = (y - scrollOffset) + height + 2;
 
         graphics.fill(x - 3, menuY - 3, x + width + 3, menuY + menuHeight + 3, 0xFF000000);
         RenderHelper.renderSurface(graphics, x, menuY, width, menuHeight, Theme.BORDER_RADIUS_SMALL, false);
@@ -130,8 +131,8 @@ public class Dropdown extends Widget {
             String option = options.get(i);
             int optY = menuY + (i * OPTION_HEIGHT);
 
-            boolean isOptHovered = mouseX >= x && mouseX <= x + width && mouseY >= optY - menuScrollOffset
-                    && mouseY < optY + OPTION_HEIGHT - menuScrollOffset;
+            boolean isOptHovered = mouseX >= x && mouseX <= x + width && mouseY >= optY + scrollOffset - menuScrollOffset
+                    && mouseY < optY + scrollOffset + OPTION_HEIGHT - menuScrollOffset;
 
             if (isOptHovered) {
                 graphics.fill(x + 2, optY, x + width - 2, optY + OPTION_HEIGHT,

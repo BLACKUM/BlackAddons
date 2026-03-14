@@ -39,6 +39,8 @@ public class BlackAddonsGUI extends BaseScreen {
     private LegitTabController legitController;
     private AboutTabController aboutController;
     private ChatActionsTabController chatActionsController;
+    private WaypointsTabController waypointsController;
+    private ConfigsTabController configsController;
     private final List<SimpleTabController> controllers = new ArrayList<>();
 
     public BlackAddonsGUI() {
@@ -53,6 +55,11 @@ public class BlackAddonsGUI extends BaseScreen {
     protected void initWidgets() {
         tabPanel = new TabPanel(containerX + Theme.PADDING, containerY + 40, containerWidth - (Theme.PADDING * 2),
                 containerHeight - 50);
+        
+        modCheckboxCache.clear();
+        modCheckboxWrappers.clear();
+        cachedOrganizedMods = null;
+
         tabPanel.setOnTabChange(index -> {
             lastTabIndex = index;
             if (index >= 0 && index < controllers.size()) {
@@ -67,6 +74,8 @@ public class BlackAddonsGUI extends BaseScreen {
         legitController = new LegitTabController(this);
         aboutController = new AboutTabController(this);
         chatActionsController = new ChatActionsTabController(this);
+        waypointsController = new WaypointsTabController(this);
+        configsController = new ConfigsTabController(this);
 
         controllers.clear();
         controllers.add(settingsController);
@@ -75,6 +84,8 @@ public class BlackAddonsGUI extends BaseScreen {
         controllers.add(cheatsController);
         controllers.add(legitController);
         controllers.add(chatActionsController);
+        controllers.add(waypointsController);
+        controllers.add(configsController);
         controllers.add(aboutController);
 
         settingsController.init(tabPanel.addTab("Settings"));
@@ -83,6 +94,8 @@ public class BlackAddonsGUI extends BaseScreen {
         cheatsController.init(tabPanel.addTab("Cheats"));
         legitController.init(tabPanel.addTab("Legit"));
         chatActionsController.init(tabPanel.addTab("Chat Actions"));
+        waypointsController.init(tabPanel.addTab("Waypoints Actions"));
+        configsController.init(tabPanel.addTab("Configs"));
         aboutController.init(tabPanel.addTab("About"));
 
         tabPanel.selectTab(lastTabIndex);

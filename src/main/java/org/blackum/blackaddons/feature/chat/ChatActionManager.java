@@ -5,6 +5,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
 
 import java.util.regex.Pattern;
@@ -35,7 +36,7 @@ public class ChatActionManager {
         if (client == null || client.player == null)
             return;
 
-        for (ConfigManager.ChatAction trigger : ConfigManager.data.chatActions) {
+        for (ConfigManager.ChatAction trigger : ActionManager.getInstance().getChatActions()) {
             if (!trigger.enabled || trigger.pattern == null || trigger.pattern.isEmpty())
                 continue;
 
