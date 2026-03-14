@@ -148,7 +148,7 @@ public class WaypointEditScreen extends BaseScreen {
                 waypoint.y = Double.parseDouble(yField.getText().replace(",", "."));
                 waypoint.z = Double.parseDouble(zField.getText().replace(",", "."));
                 if (waypoint.dimension == null && Minecraft.getInstance().level != null) {
-                    waypoint.dimension = Minecraft.getInstance().level.dimension().identifier().toString();
+                    waypoint.dimension = Minecraft.getInstance().level.dimension().location().toString();
                 }
                 onSave.accept(waypoint);
                 minecraft.setScreen(parent);

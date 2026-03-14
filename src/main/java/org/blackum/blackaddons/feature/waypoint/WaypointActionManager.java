@@ -3,7 +3,7 @@ package org.blackum.blackaddons.feature.waypoint;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -37,7 +37,7 @@ public class WaypointActionManager {
         double playerX = client.player.getX();
         double playerY = client.player.getY();
         double playerZ = client.player.getZ();
-        String dimension = client.level.dimension().identifier().toString();
+        String dimension = client.level.dimension().location().toString();
 
         for (Waypoint waypoint : waypoints) {
             java.util.List<WaypointAction> actions = waypoint.actions;
@@ -76,8 +76,8 @@ public class WaypointActionManager {
 
             if (action.soundId != null && !action.soundId.isEmpty()) {
                 try {
-                    Identifier location = Identifier.tryParse(action.soundId);
-                    if (location == null) location = Identifier.fromNamespaceAndPath("minecraft", action.soundId);
+                    ResourceLocation location = ResourceLocation.tryParse(action.soundId);
+                    if (location == null) location = ResourceLocation.fromNamespaceAndPath("minecraft", action.soundId);
                     SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                     client.getSoundManager().play(SimpleSoundInstance.forUI(event, action.pitch, action.volume));
                 } catch (Exception ignored) {}

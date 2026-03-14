@@ -34,7 +34,7 @@ public class WaypointsTabController extends SimpleTabController {
                 x = mc.player.getX();
                 y = mc.player.getY();
                 z = mc.player.getZ();
-                dim = mc.level.dimension().identifier().toString();
+                dim = mc.level.dimension().location().toString();
             }
             final double fx = x, fy = y, fz = z;
             final String fdim = dim;

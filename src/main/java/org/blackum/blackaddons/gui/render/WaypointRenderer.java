@@ -5,7 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.blackum.blackaddons.Blackaddons;
@@ -30,7 +30,7 @@ public class WaypointRenderer {
         int count = 0;
         for (Waypoint waypoint : WaypointManager.getInstance().getWaypoints()) {
             if (!waypoint.enabled) continue;
-            if (waypoint.dimension != null && !waypoint.dimension.equals(mc.level.dimension().identifier().toString())) continue;
+            if (waypoint.dimension != null && !waypoint.dimension.equals(mc.level.dimension().location().toString())) continue;
             renderWaypoint(matrix, bufferSource, waypoint, camPos);
         }
         if (count > 0 && System.currentTimeMillis() % 5000 < 50) {
