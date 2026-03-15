@@ -182,13 +182,15 @@ public class SettingsTabController extends SimpleTabController {
         Slider guiScaleSlider = new Slider(0, 0, width, 0f, 5f,
                 ConfigManager.data.forcedGuiScale, (val) -> {
                     int scale = Math.round(val);
-                    ConfigManager.data.forcedGuiScale = scale;
                     guiScaleLabel.setText("Forced GUI Scale: " + (scale == 0 ? "Off" : scale));
-                    ConfigManager.save();
                 }).onRelease((val) -> {
+                    int scale = Math.round(val);
+                    ConfigManager.data.forcedGuiScale = scale;
+                    ConfigManager.save();
+
                     Minecraft mc = Minecraft.getInstance();
                     if (mc.screen instanceof BaseScreen) {
-                        mc.resizeDisplay();
+                        mc.setScreen(mc.screen);
                     }
                 });
         listView.addItem(guiScaleSlider);

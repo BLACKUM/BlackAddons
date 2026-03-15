@@ -123,14 +123,28 @@ public abstract class BaseScreen extends Screen {
         return widget;
     }
 
+    protected float getGuiScaleFactor() {
+        int forcedScale = ConfigManager.data.forcedGuiScale;
+        if (forcedScale <= 0) return 1.0f;
+        
+        int vanillaScale = (int)Minecraft.getInstance().getWindow().getGuiScale();
+        if (forcedScale >= vanillaScale) return 1.0f;
+        
+        return (float)forcedScale / vanillaScale;
+    }
+
     @Override
     public void init() {
         super.init();
+        
+        float scale = getGuiScaleFactor();
+        int virtualWidth = (int)(this.width / scale);
+        int virtualHeight = (int)(this.height / scale);
 
-        this.containerWidth = (int) (this.width * 0.8);
-        this.containerHeight = (int) (this.height * 0.8);
-        this.containerX = (this.width - this.containerWidth) / 2;
-        this.containerY = (this.height - this.containerHeight) / 2;
+        this.containerWidth = (int) (virtualWidth * 0.8);
+        this.containerHeight = (int) (virtualHeight * 0.8);
+        this.containerX = (virtualWidth - this.containerWidth) / 2;
+        this.containerY = (virtualHeight - this.containerHeight) / 2;
 
         widgets.clear();
         isMovingOverlay = false;
@@ -164,17 +178,22 @@ public abstract class BaseScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        float scale = getGuiScaleFactor();
+        
+        int scaledMouseX = (int)(mouseX / scale);
+        int scaledMouseY = (int)(mouseY / scale);
+
+        graphics.enableScissor(
+            (int)(containerX * scale), 
+            (int)(containerY * scale), 
+            (int)((containerX + containerWidth) * scale), 
+            (int)((containerY + containerHeight) * scale)
+        );
+
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(scale, scale);
+
         this.contentHeight = getContentHeight();
-        Minecraft mc = Minecraft.getInstance();
-        double windowWidth = mc.getWindow().getScreenWidth();
-        double windowHeight = mc.getWindow().getScreenHeight();
-        double scaledWidth = this.width;
-        double scaledHeight = this.height;
-
-        int finalMouseX = (int) (mc.mouseHandler.xpos() * (scaledWidth / windowWidth));
-        int finalMouseY = (int) (mc.mouseHandler.ypos() * (scaledHeight / windowHeight));
-
-        super.render(graphics, mouseX, mouseY, partialTick);
 
         RenderHelper.renderSurface(
                 graphics, containerX, containerY, containerWidth, containerHeight,
@@ -192,19 +211,17 @@ public abstract class BaseScreen extends Screen {
         if (scrollOffset > maxScroll)
             scrollOffset = maxScroll;
 
-        graphics.enableScissor(containerX, containerY, containerX + containerWidth, containerY + containerHeight);
-
         graphics.pose().pushMatrix();
         graphics.pose().translate(0f, (float) -scrollOffset);
 
-        renderScrolledContent(graphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
+        renderScrolledContent(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), partialTick);
 
         boolean mouseCaptured = false;
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
             if (widget.isVisible()) {
-                if (!mouseCaptured && widget.isMouseOver(mouseX, mouseY + scrollOffset)) {
-                    widget.updateHoverState(mouseX, (int) (mouseY + scrollOffset));
+                if (!mouseCaptured && widget.isMouseOver(scaledMouseX, scaledMouseY + scrollOffset)) {
+                    widget.updateHoverState(scaledMouseX, (int) (scaledMouseY + scrollOffset));
                     mouseCaptured = true;
                 } else {
                     widget.updateHoverState(-1, -1);
@@ -214,7 +231,7 @@ public abstract class BaseScreen extends Screen {
 
         for (Widget widget : widgets) {
             if (widget.isVisible()) {
-                widget.render(graphics, mouseX, (int) (mouseY + scrollOffset), partialTick);
+                widget.render(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), partialTick);
 
                 if (showHitboxes) {
                     graphics.fill(widget.getX(), widget.getY(), widget.getX() + widget.getWidth(), widget.getY() + 1,
@@ -234,7 +251,7 @@ public abstract class BaseScreen extends Screen {
 
         for (Widget widget : widgets) {
             if (widget.isVisible()) {
-                widget.renderOverlay(graphics, mouseX, (int) (mouseY + scrollOffset), mouseX, mouseY, partialTick);
+                widget.renderOverlay(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), scaledMouseX, scaledMouseY, partialTick);
             }
         }
 
@@ -254,9 +271,11 @@ public abstract class BaseScreen extends Screen {
             graphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + scrollBarHeight, Theme.SCROLLBAR_THUMB);
         }
 
-        renderTooltips(graphics, mouseX, mouseY);
+        renderTooltips(graphics, scaledMouseX, scaledMouseY);
 
         NotificationManager.getInstance().render(graphics);
+        
+        graphics.pose().popMatrix();
     }
 
     protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -281,21 +300,21 @@ public abstract class BaseScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean pressed) {
+        float scale = getGuiScaleFactor();
         Minecraft mc = Minecraft.getInstance();
         double windowWidth = mc.getWindow().getScreenWidth();
         double windowHeight = mc.getWindow().getScreenHeight();
-        double scaledWidth = this.width;
-        double scaledHeight = this.height;
+        double scaledWidth = this.width / scale;
+        double scaledHeight = this.height / scale;
 
-        double mouseX = mc.mouseHandler.xpos() * (scaledWidth / windowWidth);
-        double rawMouseY = (mc.mouseHandler.ypos() * (scaledHeight / windowHeight));
+        double mouseX = (mc.mouseHandler.xpos() * (this.width / windowWidth)) / scale;
+        double rawMouseY = (mc.mouseHandler.ypos() * (this.height / windowHeight)) / scale;
         double mouseY = rawMouseY + scrollOffset;
         int button = event.button();
 
         if (showClickDebug && mc.player != null) {
-            String msg = String.format("%s[Click] Scaled: %.1f,%.1f (Raw: %.1f,%.1f)", ChatFormatting.YELLOW, mouseX,
-                    mouseY,
-                    mc.mouseHandler.xpos(), mc.mouseHandler.ypos());
+            String msg = String.format("%s[Click] Scaled: %.1f,%.1f (Raw: %.1f,%.1f, Scale: %.2f)", 
+                    ChatFormatting.YELLOW, mouseX, mouseY, mc.mouseHandler.xpos(), mc.mouseHandler.ypos(), scale);
             mc.player.displayClientMessage(Component.literal(msg), false);
         }
 
@@ -325,9 +344,10 @@ public abstract class BaseScreen extends Screen {
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         isDraggingScrollbar = false;
+        float scale = getGuiScaleFactor();
         Minecraft mc = Minecraft.getInstance();
-        double mouseX = mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth());
-        double rawMouseY = mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight());
+        double mouseX = (mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth())) / scale;
+        double rawMouseY = (mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight())) / scale;
         double mouseY = rawMouseY + scrollOffset;
         int button = event.button();
 
@@ -344,9 +364,10 @@ public abstract class BaseScreen extends Screen {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        float scale = getGuiScaleFactor();
         Minecraft mc = Minecraft.getInstance();
-        double mouseX = mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth());
-        double rawMouseY = mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight());
+        double mouseX = (mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth())) / scale;
+        double rawMouseY = (mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight())) / scale;
         double mouseY = rawMouseY + scrollOffset;
         int button = event.button();
 
@@ -356,7 +377,7 @@ public abstract class BaseScreen extends Screen {
                 scrollBarHeight = 30;
 
             double trackHeight = containerHeight - scrollBarHeight;
-            double movement = dragY * ((double) maxScroll / trackHeight);
+            double movement = (dragY / scale) * ((double) maxScroll / trackHeight);
 
             scrollOffset += movement;
             if (scrollOffset < 0)
@@ -366,7 +387,7 @@ public abstract class BaseScreen extends Screen {
             return true;
         }
 
-        if (getFocusedWidget() != null && getFocusedWidget().mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+        if (getFocusedWidget() != null && getFocusedWidget().mouseDragged(mouseX, mouseY, button, dragX / scale, dragY / scale)) {
             return true;
         }
         return super.mouseDragged(event, dragX, dragY);
@@ -374,10 +395,14 @@ public abstract class BaseScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        float scale = getGuiScaleFactor();
+        double scaledMouseX = mouseX / scale;
+        double scaledMouseY = mouseY / scale;
+
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
-            if (widget.isVisible() && widget.isEnabled() && widget.isMouseOver(mouseX, mouseY + scrollOffset)) {
-                if (widget.mouseScrolled(mouseX, mouseY + scrollOffset, scrollX, scrollY)) {
+            if (widget.isVisible() && widget.isEnabled() && widget.isMouseOver(scaledMouseX, scaledMouseY + scrollOffset)) {
+                if (widget.mouseScrolled(scaledMouseX, scaledMouseY + scrollOffset, scrollX, scrollY)) {
                     return true;
                 }
             }
