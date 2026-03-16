@@ -33,10 +33,13 @@ public class FastLeap {
     private static final Pattern COOLDOWN_PATTERN = Pattern.compile("(?i)You are on a leap cooldown!");
     private static final Pattern BLOOD_DOOR_PATTERN = Pattern.compile("(?i)the BLOOD DOOR has been opened!");
 
-    private static final int S1_MIN_X = 108, S1_MAX_X = 112, S1_MIN_Y = 118, S1_MAX_Y = 122, S1_MIN_Z = 92, S1_MAX_Z = 96;
-    private static final int S2_MIN_X = 58, S2_MAX_X = 62, S2_MIN_Y = 130, S2_MAX_Y = 134, S2_MIN_Z = 136, S2_MAX_Z = 140;
-    private static final int S3_MIN_X = 0, S3_MAX_X = 4, S3_MIN_Y = 107, S3_MAX_Y = 111, S3_MIN_Z = 102, S3_MAX_Z = 106;
-    private static final int S4_MIN_X = 52, S4_MAX_X = 56, S4_MIN_Y = 113, S4_MAX_Y = 117, S4_MIN_Z = 48, S4_MAX_Z = 52;
+    private static final int S1_SS_MIN_X = 106, S1_SS_MAX_X = 109, S1_SS_MIN_Y = 119, S1_SS_MAX_Y = 123, S1_SS_MIN_Z = 92,  S1_SS_MAX_Z = 95;
+    private static final int S2_EE2_MIN_X  = 56,  S2_EE2_MAX_X  = 59,  S2_EE2_MIN_Y  = 108, S2_EE2_MAX_Y  = 111, S2_EE2_MIN_Z  = 129, S2_EE2_MAX_Z  = 132;
+    private static final int S2_SAFE1_MIN_X = 69,  S2_SAFE1_MAX_X = 69,  S2_SAFE1_MIN_Y = 109, S2_SAFE1_MAX_Y = 110, S2_SAFE1_MIN_Z = 121, S2_SAFE1_MAX_Z = 121;
+    private static final int S2_HEE2_MIN_X = 58,  S2_HEE2_MAX_X = 65,  S2_HEE2_MIN_Y = 130, S2_HEE2_MAX_Y = 135, S2_HEE2_MIN_Z = 135, S2_HEE2_MAX_Z = 146;
+    private static final int S3_EE3_MIN_X  = 0,   S3_EE3_MAX_X  = 3,   S3_EE3_MIN_Y  = 108, S3_EE3_MAX_Y  = 111, S3_EE3_MIN_Z  = 100, S3_EE3_MAX_Z  = 106;
+    private static final int S3_HEE3_MIN_X = 17,  S3_HEE3_MAX_X = 19,  S3_HEE3_MIN_Y = 121, S3_HEE3_MAX_Y = 123, S3_HEE3_MIN_Z = 89,  S3_HEE3_MAX_Z = 99;
+    private static final int S4_MIN_X = 51, S4_MAX_X = 57, S4_MIN_Y = 115, S4_MAX_Y = 118, S4_MIN_Z = 48, S4_MAX_Z = 53;
 
     private static final String CLASS_NONE = "NONE";
 
@@ -55,7 +58,6 @@ public class FastLeap {
         ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> onChatMessage(message));
         ClientTickEvents.END_CLIENT_TICK.register(FastLeap::onTick);
 
-        // Strong reset when joining a new world/server instance
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             resetState();
             bloodRoomOpened = false;
@@ -90,7 +92,6 @@ public class FastLeap {
                 resetState();
             }
             
-            // Reset state for new dungeon runs
             if (cleanText.contains("The Dungeon starts in 1 second.") || cleanText.contains("Starting in 1 second.")) {
                 bloodRoomOpened = false;
                 leapTarget = null;
@@ -110,18 +111,14 @@ public class FastLeap {
             if (configuredClass == null || configuredClass.equals(CLASS_NONE)) continue;
 
             for (Player player : mc.level.players()) {
-                // Do not leap to ourselves
                 if (player.getScoreboardName().equalsIgnoreCase(myName)) continue;
 
                 double x = player.getX();
                 double y = player.getY();
                 double z = player.getZ();
 
-                boolean inRoom = false;
-                if (targetRoom.equals("S1") && isInBox(x, y, z, S1_MIN_X, S1_MAX_X, S1_MIN_Y, S1_MAX_Y, S1_MIN_Z, S1_MAX_Z)) inRoom = true;
-                else if (targetRoom.equals("S2") && isInBox(x, y, z, S2_MIN_X, S2_MAX_X, S2_MIN_Y, S2_MAX_Y, S2_MIN_Z, S2_MAX_Z)) inRoom = true;
-                else if (targetRoom.equals("S3") && isInBox(x, y, z, S3_MIN_X, S3_MAX_X, S3_MIN_Y, S3_MAX_Y, S3_MIN_Z, S3_MAX_Z)) inRoom = true;
-                else if (targetRoom.equals("S4") && isInBox(x, y, z, S4_MIN_X, S4_MAX_X, S4_MIN_Y, S4_MAX_Y, S4_MIN_Z, S4_MAX_Z)) inRoom = true;
+                String zone = getZoneForPosition(x, y, z);
+                boolean inRoom = targetRoom.equals(getStageFromZone(zone));
 
                 if (inRoom) {
                     String rawText = getPlayerClassRaw(player);
@@ -145,7 +142,7 @@ public class FastLeap {
         if (rawText.contains("[b] ")) return "BERSERK";
         if (rawText.contains("[a] ")) return "ARCHER";
         if (rawText.contains("[t] ")) return "TANK";
-        // Fallback for end of string or tight bracket
+        // without space cuz idk which one works and cba to check XD
         if (rawText.contains("[h]")) return "HEALER";
         if (rawText.contains("[m]")) return "MAGE";
         if (rawText.contains("[b]")) return "BERSERK";
@@ -187,11 +184,7 @@ public class FastLeap {
         double x = player.getX();
         double y = player.getY();
         double z = player.getZ();
-        if (isInBox(x, y, z, S1_MIN_X, S1_MAX_X, S1_MIN_Y, S1_MAX_Y, S1_MIN_Z, S1_MAX_Z)) return "S1";
-        if (isInBox(x, y, z, S2_MIN_X, S2_MAX_X, S2_MIN_Y, S2_MAX_Y, S2_MIN_Z, S2_MAX_Z)) return "S2";
-        if (isInBox(x, y, z, S3_MIN_X, S3_MAX_X, S3_MIN_Y, S3_MAX_Y, S3_MIN_Z, S3_MAX_Z)) return "S3";
-        if (isInBox(x, y, z, S4_MIN_X, S4_MAX_X, S4_MIN_Y, S4_MAX_Y, S4_MIN_Z, S4_MAX_Z)) return "S4";
-        return null;
+        return getStageFromZone(getZoneForPosition(x, y, z));
     }
 
     private static String getDetectedRoom(Minecraft mc) {
@@ -209,6 +202,26 @@ public class FastLeap {
     }
 
 
+    private static String getZoneForPosition(double x, double y, double z) {
+        if (isInBox(x, y, z, S1_SS_MIN_X,   S1_SS_MAX_X,   S1_SS_MIN_Y,   S1_SS_MAX_Y,   S1_SS_MIN_Z,   S1_SS_MAX_Z))   return "S1 SS";
+        if (isInBox(x, y, z, S2_EE2_MIN_X,  S2_EE2_MAX_X,  S2_EE2_MIN_Y,  S2_EE2_MAX_Y,  S2_EE2_MIN_Z,  S2_EE2_MAX_Z))  return "S2 EE2";
+        if (isInBox(x, y, z, S2_SAFE1_MIN_X, S2_SAFE1_MAX_X, S2_SAFE1_MIN_Y, S2_SAFE1_MAX_Y, S2_SAFE1_MIN_Z, S2_SAFE1_MAX_Z)) return "S2 safe-1";
+        if (isInBox(x, y, z, S2_HEE2_MIN_X, S2_HEE2_MAX_X, S2_HEE2_MIN_Y, S2_HEE2_MAX_Y, S2_HEE2_MIN_Z, S2_HEE2_MAX_Z)) return "S2 HEE2";
+        if (isInBox(x, y, z, S3_EE3_MIN_X,  S3_EE3_MAX_X,  S3_EE3_MIN_Y,  S3_EE3_MAX_Y,  S3_EE3_MIN_Z,  S3_EE3_MAX_Z))  return "S3 EE3";
+        if (isInBox(x, y, z, S3_HEE3_MIN_X, S3_HEE3_MAX_X, S3_HEE3_MIN_Y, S3_HEE3_MAX_Y, S3_HEE3_MIN_Z, S3_HEE3_MAX_Z)) return "S3 HEE3";
+        if (isInBox(x, y, z, S4_MIN_X,      S4_MAX_X,      S4_MIN_Y,      S4_MAX_Y,      S4_MIN_Z,      S4_MAX_Z))      return "S4";
+        return null;
+    }
+
+    private static String getStageFromZone(String zone) {
+        if (zone == null) return null;
+        if (zone.startsWith("S1")) return "S1";
+        if (zone.startsWith("S2")) return "S2";
+        if (zone.startsWith("S3")) return "S3";
+        if (zone.startsWith("S4")) return "S4";
+        return null;
+    }
+
     private static boolean isInBox(double x, double y, double z,
             int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
         return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
@@ -218,7 +231,7 @@ public class FastLeap {
         if (!ConfigManager.data.FastLeapEnabled || client.player == null || client.level == null) return;
 
         if (ConfigManager.data.FastLeapPositional) {
-            // Check local player room for the simple "Entered S1" message
+
             String myRoom = getDetectedRoom(client);
             if (myRoom != null && !myRoom.equals(lastDetectedRoom)) {
                 String targetClass = getRoomClass(myRoom);
@@ -227,20 +240,18 @@ public class FastLeap {
             }
             lastDetectedRoom = myRoom;
 
-            // Scan all players for debug announcements
             for (Player player : client.level.players()) {
-                String room = getDetectedPlayerRoom(player);
+                double px = player.getX(), py = player.getY(), pz = player.getZ();
+                String zone = getZoneForPosition(px, py, pz);
                 UUID uuid = player.getUUID();
-                String lastRoom = playerRooms.get(uuid);
+                String lastZone = playerRooms.get(uuid);
 
-                if (room != null && !room.equals(lastRoom)) {
-                    String rawText = getPlayerClassRaw(player);
-                    String msg = "[FastLeap] " + player.getName().getString() + " in " + room;
-                    if (rawText != null) msg += " (" + rawText + ")";
-                    ChatUtils.send_debug(msg);
+                if (zone != null && !zone.equals(lastZone)) {
+                    String label = zone.contains(" ") ? zone.split(" ", 2)[1] : "CORE";
+                    ChatUtils.send_debug("[FastLeap] " + player.getName().getString() + " has been detected in " + label);
                 }
-                
-                if (room != null) playerRooms.put(uuid, room);
+
+                if (zone != null) playerRooms.put(uuid, zone);
                 else playerRooms.remove(uuid);
             }
         }
@@ -262,12 +273,10 @@ public class FastLeap {
                 String target = null;
                 boolean byClass = false;
 
-                // 1. Try Positional target first if enabled
                 if (ConfigManager.data.FastLeapPositional) {
                     target = getPositionalTargetPlayer(client);
                 }
 
-                // 2. Fallback to Door Opener if enabled and Positional didn't find anyone
                 if (target == null && ConfigManager.data.FastLeapDoorOpener && leapTarget != null && !bloodRoomOpened) {
                     target = leapTarget;
                     byClass = false;
@@ -310,8 +319,6 @@ public class FastLeap {
                         String itemName = slot.getItem().getHoverName().getString()
                                 .replaceAll("(?i)§[0-9A-FK-ORX]", "").toLowerCase();
 
-                        // Match logic identical to door opener: startsWith or contains depending on preference
-                        // Door opener typically uses startsWith since names are at the beginning
                         boolean matches = searchByClass
                                 ? slotLoreContains(slot, target)
                                 : itemName.startsWith(target) || itemName.contains(target);
