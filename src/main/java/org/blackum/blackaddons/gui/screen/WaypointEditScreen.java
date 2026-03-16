@@ -117,6 +117,11 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(picker);
         list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
+        list.addItem(new Label(0, 0, "Render Style", Label.Style.CAPTION));
+        Checkbox showCylinderCheckbox = new Checkbox(0, 0, "Show Cylinder", waypoint.showCylinder, val -> waypoint.showCylinder = val);
+        list.addItem(showCylinderCheckbox);
+        list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
+
         list.addItem(new Label(0, 0, "Radius", Label.Style.CAPTION));
         GridRow radiusRow = new GridRow(itemWidth, 20);
         TextField manualRadius = new TextField(0, 0, 50, 14, "Radius");
@@ -138,6 +143,29 @@ public class WaypointEditScreen extends BaseScreen {
                 }
             } catch (NumberFormatException ignored) {}
         });
+        list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
+
+        list.addItem(new Label(0, 0, "Height", Label.Style.CAPTION));
+        GridRow heightRow = new GridRow(itemWidth, 20);
+        TextField manualHeight = new TextField(0, 0, 50, 14, "Height");
+        manualHeight.setText(String.format(java.util.Locale.ROOT, "%.2f", waypoint.height));
+        Slider heightSlider = new Slider(0, 0, itemWidth - 60, 0.01f, 10.00f, (float)waypoint.height, val -> {
+            waypoint.height = val;
+            manualHeight.setText(String.format(java.util.Locale.ROOT, "%.2f", val));
+        });
+        heightRow.addChild(heightSlider, 0);
+        heightRow.addChild(manualHeight, itemWidth - 55);
+        list.addItem(heightRow);
+
+        manualHeight.setOnValueChange(text -> {
+            try {
+                float val = Float.parseFloat(text);
+                if (val >= 0.01f && val <= 10.00f) {
+                    waypoint.height = val;
+                    heightSlider.setValue(val);
+                }
+            } catch (NumberFormatException ignored) {}
+        });
         list.addItem(new Widget(0, 0, itemWidth, 15) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
         GridRow btnRow = new GridRow(itemWidth, 20);
@@ -147,6 +175,17 @@ public class WaypointEditScreen extends BaseScreen {
                 waypoint.x = Double.parseDouble(xField.getText().replace(",", "."));
                 waypoint.y = Double.parseDouble(yField.getText().replace(",", "."));
                 waypoint.z = Double.parseDouble(zField.getText().replace(",", "."));
+                
+                try {
+                    waypoint.radius = Double.parseDouble(manualRadius.getText().replace(",", "."));
+                } catch (NumberFormatException ignored) {}
+                
+                try {
+                    waypoint.height = Double.parseDouble(manualHeight.getText().replace(",", "."));
+                } catch (NumberFormatException ignored) {}
+                
+                waypoint.showCylinder = showCylinderCheckbox.isChecked();
+
                 if (waypoint.dimension == null && Minecraft.getInstance().level != null) {
                     waypoint.dimension = Minecraft.getInstance().level.dimension().location().toString();
                 }

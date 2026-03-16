@@ -47,10 +47,10 @@ public class WaypointRenderer {
         Color color = new Color(waypoint.color, true);
 
         WaypointAnimation anim = waypoint.animation != null ? waypoint.animation : WaypointAnimation.STATIC;
-        renderAnimatedWaypoint(matrix, bufferSource, x, y, z, radius, color, waypoint.height, anim);
+        renderAnimatedWaypoint(matrix, bufferSource, x, y, z, radius, color, waypoint.height, waypoint.showCylinder, anim);
     }
 
-    private static void renderAnimatedWaypoint(Matrix4f matrix, MultiBufferSource bufferSource, double x, double y, double z, float radius, Color color, double height, WaypointAnimation animation) {
+    private static void renderAnimatedWaypoint(Matrix4f matrix, MultiBufferSource bufferSource, double x, double y, double z, float radius, Color color, double height, boolean showCylinder, WaypointAnimation animation) {
         VertexConsumer buffer = bufferSource.getBuffer(BlackaddonsRenderTypes.getWaypoint());
 
         float r = color.getRed() / 255f;
@@ -58,42 +58,70 @@ public class WaypointRenderer {
         float b = color.getBlue() / 255f;
         float a = color.getAlpha() / 255f;
 
+        float ringHeight = 0.05f;
+
         switch (animation) {
             case RADAR:
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, height, r, g, b, a * 0.8f);
+                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, ringHeight, r, g, b, a * 0.8f, true);
+                if (showCylinder) {
+                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.01f, height, r, g, b, a * 0.2f, false);
+                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.02f, ringHeight, r, g, b, a * 0.8f, true);
+                }
                 float radarTime = (System.currentTimeMillis() % 1500) / 1500f;
                 float waveRadius = radius * radarTime;
                 if (waveRadius > 0.05f) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, waveRadius, 0.03f, height * 0.5f, r, g, b, a * (1.0f - radarTime));
+                    drawCylindricalShell(matrix, buffer, x, y, z, waveRadius, 0.03f, ringHeight * 0.5f, r, g, b, a * (1.0f - radarTime), true);
                 }
                 break;
             case PULSE:
                 float pulse = Mth.sin((System.currentTimeMillis() % 2000) / 2000f * (float) Math.PI * 2) * 0.1f + 0.9f;
-                drawCylindricalShell(matrix, buffer, x, y, z, radius * pulse, 0.05f, height, r, g, b, a);
+                float currentRadius = radius * pulse;
+                drawCylindricalShell(matrix, buffer, x, y, z, currentRadius, 0.05f, ringHeight, r, g, b, a, true);
+                if (showCylinder) {
+                    drawCylindricalShell(matrix, buffer, x, y, z, currentRadius, 0.02f, height, r, g, b, a * 0.3f, false);
+                    drawCylindricalShell(matrix, buffer, x, y + height, z, currentRadius, 0.05f, ringHeight, r, g, b, a, true);
+                }
                 break;
             case STATIC:
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.05f, height, r, g, b, a);
+                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                if (showCylinder) {
+                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, height, r, g, b, a * 0.3f, false);
+                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                }
                 break;
             case BOUNCE:
                 float bounce = Mth.sin((System.currentTimeMillis() % 1000) / 1000f * (float) Math.PI * 2) * 0.2f;
-                drawCylindricalShell(matrix, buffer, x, y + bounce, z, radius, 0.05f, height, r, g, b, a);
+                drawCylindricalShell(matrix, buffer, x, y + bounce, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                if (showCylinder) {
+                    drawCylindricalShell(matrix, buffer, x, y + bounce, z, radius, 0.02f, height, r, g, b, a * 0.3f, false);
+                    drawCylindricalShell(matrix, buffer, x, y + bounce + height, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                }
                 break;
             case BREATH:
                 float breath = Mth.sin((System.currentTimeMillis() % 3000) / 3000f * (float) Math.PI * 2) * 0.4f + 0.6f;
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.05f, height, r, g, b, a * breath);
+                float breathAlpha = a * breath;
+                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.05f, ringHeight, r, g, b, breathAlpha, true);
+                if (showCylinder) {
+                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, height, r, g, b, breathAlpha * 0.3f, false);
+                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.05f, ringHeight, r, g, b, breathAlpha, true);
+                }
                 break;
             case DOUBLE_RADAR:
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, height, r, g, b, a * 0.6f);
+                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, ringHeight, r, g, b, a * 0.6f, true);
+                if (showCylinder) {
+                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.01f, height, r, g, b, a * 0.2f, false);
+                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.02f, ringHeight, r, g, b, a * 0.6f, true);
+                }
                 float time1 = (System.currentTimeMillis() % 2000) / 2000f;
                 float time2 = ((System.currentTimeMillis() + 1000) % 2000) / 2000f;
-                drawCylindricalShell(matrix, buffer, x, y, z, radius * time1, 0.03f, height * 0.4f, r, g, b, a * (1.0f - time1));
-                drawCylindricalShell(matrix, buffer, x, y, z, radius * time2, 0.03f, height * 0.4f, r, g, b, a * (1.0f - time2));
+                drawCylindricalShell(matrix, buffer, x, y, z, radius * time1, 0.03f, ringHeight * 0.8f, r, g, b, a * (1.0f - time1), true);
+                drawCylindricalShell(matrix, buffer, x, y, z, radius * time2, 0.03f, ringHeight * 0.8f, r, g, b, a * (1.0f - time2), true);
                 break;
         }
     }
 
-    private static void drawCylindricalShell(Matrix4f matrix, VertexConsumer buffer, double x, double y, double z, float radius, float thickness, double height, float r, float g, float b, float a) {
-        float bottomY = (float) y + 0.05f;
+    private static void drawCylindricalShell(Matrix4f matrix, VertexConsumer buffer, double x, double y, double z, float radius, float thickness, double height, float r, float g, float b, float a, boolean drawCaps) {
+        float bottomY = (float) y + 0.01f;
         float topY = bottomY + (float) height;
 
         for (int i = 0; i < CIRCLE_SEGMENTS; i++) {
@@ -115,15 +143,17 @@ public class WaypointRenderer {
             float x2_outer = (float) (x + (radius + thickness) * cos2);
             float z2_outer = (float) (z + (radius + thickness) * sin2);
 
-            buffer.addVertex(matrix, x1_inner, topY, z1_inner).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
-            buffer.addVertex(matrix, x2_inner, topY, z2_inner).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
-            buffer.addVertex(matrix, x2_outer, topY, z2_outer).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
-            buffer.addVertex(matrix, x1_outer, topY, z1_outer).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+            if (drawCaps) {
+                buffer.addVertex(matrix, x1_inner, topY, z1_inner).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+                buffer.addVertex(matrix, x2_inner, topY, z2_inner).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+                buffer.addVertex(matrix, x2_outer, topY, z2_outer).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+                buffer.addVertex(matrix, x1_outer, topY, z1_outer).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
 
-            buffer.addVertex(matrix, x1_outer, bottomY, z1_outer).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
-            buffer.addVertex(matrix, x2_outer, bottomY, z2_outer).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
-            buffer.addVertex(matrix, x2_inner, bottomY, z2_inner).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
-            buffer.addVertex(matrix, x1_inner, bottomY, z1_inner).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
+                buffer.addVertex(matrix, x1_outer, bottomY, z1_outer).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
+                buffer.addVertex(matrix, x2_outer, bottomY, z2_outer).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
+                buffer.addVertex(matrix, x2_inner, bottomY, z2_inner).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
+                buffer.addVertex(matrix, x1_inner, bottomY, z1_inner).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, -1, 0);
+            }
 
             buffer.addVertex(matrix, x1_outer, bottomY, z1_outer).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(cos1, 0, sin1);
             buffer.addVertex(matrix, x1_outer, topY, z1_outer).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(cos1, 0, sin1);

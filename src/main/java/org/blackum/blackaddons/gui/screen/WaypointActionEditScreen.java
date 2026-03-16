@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.waypoint.Waypoint;
+import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.gui.widget.*;
@@ -40,14 +41,14 @@ public class WaypointActionEditScreen extends BaseScreen {
         
         ToggleSwitch entryToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on Entry", "Fire actions when entering radius", action.triggerOnEntry, val -> {
             action.triggerOnEntry = val;
-            ActionManager.getInstance().save();
+            WaypointManager.getInstance().save();
         });
         widgets.add(entryToggle);
         currentY += 25;
 
         ToggleSwitch exitToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on Exit", "Fire actions when leaving radius", action.triggerOnExit, val -> {
             action.triggerOnExit = val;
-            ActionManager.getInstance().save();
+            WaypointManager.getInstance().save();
         });
         widgets.add(exitToggle);
         currentY += 35;
@@ -59,7 +60,7 @@ public class WaypointActionEditScreen extends BaseScreen {
         titleField.setText(action.title);
         titleField.setOnValueChange(val -> {
             action.title = val;
-            ActionManager.getInstance().save();
+            WaypointManager.getInstance().save();
         });
         widgets.add(titleField);
 
@@ -67,7 +68,7 @@ public class WaypointActionEditScreen extends BaseScreen {
         subtitleField.setText(action.subtitle);
         subtitleField.setOnValueChange(val -> {
             action.subtitle = val;
-            ActionManager.getInstance().save();
+            WaypointManager.getInstance().save();
         });
         widgets.add(subtitleField);
         currentY += 45;
@@ -82,7 +83,7 @@ public class WaypointActionEditScreen extends BaseScreen {
 
         Button addBtn = new Button(fieldX, currentY + listHeight + 5, fieldWidth / 2 - 2, 20, "Add Step", () -> {
             action.actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.SEND_MESSAGE, 0, "", 0, 0));
-            ActionManager.getInstance().save();
+            WaypointManager.getInstance().save();
             int currentScroll = stepsList.getScrollOffset();
             rebuildSteps();
             stepsList.setScrollOffset(currentScroll);
@@ -110,7 +111,7 @@ public class WaypointActionEditScreen extends BaseScreen {
             header.setToggleCallback(() -> {
                 step.collapsed = !step.collapsed;
                 group.setExpanded(!step.collapsed);
-                ActionManager.getInstance().save();
+                WaypointManager.getInstance().save();
             });
 
             java.util.List<String> typeOptions = java.util.stream.Stream.of(ConfigManager.ActionStepType.values())
@@ -118,7 +119,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                     .toList();
             Dropdown typeDropdown = new Dropdown(0, 0, itemWidth, "Step Type", typeOptions, selected -> {
                 step.type = ConfigManager.ActionStepType.fromDisplayName(selected);
-                ActionManager.getInstance().save();
+                WaypointManager.getInstance().save();
                 int currentScroll = stepsList.getScrollOffset();
                 rebuildSteps();
                 stepsList.setScrollOffset(currentScroll);
@@ -130,7 +131,7 @@ public class WaypointActionEditScreen extends BaseScreen {
             Slider delaySlider = new Slider(0, 0, itemWidth, 0, 100, step.delayTicks, val -> {
                 step.delayTicks = Math.round(val);
                 delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.delayTicks, step.delayTicks / 20.0));
-                ActionManager.getInstance().save();
+                WaypointManager.getInstance().save();
             });
             delayWrap.setControl(delaySlider);
             delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.delayTicks, step.delayTicks / 20.0));
@@ -141,7 +142,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 Slider durationSlider = new Slider(0, 0, itemWidth, 0, 100, step.durationTicks, val -> {
                     step.durationTicks = Math.round(val);
                     durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.durationTicks, step.durationTicks / 20.0));
-                    ActionManager.getInstance().save();
+                    WaypointManager.getInstance().save();
                 });
                 durationWrap.setControl(durationSlider);
                 durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.durationTicks, step.durationTicks / 20.0));
@@ -155,7 +156,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 slotSlider.onValueChange(val -> {
                     step.slotIndex = Math.round(val);
                     slotWrap.setRightLabel("Slot " + (step.slotIndex + 1));
-                    ActionManager.getInstance().save();
+                    WaypointManager.getInstance().save();
                 });
                 slotWrap.setControl(slotSlider);
                 slotWrap.setRightLabel("Slot " + (step.slotIndex + 1));
@@ -165,7 +166,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 msgField.setText(step.message);
                 msgField.setOnValueChange(val -> {
                     step.message = val;
-                    ActionManager.getInstance().save();
+                    WaypointManager.getInstance().save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Message", "Chat message or /command", msgField));
             } else if (step.type == ConfigManager.ActionStepType.PRESS_KEYBIND) {
@@ -179,7 +180,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 keyField.setText(step.message);
                 keyField.setOnValueChange(val -> {
                     step.message = val;
-                    ActionManager.getInstance().save();
+                    WaypointManager.getInstance().save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
             } else if (step.type == ConfigManager.ActionStepType.ROTATE) {
@@ -188,7 +189,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                     Slider yawSlider = new Slider(0, 0, itemWidth, -180, 180, step.yaw, val -> {
                         step.yaw = val;
                         yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.yaw));
-                        ActionManager.getInstance().save();
+                        WaypointManager.getInstance().save();
                     });
                     yawWrap.setControl(yawSlider);
                     yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.yaw));
@@ -198,7 +199,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                     Slider pitchSlider = new Slider(0, 0, itemWidth, -90, 90, step.pitch, val -> {
                         step.pitch = val;
                         pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.pitch));
-                        ActionManager.getInstance().save();
+                        WaypointManager.getInstance().save();
                     });
                     pitchWrap.setControl(pitchSlider);
                     pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.pitch));
@@ -208,7 +209,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 ToggleSwitch coordToggle = new ToggleSwitch(0, 0, itemWidth, "Use Coordinates",
                         "Rotate to specific X, Y, Z instead of Yaw/Pitch", step.useCoordinates, val -> {
                     step.useCoordinates = val;
-                    ActionManager.getInstance().save();
+                    WaypointManager.getInstance().save();
                     rebuildSteps();
                 });
                 group.addChild(coordToggle);
@@ -242,7 +243,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 if (index > 0) {
                     ConfigManager.ActionStep prev = action.actions.remove(index);
                     action.actions.add(index - 1, prev);
-                    ActionManager.getInstance().save();
+                    WaypointManager.getInstance().save();
                     int currentScroll = stepsList.getScrollOffset();
                     rebuildSteps();
                     stepsList.setScrollOffset(currentScroll);
@@ -252,7 +253,7 @@ public class WaypointActionEditScreen extends BaseScreen {
                 if (index < action.actions.size() - 1) {
                     ConfigManager.ActionStep next = action.actions.remove(index);
                     action.actions.add(index + 1, next);
-                    ConfigManager.save();
+                    WaypointManager.getInstance().save();
                     int currentScroll = stepsList.getScrollOffset();
                     rebuildSteps();
                     stepsList.setScrollOffset(currentScroll);

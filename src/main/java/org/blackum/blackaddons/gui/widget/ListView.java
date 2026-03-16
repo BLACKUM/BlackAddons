@@ -236,6 +236,7 @@ public class ListView extends Widget {
         }
         if (totalHeight > 0) {
             totalHeight -= itemSpacing;
+            totalHeight += 5;
         }
         maxScroll = Math.max(0, totalHeight - height);
     }
