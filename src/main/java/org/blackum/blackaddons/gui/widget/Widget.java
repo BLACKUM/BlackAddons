@@ -25,6 +25,9 @@ public abstract class Widget {
             float partialTick) {
     }
 
+    public void onScrolled() {
+    }
+
     public void tick() {
     }
 

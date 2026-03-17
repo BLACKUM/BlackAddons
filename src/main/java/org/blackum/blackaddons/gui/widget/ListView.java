@@ -215,16 +215,19 @@ public class ListView extends Widget {
         float mouseProgress = (float) (mouseY - y) / scrollableHeight;
         scrollOffset = (int) (mouseProgress * maxScroll);
         scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
+        notifyItemsScrolled();
     }
 
     public void scrollTo(int offset) {
         this.scrollOffset = Math.max(0, Math.min(getMaxScroll(), offset));
+        notifyItemsScrolled();
     }
 
     private void scroll(int delta) {
         scrollOffset += delta;
         updateMaxScroll();
         scrollOffset = Math.max(0, Math.min(maxScroll, scrollOffset));
+        notifyItemsScrolled();
     }
 
     private void updateMaxScroll() {
@@ -272,6 +275,15 @@ public class ListView extends Widget {
 
     public void setScrollOffset(int scrollOffset) {
         this.scrollOffset = scrollOffset;
+        notifyItemsScrolled();
+    }
+
+    private void notifyItemsScrolled() {
+        for (Widget item : items) {
+            if (item.isVisible()) {
+                item.onScrolled();
+            }
+        }
     }
 
     public int getScrollOffset() {

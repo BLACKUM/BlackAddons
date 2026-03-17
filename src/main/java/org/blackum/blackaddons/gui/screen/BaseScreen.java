@@ -384,6 +384,7 @@ public abstract class BaseScreen extends Screen {
                 scrollOffset = 0;
             if (scrollOffset > maxScroll)
                 scrollOffset = maxScroll;
+            notifyWidgetsScrolled();
             return true;
         }
 
@@ -414,6 +415,7 @@ public abstract class BaseScreen extends Screen {
                 scrollOffset = 0;
             if (scrollOffset > maxScroll)
                 scrollOffset = maxScroll;
+            notifyWidgetsScrolled();
             return true;
         }
 
@@ -450,6 +452,14 @@ public abstract class BaseScreen extends Screen {
         focusedWidget = widget;
         if (focusedWidget != null) {
             focusedWidget.setFocused(true);
+        }
+    }
+
+    protected void notifyWidgetsScrolled() {
+        for (Widget widget : widgets) {
+            if (widget.isVisible()) {
+                widget.onScrolled();
+            }
         }
     }
 

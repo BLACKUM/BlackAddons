@@ -75,6 +75,13 @@ public class Card extends Widget {
     }
 
     @Override
+    public void onScrolled() {
+        for (Widget child : children) {
+            child.onScrolled();
+        }
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!enabled || !visible)
             return false;

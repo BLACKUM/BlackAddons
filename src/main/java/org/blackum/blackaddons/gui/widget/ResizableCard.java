@@ -155,10 +155,14 @@ public class ResizableCard extends Card {
         graphics.pose().scale(scale, scale);
         graphics.pose().translate((float) -x, (float) -y);
 
+        int scaledMouseX = (int) ((mouseX - x) / scale + x);
+        int scaledMouseY = (int) ((mouseY - y) / scale + y);
+        int scaledRawMouseX = (int) ((rawMouseX - x) / scale + x);
+        int scaledRawMouseY = (int) ((rawMouseY - y) / scale + y);
+
         for (Widget child : getChildren()) {
             if (child.isVisible()) {
-                child.renderOverlay(graphics, (int) ((mouseX - x) / scale + x),
-                        (int) ((mouseY - y) / scale + y), rawMouseX, rawMouseY, partialTick);
+                child.renderOverlay(graphics, scaledMouseX, scaledMouseY, scaledRawMouseX, scaledRawMouseY, partialTick);
             }
         }
 

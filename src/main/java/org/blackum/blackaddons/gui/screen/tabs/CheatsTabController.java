@@ -372,76 +372,79 @@ public class CheatsTabController extends SimpleTabController {
     }
 
     private ResizableCard createFastLeapCard(int x, int y) {
-        fastLeapCard = screen.createResizableCard("fastLeap", x, y, 300, 330, "⚠ FastLeap [WIP] (S1 is currently bugged)");
+        fastLeapCard = screen.createResizableCard("fastLeap", x, y, 300, 310, "⚠ FastLeap [WIP] (S1 is currently bugged)");
 
         int contentX = fastLeapCard.getContentX();
         int contentY = fastLeapCard.getContentY();
 
+        ListView listView = new ListView(contentX, contentY, 260, 260);
+
         List<String> classOptions = List.of("NONE", "HEALER", "MAGE", "BERSERK", "ARCHER", "TANK");
 
-        ToggleSwitch enableToggle = new ToggleSwitch(contentX, contentY, 260,
+        ToggleSwitch enableToggle = new ToggleSwitch(0, 0, 260,
                 "⚠ Enable FastLeap [WIP]",
                 "Automatically leaps to players or classes (S1 is currently bugged)",
                 ConfigManager.data.FastLeapEnabled, value -> {
                     ConfigManager.data.FastLeapEnabled = value;
                     ConfigManager.save();
                 });
-        fastLeapCard.addChild(enableToggle);
+        listView.addItem(enableToggle);
 
-        ToggleSwitch doorOpenerToggle = new ToggleSwitch(contentX, contentY + 40, 260,
+        ToggleSwitch doorOpenerToggle = new ToggleSwitch(0, 0, 260,
                 "Door Opener",
                 "Leap to the player who opens wither doors",
                 ConfigManager.data.FastLeapDoorOpener, value -> {
                     ConfigManager.data.FastLeapDoorOpener = value;
                     ConfigManager.save();
                 });
-        fastLeapCard.addChild(doorOpenerToggle);
+        listView.addItem(doorOpenerToggle);
 
-        ToggleSwitch positionalToggle = new ToggleSwitch(contentX, contentY + 80, 260,
+        ToggleSwitch positionalToggle = new ToggleSwitch(0, 0, 260,
                 "Positional",
                 "Leap to a class based on your S-room position",
                 ConfigManager.data.FastLeapPositional, value -> {
                     ConfigManager.data.FastLeapPositional = value;
                     ConfigManager.save();
                 });
-        fastLeapCard.addChild(positionalToggle);
+        listView.addItem(positionalToggle);
 
-        fastLeapCard.addChild(new Label(contentX, contentY + 125, "S1 Class", Label.Style.BODY));
-        s1Dropdown = new Dropdown(contentX, contentY + 137, 260, "S1 Class", classOptions, value -> {
+        listView.addItem(new Label(0, 0, "S1 Class", Label.Style.BODY));
+        s1Dropdown = new Dropdown(0, 0, 260, "S1 Class", classOptions, value -> {
             ConfigManager.data.FastLeapS1Class = value;
             ConfigManager.save();
         });
         s1Dropdown.setSelectedOption(ConfigManager.data.FastLeapS1Class);
         s1Dropdown.setOnExpand(() -> collapseOtherDropdowns(s1Dropdown));
-        fastLeapCard.addChild(s1Dropdown);
+        listView.addItem(s1Dropdown);
 
-        fastLeapCard.addChild(new Label(contentX, contentY + 175, "S2 Class", Label.Style.BODY));
-        s2Dropdown = new Dropdown(contentX, contentY + 187, 260, "S2 Class", classOptions, value -> {
+        listView.addItem(new Label(0, 0, "S2 Class", Label.Style.BODY));
+        s2Dropdown = new Dropdown(0, 0, 260, "S2 Class", classOptions, value -> {
             ConfigManager.data.FastLeapS2Class = value;
             ConfigManager.save();
         });
         s2Dropdown.setSelectedOption(ConfigManager.data.FastLeapS2Class);
         s2Dropdown.setOnExpand(() -> collapseOtherDropdowns(s2Dropdown));
-        fastLeapCard.addChild(s2Dropdown);
+        listView.addItem(s2Dropdown);
 
-        fastLeapCard.addChild(new Label(contentX, contentY + 225, "S3 Class", Label.Style.BODY));
-        s3Dropdown = new Dropdown(contentX, contentY + 237, 260, "S3 Class", classOptions, value -> {
+        listView.addItem(new Label(0, 0, "S3 Class", Label.Style.BODY));
+        s3Dropdown = new Dropdown(0, 0, 260, "S3 Class", classOptions, value -> {
             ConfigManager.data.FastLeapS3Class = value;
             ConfigManager.save();
         });
         s3Dropdown.setSelectedOption(ConfigManager.data.FastLeapS3Class);
         s3Dropdown.setOnExpand(() -> collapseOtherDropdowns(s3Dropdown));
-        fastLeapCard.addChild(s3Dropdown);
+        listView.addItem(s3Dropdown);
 
-        fastLeapCard.addChild(new Label(contentX, contentY + 275, "S4 Class", Label.Style.BODY));
-        s4Dropdown = new Dropdown(contentX, contentY + 287, 260, "S4 Class", classOptions, value -> {
+        listView.addItem(new Label(0, 0, "S4 Class", Label.Style.BODY));
+        s4Dropdown = new Dropdown(0, 0, 260, "S4 Class", classOptions, value -> {
             ConfigManager.data.FastLeapS4Class = value;
             ConfigManager.save();
         });
         s4Dropdown.setSelectedOption(ConfigManager.data.FastLeapS4Class);
         s4Dropdown.setOnExpand(() -> collapseOtherDropdowns(s4Dropdown));
-        fastLeapCard.addChild(s4Dropdown);
+        listView.addItem(s4Dropdown);
 
+        fastLeapCard.addChild(listView);
         fastLeapCard.updateLayout();
         return fastLeapCard;
     }
