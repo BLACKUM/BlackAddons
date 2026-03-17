@@ -47,7 +47,8 @@ public class ResizableCard extends Card {
         this.expandedHeight = height;
 
         if (collapsed) {
-            this.height = TITLE_BAR_HEIGHT;
+            float scale = (float) width / initialWidth;
+            this.height = (int) (TITLE_BAR_HEIGHT * scale);
         }
     }
 
@@ -61,7 +62,8 @@ public class ResizableCard extends Card {
         this.collapsed = collapsed;
         if (collapsed) {
             this.expandedHeight = this.height;
-            this.height = TITLE_BAR_HEIGHT;
+            float scale = (float) width / initialWidth;
+            this.height = (int) (TITLE_BAR_HEIGHT * scale);
         } else {
             updateLayout();
         }
@@ -82,10 +84,8 @@ public class ResizableCard extends Card {
             return;
 
         float scale = (float) width / initialWidth;
-        int contentX = getContentX();
-        int contentY = getContentY();
-        int scaledMouseX = (int) ((mouseX - contentX) / scale + contentX);
-        int scaledMouseY = (int) ((mouseY - contentY) / scale + contentY);
+        int scaledMouseX = (int) ((mouseX - x) / scale + x);
+        int scaledMouseY = (int) ((mouseY - y) / scale + y);
 
         for (Widget child : getChildren()) {
             if (child.isVisible()) {
@@ -101,13 +101,17 @@ public class ResizableCard extends Card {
 
         int shadowOffset = dragging ? 8 : 4;
         int shadowColor = Theme.withAlpha(Theme.SHADOW, dragging ? 0.4f : 0.2f);
-        graphics.fill(x + shadowOffset, y + shadowOffset, x + width + shadowOffset, y + height + shadowOffset,
-                shadowColor);
-
         RenderHelper.renderSurface(graphics, x, y, width, height, Theme.BORDER_RADIUS, false);
 
+        float scale = (float) width / initialWidth;
+
+        graphics.pose().pushMatrix();
+        graphics.pose().translate((float) x, (float) y);
+        graphics.pose().scale(scale, scale);
+        graphics.pose().translate((float) -x, (float) -y);
+
         if (getTitle() != null && !getTitle().isEmpty()) {
-            graphics.fill(x, y, x + width, y + TITLE_BAR_HEIGHT, Theme.withAlpha(Theme.SURFACE_LIGHT, 0.5f));
+            graphics.fill(x, y, x + initialWidth, y + TITLE_BAR_HEIGHT, Theme.withAlpha(Theme.SURFACE_LIGHT, 0.5f));
 
             int titleColor = dragging ? Theme.ACCENT : Theme.TEXT_PRIMARY;
             String arrow = collapsed ? "◀" : "▼";
@@ -117,26 +121,15 @@ public class ResizableCard extends Card {
 
             int arrowWidth = Minecraft.getInstance().font.width(arrow);
             graphics.drawString(Minecraft.getInstance().font,
-                    arrow, x + width - getPadding() - arrowWidth, y + (TITLE_BAR_HEIGHT - 8) / 2, titleColor);
+                    arrow, x + initialWidth - getPadding() - arrowWidth, y + (TITLE_BAR_HEIGHT - 8) / 2, titleColor);
         }
 
-        if (collapsed)
-            return;
-
-        float scale = (float) width / initialWidth;
-
-        graphics.pose().pushMatrix();
-
-        int contentX = getContentX();
-        int contentY = getContentY();
-        graphics.pose().translate((float) contentX, (float) contentY);
-        graphics.pose().scale(scale, scale);
-        graphics.pose().translate((float) -contentX, (float) -contentY);
-
-        for (Widget child : getChildren()) {
-            if (child.isVisible()) {
-                child.render(graphics, (int) ((mouseX - contentX) / scale + contentX),
-                        (int) ((mouseY - contentY) / scale + contentY), partialTick);
+        if (!collapsed) {
+            for (Widget child : getChildren()) {
+                if (child.isVisible()) {
+                    child.render(graphics, (int) ((mouseX - x) / scale + x),
+                            (int) ((mouseY - y) / scale + y), partialTick);
+                }
             }
         }
 
@@ -156,18 +149,16 @@ public class ResizableCard extends Card {
             return;
 
         float scale = (float) width / initialWidth;
-        int contentX = getContentX();
-        int contentY = getContentY();
 
         graphics.pose().pushMatrix();
-        graphics.pose().translate((float) contentX, (float) contentY);
+        graphics.pose().translate((float) x, (float) y);
         graphics.pose().scale(scale, scale);
-        graphics.pose().translate((float) -contentX, (float) -contentY);
+        graphics.pose().translate((float) -x, (float) -y);
 
         for (Widget child : getChildren()) {
             if (child.isVisible()) {
-                child.renderOverlay(graphics, (int) ((mouseX - contentX) / scale + contentX),
-                        (int) ((mouseY - contentY) / scale + contentY), rawMouseX, rawMouseY, partialTick);
+                child.renderOverlay(graphics, (int) ((mouseX - x) / scale + x),
+                        (int) ((mouseY - y) / scale + y), rawMouseX, rawMouseY, partialTick);
             }
         }
 
@@ -222,10 +213,8 @@ public class ResizableCard extends Card {
             return false;
 
         float scale = (float) width / initialWidth;
-        int contentX = getContentX();
-        int contentY = getContentY();
-        double scaledMouseX = (mouseX - contentX) / scale + contentX;
-        double scaledMouseY = (mouseY - contentY) / scale + contentY;
+        double scaledMouseX = (mouseX - x) / scale + x;
+        double scaledMouseY = (mouseY - y) / scale + y;
 
         java.util.List<Widget> children = getChildren();
         for (Widget child : children) {
@@ -267,10 +256,8 @@ public class ResizableCard extends Card {
             return false;
 
         float scale = (float) width / initialWidth;
-        int contentX = getContentX();
-        int contentY = getContentY();
-        double scaledMouseX = (mouseX - contentX) / scale + contentX;
-        double scaledMouseY = (mouseY - contentY) / scale + contentY;
+        double scaledMouseX = (mouseX - x) / scale + x;
+        double scaledMouseY = (mouseY - y) / scale + y;
 
         java.util.List<Widget> children = getChildren();
         for (Widget child : children) {
@@ -284,7 +271,11 @@ public class ResizableCard extends Card {
 
     public void pack() {
         float scale = (float) width / initialWidth;
-        int usedHeight = getContentY() - y;
+        int logicalUsedHeight = getPadding();
+        if (getTitle() != null && !getTitle().isEmpty()) {
+            logicalUsedHeight += TITLE_BAR_HEIGHT;
+        }
+
         int childrenHeight = 0;
         for (Widget child : getChildren()) {
             if (child.isVisible()) {
@@ -294,7 +285,8 @@ public class ResizableCard extends Card {
         if (childrenHeight > 0) {
             childrenHeight -= Theme.SPACING_SMALL;
         }
-        int targetHeight = usedHeight + (int) (childrenHeight * scale) + getPadding();
+
+        int targetHeight = (int) ((logicalUsedHeight + childrenHeight + getPadding()) * scale);
 
         this.expandedHeight = targetHeight;
         if (!collapsed) {
@@ -345,10 +337,8 @@ public class ResizableCard extends Card {
             return false;
 
         float scale = (float) width / initialWidth;
-        int contentX = getContentX();
-        int contentY = getContentY();
-        double scaledMouseX = (mouseX - contentX) / scale + contentX;
-        double scaledMouseY = (mouseY - contentY) / scale + contentY;
+        double scaledMouseX = (mouseX - x) / scale + x;
+        double scaledMouseY = (mouseY - y) / scale + y;
 
         double scaledDragX = dragX / scale;
         double scaledDragY = dragY / scale;
@@ -366,8 +356,9 @@ public class ResizableCard extends Card {
     private boolean isOverTitleBar(int mouseX, int mouseY) {
         if (getTitle() == null || getTitle().isEmpty())
             return false;
+        float scale = (float) width / initialWidth;
         return mouseX >= x && mouseX <= x + width &&
-                mouseY >= y && mouseY <= y + TITLE_BAR_HEIGHT;
+                mouseY >= y && mouseY <= y + (int) (TITLE_BAR_HEIGHT * scale);
     }
 
     private ResizeHandle isOverResizeHandle(int mouseX, int mouseY) {
@@ -383,39 +374,40 @@ public class ResizableCard extends Card {
     }
 
     public void updateLayout() {
-        int contentX = getContentX();
-        int contentY = getContentY();
-        float scale = (float) width / initialWidth;
-        int contentWidth = (int) ((width - getPadding() * 2) / scale);
-        int currentY = contentY;
+        int logicalPadding = getPadding();
+        int logicalTitleHeight = (getTitle() != null && !getTitle().isEmpty()) ? TITLE_BAR_HEIGHT : 0;
+        int currentLogicalY = y + logicalPadding + logicalTitleHeight;
+        int logicalContentWidth = initialWidth - logicalPadding * 2;
 
         for (Widget child : getChildren()) {
-            child.setX(contentX);
-            child.setY(currentY);
-            child.setWidth(contentWidth);
+            child.setX(x + logicalPadding);
+            child.setY(currentLogicalY);
+            child.setWidth(logicalContentWidth);
             if (child.isVisible()) {
-                currentY += child.getHeight() + Theme.SPACING_SMALL;
+                currentLogicalY += child.getHeight() + Theme.SPACING_SMALL;
             }
         }
         pack();
     }
 
     @Override
+    public int getContentX() {
+        return x + (int) (getPadding() * ((float) width / initialWidth));
+    }
+
+    @Override
     public int getContentY() {
-        int contentY = y + getPadding();
+        float scale = (float) width / initialWidth;
+        int logicalContentY = getPadding();
         if (getTitle() != null && !getTitle().isEmpty()) {
-            contentY += TITLE_BAR_HEIGHT;
+            logicalContentY += TITLE_BAR_HEIGHT;
         }
-        return contentY;
+        return y + (int) (logicalContentY * scale);
     }
 
     @Override
     public int getContentHeight() {
-        int usedHeight = getPadding();
-        if (getTitle() != null && !getTitle().isEmpty()) {
-            usedHeight += TITLE_BAR_HEIGHT;
-        }
-        return height - usedHeight - getPadding();
+        return height - (getContentY() - y) - (int) (getPadding() * ((float) width / initialWidth));
     }
 
     public boolean isDragging() {
@@ -445,10 +437,8 @@ public class ResizableCard extends Card {
             return false;
 
         float scale = (float) width / initialWidth;
-        int contentX = getContentX();
-        int contentY = getContentY();
-        double scaledMouseX = (mouseX - contentX) / scale + contentX;
-        double scaledMouseY = (mouseY - contentY) / scale + contentY;
+        double scaledMouseX = (mouseX - x) / scale + x;
+        double scaledMouseY = (mouseY - y) / scale + y;
 
         java.util.List<Widget> children = getChildren();
         for (Widget child : children) {
