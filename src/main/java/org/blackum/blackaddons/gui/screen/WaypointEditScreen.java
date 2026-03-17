@@ -117,9 +117,25 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(picker);
         list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
-        list.addItem(new Label(0, 0, "Render Style", Label.Style.CAPTION));
-        Checkbox showCylinderCheckbox = new Checkbox(0, 0, "Show Cylinder", waypoint.showCylinder, val -> waypoint.showCylinder = val);
-        list.addItem(showCylinderCheckbox);
+        list.addItem(new Label(0, 0, "Shape", Label.Style.CAPTION));
+        org.blackum.blackaddons.core.waypoint.WaypointShape[] shapes = org.blackum.blackaddons.core.waypoint.WaypointShape.values();
+        java.util.List<String> shapeOptions = java.util.Arrays.stream(shapes)
+            .map(Object::toString)
+            .collect(java.util.stream.Collectors.toList());
+
+        Dropdown shapeDropdown = new Dropdown(0, 0, itemWidth, 20, "Select Shape", shapeOptions, 
+            val -> {
+                for (org.blackum.blackaddons.core.waypoint.WaypointShape s : shapes) {
+                    if (s.toString().equals(val)) {
+                        waypoint.shape = s;
+                        break;
+                    }
+                }
+            });
+        shapeDropdown.setSelectedOption(waypoint.shape.toString());
+        list.addItem(shapeDropdown);
+        Checkbox showFullShapeCheckbox = new Checkbox(0, 0, "Show Full Shape", waypoint.showFullShape, val -> waypoint.showFullShape = val);
+        list.addItem(showFullShapeCheckbox);
         list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
         list.addItem(new Label(0, 0, "Radius", Label.Style.CAPTION));
@@ -184,7 +200,7 @@ public class WaypointEditScreen extends BaseScreen {
                     waypoint.height = Double.parseDouble(manualHeight.getText().replace(",", "."));
                 } catch (NumberFormatException ignored) {}
                 
-                waypoint.showCylinder = showCylinderCheckbox.isChecked();
+                waypoint.showFullShape = showFullShapeCheckbox.isChecked();
 
                 if (waypoint.dimension == null && Minecraft.getInstance().level != null) {
                     waypoint.dimension = Minecraft.getInstance().level.dimension().location().toString();

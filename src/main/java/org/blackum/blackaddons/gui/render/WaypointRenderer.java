@@ -47,10 +47,10 @@ public class WaypointRenderer {
         Color color = new Color(waypoint.color, true);
 
         WaypointAnimation anim = waypoint.animation != null ? waypoint.animation : WaypointAnimation.STATIC;
-        renderAnimatedWaypoint(matrix, bufferSource, x, y, z, radius, color, waypoint.height, waypoint.showCylinder, anim);
+        renderAnimatedWaypoint(matrix, bufferSource, x, y, z, radius, color, waypoint.height, waypoint, anim);
     }
 
-    private static void renderAnimatedWaypoint(Matrix4f matrix, MultiBufferSource bufferSource, double x, double y, double z, float radius, Color color, double height, boolean showCylinder, WaypointAnimation animation) {
+    private static void renderAnimatedWaypoint(Matrix4f matrix, MultiBufferSource bufferSource, double x, double y, double z, float radius, Color color, double height, Waypoint waypoint, WaypointAnimation animation) {
         VertexConsumer buffer = bufferSource.getBuffer(BlackaddonsRenderTypes.getWaypoint());
 
         float r = color.getRed() / 255f;
@@ -62,61 +62,69 @@ public class WaypointRenderer {
 
         switch (animation) {
             case RADAR:
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, ringHeight, r, g, b, a * 0.8f, true);
-                if (showCylinder) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.01f, height, r, g, b, a * 0.2f, false);
-                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.02f, ringHeight, r, g, b, a * 0.8f, true);
+                drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.02f, ringHeight, r, g, b, a * 0.8f, true);
+                if (waypoint.showFullShape) {
+                    drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.01f, height, r, g, b, a * 0.2f, false);
+                    drawShape(matrix, buffer, waypoint, x, y + height, z, radius, 0.02f, ringHeight, r, g, b, a * 0.8f, true);
                 }
                 float radarTime = (System.currentTimeMillis() % 1500) / 1500f;
                 float waveRadius = radius * radarTime;
                 if (waveRadius > 0.05f) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, waveRadius, 0.03f, ringHeight * 0.5f, r, g, b, a * (1.0f - radarTime), true);
+                    drawShape(matrix, buffer, waypoint, x, y, z, waveRadius, 0.03f, ringHeight * 0.5f, r, g, b, a * (1.0f - radarTime), true);
                 }
                 break;
             case PULSE:
                 float pulse = Mth.sin((System.currentTimeMillis() % 2000) / 2000f * (float) Math.PI * 2) * 0.1f + 0.9f;
                 float currentRadius = radius * pulse;
-                drawCylindricalShell(matrix, buffer, x, y, z, currentRadius, 0.05f, ringHeight, r, g, b, a, true);
-                if (showCylinder) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, currentRadius, 0.02f, height, r, g, b, a * 0.3f, false);
-                    drawCylindricalShell(matrix, buffer, x, y + height, z, currentRadius, 0.05f, ringHeight, r, g, b, a, true);
+                drawShape(matrix, buffer, waypoint, x, y, z, currentRadius, 0.05f, ringHeight, r, g, b, a, true);
+                if (waypoint.showFullShape) {
+                    drawShape(matrix, buffer, waypoint, x, y, z, currentRadius, 0.02f, height, r, g, b, a * 0.3f, false);
+                    drawShape(matrix, buffer, waypoint, x, y + height, z, currentRadius, 0.05f, ringHeight, r, g, b, a, true);
                 }
                 break;
             case STATIC:
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.05f, ringHeight, r, g, b, a, true);
-                if (showCylinder) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, height, r, g, b, a * 0.3f, false);
-                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                if (waypoint.showFullShape) {
+                    drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.02f, height, r, g, b, a * 0.3f, false);
+                    drawShape(matrix, buffer, waypoint, x, y + height, z, radius, 0.05f, ringHeight, r, g, b, a, true);
                 }
                 break;
             case BOUNCE:
                 float bounce = Mth.sin((System.currentTimeMillis() % 1000) / 1000f * (float) Math.PI * 2) * 0.2f;
-                drawCylindricalShell(matrix, buffer, x, y + bounce, z, radius, 0.05f, ringHeight, r, g, b, a, true);
-                if (showCylinder) {
-                    drawCylindricalShell(matrix, buffer, x, y + bounce, z, radius, 0.02f, height, r, g, b, a * 0.3f, false);
-                    drawCylindricalShell(matrix, buffer, x, y + bounce + height, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                drawShape(matrix, buffer, waypoint, x, y + bounce, z, radius, 0.05f, ringHeight, r, g, b, a, true);
+                if (waypoint.showFullShape) {
+                    drawShape(matrix, buffer, waypoint, x, y + bounce, z, radius, 0.02f, height, r, g, b, a * 0.3f, false);
+                    drawShape(matrix, buffer, waypoint, x, y + bounce + height, z, radius, 0.05f, ringHeight, r, g, b, a, true);
                 }
                 break;
             case BREATH:
                 float breath = Mth.sin((System.currentTimeMillis() % 3000) / 3000f * (float) Math.PI * 2) * 0.4f + 0.6f;
                 float breathAlpha = a * breath;
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.05f, ringHeight, r, g, b, breathAlpha, true);
-                if (showCylinder) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, height, r, g, b, breathAlpha * 0.3f, false);
-                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.05f, ringHeight, r, g, b, breathAlpha, true);
+                drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.05f, ringHeight, r, g, b, breathAlpha, true);
+                if (waypoint.showFullShape) {
+                    drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.02f, height, r, g, b, breathAlpha * 0.3f, false);
+                    drawShape(matrix, buffer, waypoint, x, y + height, z, radius, 0.05f, ringHeight, r, g, b, breathAlpha, true);
                 }
                 break;
             case DOUBLE_RADAR:
-                drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.02f, ringHeight, r, g, b, a * 0.6f, true);
-                if (showCylinder) {
-                    drawCylindricalShell(matrix, buffer, x, y, z, radius, 0.01f, height, r, g, b, a * 0.2f, false);
-                    drawCylindricalShell(matrix, buffer, x, y + height, z, radius, 0.02f, ringHeight, r, g, b, a * 0.6f, true);
+                drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.02f, ringHeight, r, g, b, a * 0.6f, true);
+                if (waypoint.showFullShape) {
+                    drawShape(matrix, buffer, waypoint, x, y, z, radius, 0.01f, height, r, g, b, a * 0.2f, false);
+                    drawShape(matrix, buffer, waypoint, x, y + height, z, radius, 0.02f, ringHeight, r, g, b, a * 0.6f, true);
                 }
                 float time1 = (System.currentTimeMillis() % 2000) / 2000f;
                 float time2 = ((System.currentTimeMillis() + 1000) % 2000) / 2000f;
-                drawCylindricalShell(matrix, buffer, x, y, z, radius * time1, 0.03f, ringHeight * 0.8f, r, g, b, a * (1.0f - time1), true);
-                drawCylindricalShell(matrix, buffer, x, y, z, radius * time2, 0.03f, ringHeight * 0.8f, r, g, b, a * (1.0f - time2), true);
+                drawShape(matrix, buffer, waypoint, x, y, z, radius * time1, 0.03f, ringHeight * 0.8f, r, g, b, a * (1.0f - time1), true);
+                drawShape(matrix, buffer, waypoint, x, y, z, radius * time2, 0.03f, ringHeight * 0.8f, r, g, b, a * (1.0f - time2), true);
                 break;
+        }
+    }
+
+    private static void drawShape(Matrix4f matrix, VertexConsumer buffer, Waypoint waypoint, double x, double y, double z, float radius, float thickness, double height, float r, float g, float b, float a, boolean drawCaps) {
+        if (waypoint.shape == org.blackum.blackaddons.core.waypoint.WaypointShape.BOX) {
+            drawBoxShell(matrix, buffer, x, y, z, radius, thickness, height, r, g, b, a, drawCaps);
+        } else {
+            drawCylindricalShell(matrix, buffer, x, y, z, radius, thickness, height, r, g, b, a, drawCaps);
         }
     }
 
@@ -165,5 +173,52 @@ public class WaypointRenderer {
             buffer.addVertex(matrix, x2_inner, topY, z2_inner).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(-cos2, 0, -sin2);
             buffer.addVertex(matrix, x1_inner, topY, z1_inner).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(-cos1, 0, -sin1);
         }
+    }
+
+    private static void drawBoxShell(Matrix4f matrix, VertexConsumer buffer, double x, double y, double z, float radius, float thickness, double height, float r, float g, float b, float a, boolean drawCaps) {
+        float bY = (float) y + 0.01f;
+        float tY = bY + (float) height;
+
+        float offI = radius - thickness;
+        float offO = radius + thickness;
+
+        float x1o = (float)x - offO, z1o = (float)z - offO;
+        float x2o = (float)x + offO, z2o = (float)z - offO;
+        float x3o = (float)x + offO, z3o = (float)z + offO;
+        float x4o = (float)x - offO, z4o = (float)z + offO;
+
+        float x1i = (float)x - offI, z1i = (float)z - offI;
+        float x2i = (float)x + offI, z2i = (float)z - offI;
+        float x3i = (float)x + offI, z3i = (float)z + offI;
+        float x4i = (float)x - offI, z4i = (float)z + offI;
+
+        if (drawCaps) {
+            addQuad(matrix, buffer, x1o, tY, z1o, x2o, tY, z2o, x2i, tY, z2i, x1i, tY, z1i, r, g, b, a, 0, 1, 0);
+            addQuad(matrix, buffer, x2o, tY, z2o, x3o, tY, z3o, x3i, tY, z3i, x2i, tY, z2i, r, g, b, a, 0, 1, 0);
+            addQuad(matrix, buffer, x3o, tY, z3o, x4o, tY, z4o, x4i, tY, z4i, x3i, tY, z3i, r, g, b, a, 0, 1, 0);
+            addQuad(matrix, buffer, x4o, tY, z4o, x1o, tY, z1o, x1i, tY, z1i, x4i, tY, z4i, r, g, b, a, 0, 1, 0);
+
+            addQuad(matrix, buffer, x1o, bY, z1o, x1i, bY, z1i, x2i, bY, z2i, x2o, bY, z2o, r, g, b, a, 0, -1, 0);
+            addQuad(matrix, buffer, x2o, bY, z2o, x2i, bY, z2i, x3i, bY, z3i, x3o, bY, z3o, r, g, b, a, 0, -1, 0);
+            addQuad(matrix, buffer, x3o, bY, z3o, x3i, bY, z3i, x4i, bY, z4i, x4o, bY, z4o, r, g, b, a, 0, -1, 0);
+            addQuad(matrix, buffer, x4o, bY, z4o, x4i, bY, z4i, x1i, bY, z1i, x1o, bY, z1o, r, g, b, a, 0, -1, 0);
+        }
+
+        addQuad(matrix, buffer, x1o, bY, z1o, x2o, bY, z2o, x2o, tY, z2o, x1o, tY, z1o, r, g, b, a, 0, 0, -1);
+        addQuad(matrix, buffer, x2o, bY, z2o, x3o, bY, z3o, x3o, tY, z3o, x2o, tY, z2o, r, g, b, a, 1, 0, 0);
+        addQuad(matrix, buffer, x3o, bY, z3o, x4o, bY, z4o, x4o, tY, z4o, x3o, tY, z3o, r, g, b, a, 0, 0, 1);
+        addQuad(matrix, buffer, x4o, bY, z4o, x1o, bY, z1o, x1o, tY, z1o, x4o, tY, z4o, r, g, b, a, -1, 0, 0);
+
+        addQuad(matrix, buffer, x1i, bY, z1i, x1i, tY, z1i, x2i, tY, z2i, x2i, bY, z2i, r, g, b, a, 0, 0, 1);
+        addQuad(matrix, buffer, x2i, bY, z2i, x2i, tY, z2i, x3i, tY, z3i, x3i, bY, z3i, r, g, b, a, -1, 0, 0);
+        addQuad(matrix, buffer, x3i, bY, z3i, x3i, tY, z3i, x4i, tY, z4i, x4i, bY, z4i, r, g, b, a, 0, 0, -1);
+        addQuad(matrix, buffer, x4i, bY, z4i, x4i, tY, z4i, x1i, tY, z1i, x1i, bY, z1i, r, g, b, a, 1, 0, 0);
+    }
+
+    private static void addQuad(Matrix4f matrix, VertexConsumer buffer, float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, float x4, float y4, float z4, float r, float g, float b, float a, float nx, float ny, float nz) {
+        buffer.addVertex(matrix, x1, y1, z1).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(nx, ny, nz);
+        buffer.addVertex(matrix, x2, y2, z2).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(nx, ny, nz);
+        buffer.addVertex(matrix, x3, y3, z3).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(nx, ny, nz);
+        buffer.addVertex(matrix, x4, y4, z4).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(nx, ny, nz);
     }
 }

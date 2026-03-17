@@ -13,7 +13,8 @@ public class Waypoint {
     public int color;
     public double radius = 1.0;
     public double height = 0.1;
-    public boolean showCylinder = false;
+    public WaypointShape shape = WaypointShape.CYLINDER;
+    public boolean showFullShape = false;
     public WaypointAnimation animation = WaypointAnimation.STATIC;
     public java.util.List<org.blackum.blackaddons.core.config.ConfigManager.WaypointAction> actions = new java.util.ArrayList<>();
 

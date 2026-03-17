@@ -45,10 +45,14 @@ public class WaypointActionManager {
 
             double dx = playerX - waypoint.x;
             double dz = playerZ - waypoint.z;
-            double distanceSq = dx * dx + dz * dz;
-            double radiusSq = waypoint.radius * waypoint.radius;
-
-            boolean currentlyInside = distanceSq <= radiusSq && playerY >= waypoint.y && playerY <= waypoint.y + waypoint.height;
+            boolean currentlyInside;
+            if (waypoint.shape == org.blackum.blackaddons.core.waypoint.WaypointShape.BOX) {
+                currentlyInside = Math.abs(dx) <= waypoint.radius && Math.abs(dz) <= waypoint.radius && playerY >= waypoint.y && playerY <= waypoint.y + waypoint.height;
+            } else {
+                double distanceSq = dx * dx + dz * dz;
+                double radiusSq = waypoint.radius * waypoint.radius;
+                currentlyInside = distanceSq <= radiusSq && playerY >= waypoint.y && playerY <= waypoint.y + waypoint.height;
+            }
             Boolean previouslyInside = playerInsideWaypoint.get(waypoint.id);
 
             if (previouslyInside == null) {
