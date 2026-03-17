@@ -78,7 +78,7 @@ public class FastLeap {
                 bloodRoomOpened = true;
                 leapTarget = null;
                 searchByClass = false;
-                ChatUtils.send_debug("[FastLeap] Blood Room opened. Door Opener disabled.");
+                debugMsg("[FastLeap] Blood Room opened. Door Opener disabled.");
                 return;
             }
 
@@ -95,7 +95,7 @@ public class FastLeap {
             if (cleanText.contains("The Dungeon starts in 1 second.") || cleanText.contains("Starting in 1 second.")) {
                 bloodRoomOpened = false;
                 leapTarget = null;
-                ChatUtils.send_debug("[FastLeap] Dungeon Start detected. Door Opener reset.");
+                debugMsg("[FastLeap] Dungeon Start detected. Door Opener reset.");
             }
         });
     }
@@ -126,7 +126,7 @@ public class FastLeap {
                     
                     if (detectedClass != null && configuredClass != null && configuredClass.equalsIgnoreCase(detectedClass)) {
                         String fullName = player.getName().getString();
-                        ChatUtils.send_debug("[FastLeap] Priority MATCH! Target: " + fullName + " (" + detectedClass + ") in " + targetRoom);
+                        debugMsg("[FastLeap] Priority MATCH! Target: " + fullName + " (" + detectedClass + ") in " + targetRoom);
                         return fullName;
                     }
                 }
@@ -167,10 +167,10 @@ public class FastLeap {
                 String boardName = rawChunk.replaceAll("[^a-z0-9_]", "");
                 
                 if (boardName.length() >= 3 && playerName.startsWith(boardName)) {
-                    ChatUtils.send_debug("[FastLeap] Scoreboard Scan Found: " + player.getName().getString() + " -> " + lowerLine);
+                    debugMsg("[FastLeap] Scoreboard Scan Found: " + player.getName().getString() + " -> " + lowerLine);
                     return lowerLine;
                 } else {
-                    ChatUtils.send_debug("[FastLeap] Scoreboard Skip: " + playerName + " != " + boardName);
+                    debugMsg("[FastLeap] Scoreboard Skip: " + playerName + " != " + boardName);
                 }
             }
         }
@@ -235,7 +235,7 @@ public class FastLeap {
             String myRoom = getDetectedRoom(client);
             if (myRoom != null && !myRoom.equals(lastDetectedRoom)) {
                 String targetClass = getRoomClass(myRoom);
-                ChatUtils.send_debug("[FastLeap] You entered " + myRoom
+                debugMsg("[FastLeap] You entered " + myRoom
                         + (targetClass != null && !targetClass.equals(CLASS_NONE) ? " -> " + targetClass : ""));
             }
             lastDetectedRoom = myRoom;
@@ -248,7 +248,7 @@ public class FastLeap {
 
                 if (zone != null && !zone.equals(lastZone)) {
                     String label = zone.contains(" ") ? zone.split(" ", 2)[1] : "CORE";
-                    ChatUtils.send_debug("[FastLeap] " + player.getName().getString() + " has been detected in " + label);
+                    debugMsg("[FastLeap] " + player.getName().getString() + " has been detected in " + label);
                 }
 
                 if (zone != null) playerRooms.put(uuid, zone);
@@ -288,11 +288,11 @@ public class FastLeap {
                     inProgress = true;
                     clickedLeap = false;
                     if (client.gameMode != null) {
-                        ChatUtils.send_debug("[FastLeap] Triggering! Target: " + target + (byClass ? " (Lore)" : " (Name)"));
+                        debugMsg("[FastLeap] Triggering! Target: " + target + (byClass ? " (Lore)" : " (Name)"));
                         client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
                     }
                 } else {
-                    ChatUtils.send_debug("[FastLeap] Trigger failed: No player in boxes or no class match.");
+                    debugMsg("[FastLeap] Trigger failed: No player in boxes or no class match.");
                 }
             }
             wasAttackDown = attackDown;
@@ -302,7 +302,7 @@ public class FastLeap {
             String title = containerScreen.getTitle().getString();
             if (title.contains("Spirit Leap")) {
                 if (!menuOpened) {
-                    ChatUtils.send_debug("[FastLeap] Spirit Leap menu detected!");
+                    debugMsg("[FastLeap] Spirit Leap menu detected!");
                     menuOpened = true;
                 }
                 
@@ -324,7 +324,7 @@ public class FastLeap {
                                 : itemName.startsWith(target) || itemName.contains(target);
 
                         if (matches) {
-                            ChatUtils.send_debug("[FastLeap] Found " + itemName + "! Clicking slot " + slot.index);
+                            debugMsg("[FastLeap] Found " + itemName + "! Clicking slot " + slot.index);
                             clickedLeap = true;
                             client.gameMode.handleInventoryMouseClick(
                                     containerScreen.getMenu().containerId, slot.index, 0, ClickType.PICKUP, client.player);
@@ -333,7 +333,7 @@ public class FastLeap {
                         }
                     }
                     if (foundSlots > 0 && !clickedLeap) {
-                        ChatUtils.send_debug("[FastLeap] Scanned " + foundSlots + " items, no match for: " + target);
+                        debugMsg("[FastLeap] Scanned " + foundSlots + " items, no match for: " + target);
                     }
                 }
             } else if (menuOpened) {
@@ -372,6 +372,12 @@ public class FastLeap {
         if (stack == null || stack.isEmpty()) return false;
         String name = stack.getHoverName().getString().toLowerCase().replaceAll("(?i)§[0-9A-FK-ORX]", "");
         return name.contains("infinileap");
+    }
+
+    private static void debugMsg(String msg) {
+        if (ConfigManager.data.FastLeapDebug) {
+            ChatUtils.send_debug(msg);
+        }
     }
 
     public static List<String> getDebugInfo() {

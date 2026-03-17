@@ -256,6 +256,7 @@ public class ConfigManager {
         public boolean FastLeapEnabled = false;
         public boolean FastLeapDoorOpener = false;
         public boolean FastLeapPositional = false;
+        public boolean FastLeapDebug = false;
         public String FastLeapS1Class = "NONE";
         public String FastLeapS2Class = "NONE";
         public String FastLeapS3Class = "NONE";

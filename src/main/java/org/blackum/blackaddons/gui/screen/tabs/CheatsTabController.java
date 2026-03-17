@@ -444,6 +444,15 @@ public class CheatsTabController extends SimpleTabController {
         s4Dropdown.setOnExpand(() -> collapseOtherDropdowns(s4Dropdown));
         listView.addItem(s4Dropdown);
 
+        ToggleSwitch debugToggle = new ToggleSwitch(0, 0, 260,
+                "Debug Mode",
+                "Shows FastLeap debug messages in chat",
+                ConfigManager.data.FastLeapDebug, value -> {
+                    ConfigManager.data.FastLeapDebug = value;
+                    ConfigManager.save();
+                });
+        listView.addItem(debugToggle);
+
         fastLeapCard.addChild(listView);
         fastLeapCard.updateLayout();
         return fastLeapCard;
