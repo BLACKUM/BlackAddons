@@ -11,6 +11,8 @@ import org.blackum.blackaddons.gui.screen.ChatActionEditScreen;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
 import net.minecraft.core.registries.BuiltInRegistries;
+import org.blackum.blackaddons.gui.notification.NotificationManager;
+import org.blackum.blackaddons.gui.notification.NotificationType;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -191,6 +193,49 @@ public class ChatActionsTabController extends SimpleTabController {
                         ActionManager.getInstance().save();
                     });
             triggerWidgets.add(enabledToggle);
+
+            ToggleSwitch notifyToggle = new ToggleSwitch(0, 0, itemWidth, "Show Notification",
+                    "Show a custom notification when triggered", trigger.showNotification, val -> {
+                trigger.showNotification = val;
+                ActionManager.getInstance().save();
+                screen.init();
+            });
+            triggerWidgets.add(notifyToggle);
+
+            if (trigger.showNotification) {
+                TextField nTitleField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Notification Title");
+                nTitleField.setText(trigger.notificationTitle != null ? trigger.notificationTitle : "");
+                nTitleField.setOnValueChange(val -> {
+                    trigger.notificationTitle = val;
+                    ActionManager.getInstance().save();
+                });
+                triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Notification Title", "Custom notification title. Supports & colors and regex groups.", nTitleField));
+
+                TextField nMsgField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Notification Message");
+                nMsgField.setText(trigger.notificationMessage != null ? trigger.notificationMessage : "");
+                nMsgField.setOnValueChange(val -> {
+                    trigger.notificationMessage = val;
+                    ActionManager.getInstance().save();
+                });
+                triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Notification Message", "Custom notification message. Supports & colors and regex groups.", nMsgField));
+
+                List<String> typeOptions = java.util.stream.Stream.of(NotificationType.values()).map(Enum::name).toList();
+                Dropdown typeDropdown = new Dropdown(0, 0, itemWidth, "Notification Type", typeOptions, selected -> {
+                    trigger.notificationType = NotificationType.valueOf(selected);
+                    ActionManager.getInstance().save();
+                });
+                typeDropdown.setSelectedIndex(trigger.notificationType.ordinal());
+                triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Notification Type", "Color profile of the notification", typeDropdown));
+
+                Button testNotifyBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Test Notification", () -> {
+                    NotificationManager.addNotification(
+                            org.blackum.blackaddons.core.util.FormatUtils.formatColor(trigger.notificationTitle != null && !trigger.notificationTitle.isEmpty() ? trigger.notificationTitle : "Test Title"),
+                            org.blackum.blackaddons.core.util.FormatUtils.formatColor(trigger.notificationMessage != null && !trigger.notificationMessage.isEmpty() ? trigger.notificationMessage : "Test Message"),
+                            trigger.notificationType
+                    );
+                });
+                triggerWidgets.add(testNotifyBtn);
+            }
 
             Button editActionsBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Edit Action Steps", () -> {
                 Minecraft.getInstance().setScreen(new ChatActionEditScreen(screen, trigger));

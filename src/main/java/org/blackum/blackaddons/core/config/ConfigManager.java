@@ -6,7 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.blackum.blackaddons.feature.cheat.AutoBM;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.gui.render.Theme;
-
+import org.blackum.blackaddons.gui.notification.NotificationType;
 import org.blackum.blackaddons.feature.modhider.SpoofMode;
 import org.blackum.blackaddons.core.util.Constants;
 
@@ -145,6 +145,10 @@ public class ConfigManager {
         public String title = "";
         public String subtitle = "";
         public float durationSeconds = 2.0f;
+        public boolean showNotification = false;
+        public String notificationTitle = "";
+        public String notificationMessage = "";
+        public NotificationType notificationType = NotificationType.INFO;
         public boolean collapsed = true;
         public List<ActionStep> actions = new ArrayList<>();
 
@@ -177,6 +181,10 @@ public class ConfigManager {
         public String title = "";
         public String subtitle = "";
         public float durationSeconds = 2.0f;
+        public boolean showNotification = false;
+        public String notificationTitle = "";
+        public String notificationMessage = "";
+        public NotificationType notificationType = NotificationType.INFO;
         public boolean collapsed = true;
         public List<ActionStep> actions = new ArrayList<>();
 

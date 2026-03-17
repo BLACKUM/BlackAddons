@@ -9,6 +9,8 @@ import org.blackum.blackaddons.core.waypoint.Waypoint;
 import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
+import org.blackum.blackaddons.gui.notification.NotificationManager;
+import org.blackum.blackaddons.gui.notification.NotificationType;
 import org.blackum.blackaddons.gui.widget.*;
 
 import java.util.ArrayList;
@@ -53,7 +55,7 @@ public class WaypointActionEditScreen extends BaseScreen {
         widgets.add(exitToggle);
         currentY += 35;
 
-        widgets.add(new Label(fieldX, currentY, "Notification:", Label.Style.CAPTION));
+        widgets.add(new Label(fieldX, currentY, "Title:", Label.Style.CAPTION));
         currentY += 15;
 
         TextField titleField = new TextField(fieldX, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Title");
@@ -71,7 +73,53 @@ public class WaypointActionEditScreen extends BaseScreen {
             WaypointManager.getInstance().save();
         });
         widgets.add(subtitleField);
-        currentY += 45;
+        currentY += 35;
+
+        ToggleSwitch notifyToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Show Notification",
+                "Show a custom notification when triggered", action.showNotification, val -> {
+            action.showNotification = val;
+            WaypointManager.getInstance().save();
+            this.init();
+        });
+        widgets.add(notifyToggle);
+        currentY += 25;
+
+        if (action.showNotification) {
+            TextField nTitleField = new TextField(fieldX, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Notification Title");
+            nTitleField.setText(action.notificationTitle != null ? action.notificationTitle : "");
+            nTitleField.setOnValueChange(val -> {
+                action.notificationTitle = val;
+                WaypointManager.getInstance().save();
+            });
+            widgets.add(nTitleField);
+
+            TextField nMsgField = new TextField(fieldX + (fieldWidth + Theme.PADDING) / 2, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Notification Message");
+            nMsgField.setText(action.notificationMessage != null ? action.notificationMessage : "");
+            nMsgField.setOnValueChange(val -> {
+                action.notificationMessage = val;
+                WaypointManager.getInstance().save();
+            });
+            widgets.add(nMsgField);
+            currentY += 35;
+
+            List<String> typeOptions = java.util.stream.Stream.of(NotificationType.values()).map(Enum::name).toList();
+            Dropdown typeDropdown = new Dropdown(fieldX, currentY, fieldWidth - 54, Theme.TEXTFIELD_HEIGHT, "Notification Type", typeOptions, selected -> {
+                action.notificationType = NotificationType.valueOf(selected);
+                WaypointManager.getInstance().save();
+            });
+            typeDropdown.setSelectedIndex(action.notificationType.ordinal());
+            widgets.add(typeDropdown);
+
+            Button testNotifyBtn = new Button(fieldX + fieldWidth - 50, currentY, 50, Theme.TEXTFIELD_HEIGHT, "Test", () -> {
+                NotificationManager.addNotification(
+                        org.blackum.blackaddons.core.util.FormatUtils.formatColor(action.notificationTitle != null && !action.notificationTitle.isEmpty() ? action.notificationTitle : "Test Title"),
+                        org.blackum.blackaddons.core.util.FormatUtils.formatColor(action.notificationMessage != null && !action.notificationMessage.isEmpty() ? action.notificationMessage : "Test Message"),
+                        action.notificationType
+                );
+            });
+            widgets.add(testNotifyBtn);
+            currentY += 35;
+        }
 
         widgets.add(new Label(fieldX, currentY, "Action Steps:", Label.Style.CAPTION));
         currentY += 15;

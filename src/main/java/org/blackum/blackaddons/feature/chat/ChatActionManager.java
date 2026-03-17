@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
-
+import org.blackum.blackaddons.gui.notification.NotificationManager;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -95,6 +95,25 @@ public class ChatActionManager {
                                     Component.literal(org.blackum.blackaddons.core.util.FormatUtils
                                                     .formatColor(fSubtitle)));
                         }
+                    }
+
+                    if (trigger.showNotification && !trigger.notificationMessage.isEmpty()) {
+                        String nTitle = trigger.notificationTitle != null && !trigger.notificationTitle.isEmpty() 
+                                ? trigger.notificationTitle : "Action Triggered";
+                        String nMessage = trigger.notificationMessage;
+
+                        for (int i = 1; i < finalGroups.length; i++) {
+                            if (finalGroups[i] != null) {
+                                String replacement = finalGroups[i];
+                                nTitle = nTitle.replace("{" + i + "}", replacement);
+                                nMessage = nMessage.replace("{" + i + "}", replacement);
+                            }
+                        }
+                        NotificationManager.addNotification(
+                                org.blackum.blackaddons.core.util.FormatUtils.formatColor(nTitle),
+                                org.blackum.blackaddons.core.util.FormatUtils.formatColor(nMessage),
+                                trigger.notificationType
+                        );
                     }
 
                     if (!trigger.actions.isEmpty()) {

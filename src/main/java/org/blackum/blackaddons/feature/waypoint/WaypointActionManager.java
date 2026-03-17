@@ -12,6 +12,7 @@ import org.blackum.blackaddons.core.waypoint.Waypoint;
 import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import org.blackum.blackaddons.core.util.FormatUtils;
 
+import org.blackum.blackaddons.gui.notification.NotificationManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -92,6 +93,16 @@ public class WaypointActionManager {
                 if (action.subtitle != null && !action.subtitle.isEmpty()) {
                     client.gui.setSubtitle(Component.literal(FormatUtils.formatColor(action.subtitle)));
                 }
+            }
+
+            if (action.showNotification && !action.notificationMessage.isEmpty()) {
+                String nTitle = action.notificationTitle != null && !action.notificationTitle.isEmpty()
+                        ? action.notificationTitle : (waypoint.name != null ? waypoint.name : "Waypoint Action");
+                NotificationManager.addNotification(
+                        FormatUtils.formatColor(nTitle),
+                        FormatUtils.formatColor(action.notificationMessage),
+                        action.notificationType
+                );
             }
 
             if (!action.actions.isEmpty()) {
