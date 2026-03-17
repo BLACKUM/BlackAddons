@@ -2,6 +2,7 @@ package org.blackum.blackaddons.gui.notification;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import org.blackum.blackaddons.gui.render.RenderHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -40,9 +41,14 @@ public class NotificationManager {
         if (notifications.isEmpty())
             return;
 
+        float scale = RenderHelper.getGuiScaleFactor();
         Minecraft mc = Minecraft.getInstance();
-        int screenWidth = mc.getWindow().getGuiScaledWidth();
-        int screenHeight = mc.getWindow().getGuiScaledHeight();
+        
+        int screenWidth = (int) (mc.getWindow().getGuiScaledWidth() / scale);
+        int screenHeight = (int) (mc.getWindow().getGuiScaledHeight() / scale);
+
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(scale, scale);
 
         int bottomY = screenHeight - 50;
         int x = screenWidth - 170;
@@ -56,5 +62,7 @@ public class NotificationManager {
 
             bottomY = topY - 5;
         }
+
+        graphics.pose().popMatrix();
     }
 }

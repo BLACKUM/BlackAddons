@@ -1,9 +1,21 @@
 package org.blackum.blackaddons.gui.render;
 
+import net.minecraft.client.Minecraft;
+import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.render.Theme;
 import net.minecraft.client.gui.GuiGraphics;
 
 public class RenderHelper {
+
+    public static float getGuiScaleFactor() {
+        int forcedScale = ConfigManager.data.forcedGuiScale;
+        if (forcedScale <= 0) return 1.0f;
+        
+        int vanillaScale = (int)Minecraft.getInstance().getWindow().getGuiScale();
+        if (forcedScale >= vanillaScale) return 1.0f;
+        
+        return (float)forcedScale / vanillaScale;
+    }
 
     public static void renderSurface(GuiGraphics graphics, int x, int y, int width, int height, int radius,
             boolean pressed) {

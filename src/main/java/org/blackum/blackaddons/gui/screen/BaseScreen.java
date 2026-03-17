@@ -124,13 +124,7 @@ public abstract class BaseScreen extends Screen {
     }
 
     protected float getGuiScaleFactor() {
-        int forcedScale = ConfigManager.data.forcedGuiScale;
-        if (forcedScale <= 0) return 1.0f;
-        
-        int vanillaScale = (int)Minecraft.getInstance().getWindow().getGuiScale();
-        if (forcedScale >= vanillaScale) return 1.0f;
-        
-        return (float)forcedScale / vanillaScale;
+        return RenderHelper.getGuiScaleFactor();
     }
 
     @Override
@@ -272,10 +266,10 @@ public abstract class BaseScreen extends Screen {
         }
 
         renderTooltips(graphics, scaledMouseX, scaledMouseY);
-
-        NotificationManager.getInstance().render(graphics);
         
         graphics.pose().popMatrix();
+
+        NotificationManager.getInstance().render(graphics);
     }
 
     protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
