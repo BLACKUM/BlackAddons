@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.feature.cheat.FastLeap;
 import org.blackum.blackaddons.mixin.core.KeyBindingAccessor;
 import org.blackum.blackaddons.core.manager.RotationManager;
 
@@ -71,6 +72,10 @@ public class ChatActionExecutor {
         }
     }
 
+    public boolean isKeySimulated(KeyMapping key) {
+        return activeKeybinds.containsKey(key);
+    }
+
     private void executeAction(Minecraft client, ConfigManager.ActionStep action, String[] groups) {
         if (client.player == null) return;
 
@@ -86,11 +91,14 @@ public class ChatActionExecutor {
                 break;
             case USE_ITEM:
                 if (client.screen != null) break;
-                clickKey(client.options.keyUse);
+                holdOrClickKey(client.options.keyUse, action.durationTicks);
                 break;
             case ATTACK:
                 if (client.screen != null) break;
-                clickKey(client.options.keyAttack);
+                if (FastLeap.tryTriggerFromAttackAction(client, true)) {
+                    break;
+                }
+                holdOrClickKey(client.options.keyAttack, action.durationTicks);
                 break;
             case SEND_MESSAGE:
                 String msg = action.message;
@@ -111,12 +119,7 @@ public class ChatActionExecutor {
                 if (client.screen != null) break;
                 for (KeyMapping key : client.options.keyMappings) {
                     if (key.getName().equalsIgnoreCase(action.message)) {
-                        if (action.durationTicks > 0) {
-                            setKeyState(key, true);
-                            activeKeybinds.put(key, action.durationTicks);
-                        } else {
-                            clickKey(key);
-                        }
+                        holdOrClickKey(key, action.durationTicks);
                         break;
                     }
                 }
@@ -144,8 +147,18 @@ public class ChatActionExecutor {
         }
     }
 
+    private void holdOrClickKey(KeyMapping key, int durationTicks) {
+        if (durationTicks > 0) {
+            setKeyState(key, true);
+            activeKeybinds.put(key, durationTicks);
+            return;
+        }
+        clickKey(key);
+    }
+
     private void setKeyState(KeyMapping key, boolean pressed) {
         if (key instanceof KeyBindingAccessor accessor) {
+            KeyMapping.set(accessor.getBoundKey(), pressed);
             accessor.setBlackaddonsIsDown(pressed);
         }
     }

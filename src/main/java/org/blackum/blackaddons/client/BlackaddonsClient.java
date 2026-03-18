@@ -19,10 +19,9 @@ import org.blackum.blackaddons.core.manager.CustomNameManager;
 import org.blackum.blackaddons.core.manager.DebugOverlayManager;
 import org.blackum.blackaddons.core.manager.PartyFinderManager;
 import org.blackum.blackaddons.core.manager.UpdateManager;
-import org.blackum.blackaddons.core.util.Scheduler;
-import org.blackum.blackaddons.core.waypoint.WaypointManager;
-import org.blackum.blackaddons.feature.chat.ChatActionManager;
+import org.blackum.blackaddons.gui.render.WaypointRenderer;
 import org.blackum.blackaddons.feature.chat.ChatImageHandler;
+import org.blackum.blackaddons.feature.chat.ChatActionManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import org.blackum.blackaddons.feature.chat.IrcPrefixManager;
 import org.blackum.blackaddons.feature.cheat.AutoBM;
@@ -106,6 +105,20 @@ public class BlackaddonsClient implements ClientModInitializer {
 
         WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
             WaypointRenderer.render(context.matrices().last().pose(), context.consumers(), 0.0f);
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null || mc.level == null || mc.gameRenderer == null) return;
+            DebugBoxRenderer.render(
+                    context.matrices().last().pose(),
+                    context.consumers(),
+                    mc.gameRenderer.getMainCamera().position(),
+                    LocationUtils.getDebugBoxes()
+            );
+            DebugBoxRenderer.render(
+                    context.matrices().last().pose(),
+                    context.consumers(),
+                    mc.gameRenderer.getMainCamera().position(),
+                    FastLeap.getDebugBoxes()
+            );
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

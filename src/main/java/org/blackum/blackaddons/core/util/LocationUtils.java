@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.phys.Vec3;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.model.DungeonFloor;
+import org.blackum.blackaddons.gui.render.DebugBoxRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.Map;
 public class LocationUtils {
     private static final int COLOR_WHITE = 0xFFFFFFFF;
     private static final int LINE_HEIGHT = 10;
+    private static final int COLOR_BOSS = 0xFFFFFFFF;
+    private static final int[] F7_PHASE_COLORS = {0xFF5555, 0xFFAA33, 0xFFEE55, 0x55CC55, 0x33AADD};
 
     private static final Map<Integer, int[]> BOSS_ROOM_BOUNDS = Map.of(
         7, new int[]{-8, 0, -8, 134, 254, 147},
@@ -156,6 +159,26 @@ public class LocationUtils {
         return info;
     }
 
+    public static List<DebugBoxRenderer.BoxSpec> getDebugBoxes() {
+        List<DebugBoxRenderer.BoxSpec> boxes = new ArrayList<>();
+        if (!ConfigManager.data.showLocationDebug) return boxes;
+
+        DungeonFloor floor = getCurrentFloor();
+        if (floor == null || floor == DungeonFloor.ENTRANCE) return boxes;
+
+        int[] bounds = getBossBounds(floor);
+        if (bounds == null) return boxes;
+
+        boxes.add(createBox("Boss", bounds, COLOR_BOSS, 0.08f));
+
+        String display = floor.getDisplayName();
+        if ("F7".equals(display) || "M7".equals(display)) {
+            addF7PhaseBoxes(boxes, bounds, getF7Phase());
+        }
+
+        return boxes;
+    }
+
     private static void renderOverlay(GuiGraphics graphics) {
         Minecraft mc = Minecraft.getInstance();
         if (!ConfigManager.data.showLocationDebug || mc.options.hideGui) return;
@@ -177,6 +200,45 @@ public class LocationUtils {
 
     private static String yesNo(boolean value) {
         return value ? ChatFormatting.GREEN + "YES" : ChatFormatting.RED + "NO";
+    }
+
+    private static void addF7PhaseBoxes(List<DebugBoxRenderer.BoxSpec> boxes, int[] bossBounds, int activePhase) {
+        int minX = Math.min(bossBounds[0], bossBounds[3]);
+        int maxX = Math.max(bossBounds[0], bossBounds[3]) + 1;
+        int minZ = Math.min(bossBounds[2], bossBounds[5]);
+        int maxZ = Math.max(bossBounds[2], bossBounds[5]) + 1;
+
+        int[][] yRanges = {
+                {211, 255},
+                {156, 211},
+                {101, 156},
+                {46, 101},
+                {0, 46}
+        };
+
+        for (int i = 0; i < yRanges.length; i++) {
+            int phase = i + 1;
+            int minY = yRanges[i][0];
+            int maxY = yRanges[i][1];
+            float alpha = phase == activePhase ? 0.18f : 0.06f;
+            boxes.add(new DebugBoxRenderer.BoxSpec(
+                    "Phase " + phase,
+                    minX, minY, minZ,
+                    maxX, maxY, maxZ,
+                    F7_PHASE_COLORS[i],
+                    alpha
+            ));
+        }
+    }
+
+    private static DebugBoxRenderer.BoxSpec createBox(String label, int[] bounds, int color, float alpha) {
+        int minX = Math.min(bounds[0], bounds[3]);
+        int maxX = Math.max(bounds[0], bounds[3]) + 1;
+        int minY = Math.min(bounds[1], bounds[4]);
+        int maxY = Math.max(bounds[1], bounds[4]) + 1;
+        int minZ = Math.min(bounds[2], bounds[5]);
+        int maxZ = Math.max(bounds[2], bounds[5]) + 1;
+        return new DebugBoxRenderer.BoxSpec(label, minX, minY, minZ, maxX, maxY, maxZ, color, alpha);
     }
 
     private static int[] getBossBounds(DungeonFloor floor) {

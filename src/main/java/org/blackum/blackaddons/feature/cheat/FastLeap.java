@@ -11,8 +11,10 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.component.ItemLore;
 import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import org.blackum.blackaddons.feature.chat.ChatUtils;
 import org.blackum.blackaddons.core.util.ScoreboardUtils;
+import org.blackum.blackaddons.gui.render.DebugBoxRenderer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.world.scores.Scoreboard;
@@ -35,11 +37,18 @@ public class FastLeap {
 
     private static final int S1_SS_MIN_X = 106, S1_SS_MAX_X = 109, S1_SS_MIN_Y = 119, S1_SS_MAX_Y = 123, S1_SS_MIN_Z = 92,  S1_SS_MAX_Z = 95;
     private static final int S2_EE2_MIN_X  = 56,  S2_EE2_MAX_X  = 59,  S2_EE2_MIN_Y  = 108, S2_EE2_MAX_Y  = 111, S2_EE2_MIN_Z  = 129, S2_EE2_MAX_Z  = 132;
-    private static final int S2_SAFE1_MIN_X = 69,  S2_SAFE1_MAX_X = 69,  S2_SAFE1_MIN_Y = 109, S2_SAFE1_MAX_Y = 110, S2_SAFE1_MIN_Z = 121, S2_SAFE1_MAX_Z = 121;
+    private static final int S2_SAFE1_MIN_X = 68,  S2_SAFE1_MAX_X = 70,  S2_SAFE1_MIN_Y = 108, S2_SAFE1_MAX_Y = 111, S2_SAFE1_MIN_Z = 120, S2_SAFE1_MAX_Z = 122;
     private static final int S2_HEE2_MIN_X = 58,  S2_HEE2_MAX_X = 65,  S2_HEE2_MIN_Y = 130, S2_HEE2_MAX_Y = 135, S2_HEE2_MIN_Z = 135, S2_HEE2_MAX_Z = 146;
     private static final int S3_EE3_MIN_X  = 0,   S3_EE3_MAX_X  = 3,   S3_EE3_MIN_Y  = 108, S3_EE3_MAX_Y  = 111, S3_EE3_MIN_Z  = 100, S3_EE3_MAX_Z  = 106;
     private static final int S3_HEE3_MIN_X = 17,  S3_HEE3_MAX_X = 19,  S3_HEE3_MIN_Y = 121, S3_HEE3_MAX_Y = 123, S3_HEE3_MIN_Z = 89,  S3_HEE3_MAX_Z = 99;
     private static final int S4_MIN_X = 51, S4_MAX_X = 57, S4_MIN_Y = 115, S4_MAX_Y = 118, S4_MIN_Z = 48, S4_MAX_Z = 53;
+    private static final int[] S1_SS = {S1_SS_MIN_X, S1_SS_MIN_Y, S1_SS_MIN_Z, S1_SS_MAX_X, S1_SS_MAX_Y, S1_SS_MAX_Z};
+    private static final int[] S2_EE2 = {S2_EE2_MIN_X, S2_EE2_MIN_Y, S2_EE2_MIN_Z, S2_EE2_MAX_X, S2_EE2_MAX_Y, S2_EE2_MAX_Z};
+    private static final int[] S2_SAFE1 = {S2_SAFE1_MIN_X, S2_SAFE1_MIN_Y, S2_SAFE1_MIN_Z, S2_SAFE1_MAX_X, S2_SAFE1_MAX_Y, S2_SAFE1_MAX_Z};
+    private static final int[] S2_HEE2 = {S2_HEE2_MIN_X, S2_HEE2_MIN_Y, S2_HEE2_MIN_Z, S2_HEE2_MAX_X, S2_HEE2_MAX_Y, S2_HEE2_MAX_Z};
+    private static final int[] S3_EE3 = {S3_EE3_MIN_X, S3_EE3_MIN_Y, S3_EE3_MIN_Z, S3_EE3_MAX_X, S3_EE3_MAX_Y, S3_EE3_MAX_Z};
+    private static final int[] S3_HEE3 = {S3_HEE3_MIN_X, S3_HEE3_MIN_Y, S3_HEE3_MIN_Z, S3_HEE3_MAX_X, S3_HEE3_MAX_Y, S3_HEE3_MAX_Z};
+    private static final int[] S4_ROOM = {S4_MIN_X, S4_MIN_Y, S4_MIN_Z, S4_MAX_X, S4_MAX_Y, S4_MAX_Z};
 
     private static final String CLASS_NONE = "NONE";
 
@@ -50,8 +59,12 @@ public class FastLeap {
     private static boolean menuOpened = false;
     private static boolean wasAttackDown = false;
     private static String lastDetectedRoom = null;
+    private static long lastDetectedRoomAt = 0L;
     private static final Map<UUID, String> playerRooms = new HashMap<>();
     private static boolean bloodRoomOpened = false;
+    private static String lastFailureReason = null;
+    private static long lastFailureReasonAt = 0L;
+    private static final long ROOM_MEMORY_MS = 3000L;
 
     public static void register() {
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> onChatMessage(message));
@@ -100,35 +113,47 @@ public class FastLeap {
         });
     }
 
+    private static String getActiveRoom(Minecraft mc) {
+        String currentRoom = getDetectedRoom(mc);
+        if (currentRoom != null) {
+            lastDetectedRoom = currentRoom;
+            lastDetectedRoomAt = System.currentTimeMillis();
+            return currentRoom;
+        }
+        if (lastDetectedRoom != null && System.currentTimeMillis() - lastDetectedRoomAt <= ROOM_MEMORY_MS) {
+            return lastDetectedRoom;
+        }
+        return null;
+    }
+
     private static String getPositionalTargetPlayer(Minecraft mc) {
         if (mc.level == null || mc.player == null) return null;
 
         String myName = mc.player.getScoreboardName();
-        String[] roomPriority = {"S1", "S2", "S3", "S4"};
+        String targetRoom = getActiveRoom(mc);
+        if (targetRoom == null) return null;
 
-        for (String targetRoom : roomPriority) {
-            String configuredClass = getRoomClass(targetRoom);
-            if (configuredClass == null || configuredClass.equals(CLASS_NONE)) continue;
+        String configuredClass = getRoomClass(targetRoom);
+        if (configuredClass == null || configuredClass.equals(CLASS_NONE)) return null;
 
-            for (Player player : mc.level.players()) {
-                if (player.getScoreboardName().equalsIgnoreCase(myName)) continue;
+        for (Player player : mc.level.players()) {
+            if (player.getScoreboardName().equalsIgnoreCase(myName)) continue;
 
-                double x = player.getX();
-                double y = player.getY();
-                double z = player.getZ();
+            double x = player.getX();
+            double y = player.getY();
+            double z = player.getZ();
 
-                String zone = getZoneForPosition(x, y, z);
-                boolean inRoom = targetRoom.equals(getStageFromZone(zone));
+            String zone = getZoneForPosition(x, y, z);
+            boolean inRoom = targetRoom.equals(getStageFromZone(zone));
 
-                if (inRoom) {
-                    String rawText = getPlayerClassRaw(player);
-                    String detectedClass = detectClass(rawText);
-                    
-                    if (detectedClass != null && configuredClass != null && configuredClass.equalsIgnoreCase(detectedClass)) {
-                        String fullName = player.getName().getString();
-                        debugMsg("[FastLeap] Priority MATCH! Target: " + fullName + " (" + detectedClass + ") in " + targetRoom);
-                        return fullName;
-                    }
+            if (inRoom) {
+                String rawText = getPlayerClassRaw(player);
+                String detectedClass = detectClass(rawText);
+
+                if (detectedClass != null && configuredClass.equalsIgnoreCase(detectedClass)) {
+                    String fullName = player.getName().getString();
+                    debugMsg("[FastLeap] Priority MATCH! Target: " + fullName + " (" + detectedClass + ") in " + targetRoom);
+                    return fullName;
                 }
             }
         }
@@ -143,6 +168,7 @@ public class FastLeap {
         if (rawText.contains("[a] ")) return "ARCHER";
         if (rawText.contains("[t] ")) return "TANK";
         // without space cuz idk which one works and cba to check XD
+        // BLACKUM: bruh
         if (rawText.contains("[h]")) return "HEALER";
         if (rawText.contains("[m]")) return "MAGE";
         if (rawText.contains("[b]")) return "BERSERK";
@@ -238,7 +264,10 @@ public class FastLeap {
                 debugMsg("[FastLeap] You entered " + myRoom
                         + (targetClass != null && !targetClass.equals(CLASS_NONE) ? " -> " + targetClass : ""));
             }
-            lastDetectedRoom = myRoom;
+            if (myRoom != null) {
+                lastDetectedRoom = myRoom;
+                lastDetectedRoomAt = System.currentTimeMillis();
+            }
 
             for (Player player : client.level.players()) {
                 double px = player.getX(), py = player.getY(), pz = player.getZ();
@@ -258,42 +287,18 @@ public class FastLeap {
         if (client.screen == null) {
             boolean attackDown = client.options.keyAttack.isDown();
             boolean useDown = client.options.keyUse.isDown();
+            boolean simulatedAttack = ChatActionExecutor.getInstance().isKeySimulated(client.options.keyAttack);
 
             if (useDown) {
                 inProgress = false;
             }
 
-            if (attackDown && !wasAttackDown) {
-                ItemStack hand = client.player.getMainHandItem();
-                if (!isLeapItem(hand)) {
+            if (attackDown && !wasAttackDown && !simulatedAttack) {
+                if (!isLeapItem(client.player.getMainHandItem())) {
                     wasAttackDown = true;
                     return;
                 }
-
-                String target = null;
-                boolean byClass = false;
-
-                if (ConfigManager.data.FastLeapPositional) {
-                    target = getPositionalTargetPlayer(client);
-                }
-
-                if (target == null && ConfigManager.data.FastLeapDoorOpener && leapTarget != null && !bloodRoomOpened) {
-                    target = leapTarget;
-                    byClass = false;
-                }
-
-                if (target != null) {
-                    leapTarget = target;
-                    searchByClass = byClass;
-                    inProgress = true;
-                    clickedLeap = false;
-                    if (client.gameMode != null) {
-                        debugMsg("[FastLeap] Triggering! Target: " + target + (byClass ? " (Lore)" : " (Name)"));
-                        client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
-                    }
-                } else {
-                    debugMsg("[FastLeap] Trigger failed: No player in boxes or no class match.");
-                }
+                tryTriggerFromAttackAction(client, true);
             }
             wasAttackDown = attackDown;
         }
@@ -344,6 +349,39 @@ public class FastLeap {
         }
     }
 
+    public static boolean tryTriggerFromAttackAction(Minecraft client, boolean logFailure) {
+        if (!ConfigManager.data.FastLeapEnabled || client == null || client.player == null || client.level == null) return false;
+        if (client.screen != null || client.gameMode == null) return false;
+        if (!isLeapItem(client.player.getMainHandItem())) return false;
+
+        String target = null;
+        boolean byClass = false;
+
+        if (ConfigManager.data.FastLeapPositional) {
+            target = getPositionalTargetPlayer(client);
+        }
+
+        if (target == null && ConfigManager.data.FastLeapDoorOpener && leapTarget != null && !bloodRoomOpened) {
+            target = leapTarget;
+            byClass = false;
+        }
+
+        if (target == null) {
+            if (logFailure) {
+                logFailureReason(buildFailureReason(client));
+            }
+            return false;
+        }
+
+        leapTarget = target;
+        searchByClass = byClass;
+        inProgress = true;
+        clickedLeap = false;
+        debugMsg("[FastLeap] Triggering! Target: " + target + (byClass ? " (Lore)" : " (Name)"));
+        client.gameMode.useItem(client.player, InteractionHand.MAIN_HAND);
+        return true;
+    }
+
     private static boolean slotLoreContains(Slot slot, String target) {
         ItemLore lore = slot.getItem().get(DataComponents.LORE);
         if (lore == null) return false;
@@ -368,6 +406,64 @@ public class FastLeap {
         searchByClass = false;
     }
 
+    private static String buildFailureReason(Minecraft client) {
+        if (ConfigManager.data.FastLeapPositional) {
+            String currentRoom = getActiveRoom(client);
+            if (currentRoom == null) {
+                return "[FastLeap] Trigger failed: your position is not inside any configured S-room.";
+            }
+
+            String configuredClass = getRoomClass(currentRoom);
+            if (configuredClass == null || configuredClass.equals(CLASS_NONE)) {
+                return "[FastLeap] Trigger failed: " + currentRoom + " class is set to NONE.";
+            }
+
+            boolean foundPlayerInRoom = false;
+            boolean foundClassMismatch = false;
+            String myName = client.player.getScoreboardName();
+            for (Player player : client.level.players()) {
+                if (player.getScoreboardName().equalsIgnoreCase(myName)) continue;
+
+                String playerRoom = getDetectedPlayerRoom(player);
+                if (!currentRoom.equals(playerRoom)) continue;
+                foundPlayerInRoom = true;
+
+                String rawText = getPlayerClassRaw(player);
+                String detectedClass = detectClass(rawText);
+                if (detectedClass != null && configuredClass.equalsIgnoreCase(detectedClass)) {
+                    return "[FastLeap] Trigger failed: positional target resolved unexpectedly.";
+                }
+                foundClassMismatch = true;
+            }
+
+            if (!foundPlayerInRoom) {
+                return "[FastLeap] Trigger failed: no players found in " + currentRoom + ".";
+            }
+
+            if (foundClassMismatch) {
+                return "[FastLeap] Trigger failed: no player in " + currentRoom + " matched configured class " + configuredClass + ".";
+            }
+        }
+
+        if (ConfigManager.data.FastLeapDoorOpener && (leapTarget == null || bloodRoomOpened)) {
+            return bloodRoomOpened
+                    ? "[FastLeap] Trigger failed: Blood Door was opened, so door-opener target is disabled."
+                    : "[FastLeap] Trigger failed: no door-opener target is stored.";
+        }
+
+        return "[FastLeap] Trigger failed: No player in boxes or no class match.";
+    }
+
+    private static void logFailureReason(String reason) {
+        long now = System.currentTimeMillis();
+        if (reason.equals(lastFailureReason) && now - lastFailureReasonAt < 750L) {
+            return;
+        }
+        lastFailureReason = reason;
+        lastFailureReasonAt = now;
+        debugMsg(reason);
+    }
+
     private static boolean isLeapItem(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         String name = stack.getHoverName().getString().toLowerCase().replaceAll("(?i)§[0-9A-FK-ORX]", "");
@@ -382,5 +478,63 @@ public class FastLeap {
 
     public static List<String> getDebugInfo() {
         return new ArrayList<>();
+    }
+
+    public static List<DebugBoxRenderer.BoxSpec> getDebugBoxes() {
+        List<DebugBoxRenderer.BoxSpec> boxes = new ArrayList<>();
+        if (!ConfigManager.data.FastLeapDebug) return boxes;
+
+        String activeRoom = null;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null) {
+            activeRoom = getActiveRoom(mc);
+        }
+
+        boxes.add(createStageBox("S1 Core", union(S1_SS), 0x3388FF, alphaForRoom("S1", activeRoom, 0.12f, 0.05f)));
+        boxes.add(createStageBox("S2 Core", union(S2_EE2, S2_SAFE1, S2_HEE2), 0x33CC66, alphaForRoom("S2", activeRoom, 0.12f, 0.05f)));
+        boxes.add(createStageBox("S3 Core", union(S3_EE3, S3_HEE3), 0xCCAA33, alphaForRoom("S3", activeRoom, 0.12f, 0.05f)));
+        boxes.add(createStageBox("S4 Core", union(S4_ROOM), 0xCC5533, alphaForRoom("S4", activeRoom, 0.12f, 0.05f)));
+
+        boxes.add(createStageBox("S1 SS", S1_SS, 0x66AAFF, alphaForRoom("S1", activeRoom, 0.22f, 0.10f)));
+        boxes.add(createStageBox("S2 EE2", S2_EE2, 0x55DD88, alphaForRoom("S2", activeRoom, 0.18f, 0.08f)));
+        boxes.add(createStageBox("S2 SAFE1", S2_SAFE1, 0x88FFAA, alphaForRoom("S2", activeRoom, 0.20f, 0.09f)));
+        boxes.add(createStageBox("S2 HEE2", S2_HEE2, 0x33AA66, alphaForRoom("S2", activeRoom, 0.18f, 0.08f)));
+        boxes.add(createStageBox("S3 EE3", S3_EE3, 0xFFDD55, alphaForRoom("S3", activeRoom, 0.18f, 0.08f)));
+        boxes.add(createStageBox("S3 HEE3", S3_HEE3, 0xCCAA33, alphaForRoom("S3", activeRoom, 0.18f, 0.08f)));
+        boxes.add(createStageBox("S4", S4_ROOM, 0xFF7744, alphaForRoom("S4", activeRoom, 0.20f, 0.09f)));
+        return boxes;
+    }
+
+    private static DebugBoxRenderer.BoxSpec createStageBox(String label, int[] bounds, int color, float alpha) {
+        int minX = Math.min(bounds[0], bounds[3]);
+        int maxX = Math.max(bounds[0], bounds[3]) + 1;
+        int minY = Math.min(bounds[1], bounds[4]);
+        int maxY = Math.max(bounds[1], bounds[4]) + 1;
+        int minZ = Math.min(bounds[2], bounds[5]);
+        int maxZ = Math.max(bounds[2], bounds[5]) + 1;
+        return new DebugBoxRenderer.BoxSpec(label, minX, minY, minZ, maxX, maxY, maxZ, color, alpha);
+    }
+
+    private static float alphaForRoom(String room, String activeRoom, float activeAlpha, float inactiveAlpha) {
+        return room.equals(activeRoom) ? activeAlpha : inactiveAlpha;
+    }
+
+    private static int[] union(int[]... boxes) {
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+
+        for (int[] box : boxes) {
+            minX = Math.min(minX, Math.min(box[0], box[3]));
+            minY = Math.min(minY, Math.min(box[1], box[4]));
+            minZ = Math.min(minZ, Math.min(box[2], box[5]));
+            maxX = Math.max(maxX, Math.max(box[0], box[3]));
+            maxY = Math.max(maxY, Math.max(box[1], box[4]));
+            maxZ = Math.max(maxZ, Math.max(box[2], box[5]));
+        }
+        return new int[]{minX, minY, minZ, maxX, maxY, maxZ};
     }
 }
