@@ -52,7 +52,7 @@ public class WaypointActionManager {
             return;
         }
 
-        String dimension = client.level.dimension().identifier().toString();
+        String dimension = client.level.dimension().location().toString();
         double playerX = client.player.getX();
         double playerY = client.player.getY();
         double playerZ = client.player.getZ();
