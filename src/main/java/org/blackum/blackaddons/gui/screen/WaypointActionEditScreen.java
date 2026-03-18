@@ -232,57 +232,93 @@ public class WaypointActionEditScreen extends BaseScreen {
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
             } else if (step.type == ConfigManager.ActionStepType.ROTATE) {
+                GridRow topRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Insta Snap", step.instaSnap, val -> {
+                    step.instaSnap = val;
+                    WaypointManager.getInstance().save();
+                    rebuildSteps();
+                }), 0);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Use Coords", step.useCoordinates, val -> {
+                    step.useCoordinates = val;
+                    WaypointManager.getInstance().save();
+                    rebuildSteps();
+                }), (itemWidth / 2) + 2);
+                group.addChild(topRow);
+
+                if (!step.instaSnap) {
+                    SettingWrapper speedWrap = new SettingWrapper(0, 0, itemWidth, "Rotation Speed", "Override speed (0 = use global)", null);
+                    Slider speedSlider = new Slider(0, 0, itemWidth, 0, 100, step.rotationSpeed, val -> {
+                        step.rotationSpeed = val;
+                        speedWrap.setRightLabel(val == 0 ? "Global" : String.format(java.util.Locale.ROOT, "%.1f", val));
+                        WaypointManager.getInstance().save();
+                    });
+                    speedWrap.setControl(speedSlider);
+                    speedWrap.setRightLabel(step.rotationSpeed == 0 ? "Global" : String.format(java.util.Locale.ROOT, "%.1f", step.rotationSpeed));
+                    group.addChild(speedWrap);
+                }
+
                 if (!step.useCoordinates) {
-                    SettingWrapper yawWrap = new SettingWrapper(0, 0, itemWidth, "Yaw", "Target horizontal rotation", null);
-                    Slider yawSlider = new Slider(0, 0, itemWidth, -180, 180, step.yaw, val -> {
+                    GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
+                    SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Yaw", null, null);
+                    Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, step.yaw, val -> {
                         step.yaw = val;
                         yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.yaw));
                         WaypointManager.getInstance().save();
                     });
                     yawWrap.setControl(yawSlider);
                     yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.yaw));
-                    group.addChild(yawWrap);
+                    angleRow.addChild(yawWrap, 0);
 
-                    SettingWrapper pitchWrap = new SettingWrapper(0, 0, itemWidth, "Pitch", "Target vertical rotation", null);
-                    Slider pitchSlider = new Slider(0, 0, itemWidth, -90, 90, step.pitch, val -> {
+                    SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Pitch", null, null);
+                    Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, step.pitch, val -> {
                         step.pitch = val;
                         pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.pitch));
                         WaypointManager.getInstance().save();
                     });
                     pitchWrap.setControl(pitchSlider);
                     pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.pitch));
-                    group.addChild(pitchWrap);
-                }
+                    angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
+                    group.addChild(angleRow);
 
-                ToggleSwitch coordToggle = new ToggleSwitch(0, 0, itemWidth, "Use Coordinates",
-                        "Rotate to specific X, Y, Z instead of Yaw/Pitch", step.useCoordinates, val -> {
-                    step.useCoordinates = val;
-                    WaypointManager.getInstance().save();
-                    rebuildSteps();
-                });
-                group.addChild(coordToggle);
-
-                if (step.useCoordinates) {
-                    TextField xField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "X");
-                    xField.setText(String.valueOf(step.targetX));
-                    xField.setOnValueChange(val -> {
-                        try { step.targetX = Double.parseDouble(val); ConfigManager.save(); } catch (Exception ignored) {}
+                    Button captureBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
+                        if (minecraft.player != null) {
+                            step.yaw = minecraft.player.getYRot();
+                            step.pitch = minecraft.player.getXRot();
+                            WaypointManager.getInstance().save();
+                            rebuildSteps();
+                        }
                     });
-                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target X", "X Coordinate", xField));
+                    group.addChild(captureBtn);
+                } else {
+                    GridRow coordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                    TextField xField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "X");
+                    xField.setText(String.format(java.util.Locale.ROOT, "%.1f", step.targetX));
+                    xField.setOnValueChange(val -> { try { step.targetX = Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(xField, 0);
 
-                    TextField yField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Y");
-                    yField.setText(String.valueOf(step.targetY));
-                    yField.setOnValueChange(val -> {
-                        try { step.targetY = Double.parseDouble(val); ConfigManager.save(); } catch (Exception ignored) {}
-                    });
-                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target Y", "Y Coordinate", yField));
+                    TextField yField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Y");
+                    yField.setText(String.format(java.util.Locale.ROOT, "%.1f", step.targetY));
+                    yField.setOnValueChange(val -> { try { step.targetY = Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(yField, (itemWidth / 3) + 1);
 
-                    TextField zField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Z");
-                    zField.setText(String.valueOf(step.targetZ));
-                    zField.setOnValueChange(val -> {
-                        try { step.targetZ = Double.parseDouble(val); ConfigManager.save(); } catch (Exception ignored) {}
+                    TextField zField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
+                    zField.setText(String.format(java.util.Locale.ROOT, "%.1f", step.targetZ));
+                    zField.setOnValueChange(val -> { try { step.targetZ = Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(zField, (itemWidth * 2 / 3) + 2);
+                    group.addChild(coordRow);
+
+                    Button captureBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Looking At", () -> {
+                        net.minecraft.world.phys.HitResult hr = minecraft.hitResult;
+                        if (hr instanceof net.minecraft.world.phys.BlockHitResult bhr) {
+                            net.minecraft.core.BlockPos pos = bhr.getBlockPos();
+                            step.targetX = pos.getX();
+                            step.targetY = pos.getY();
+                            step.targetZ = pos.getZ();
+                            WaypointManager.getInstance().save();
+                            rebuildSteps();
+                        }
                     });
-                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target Z", "Z Coordinate", zField));
+                    group.addChild(captureBtn);
                 }
             }
 

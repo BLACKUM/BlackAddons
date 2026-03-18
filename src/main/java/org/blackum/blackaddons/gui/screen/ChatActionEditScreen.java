@@ -143,57 +143,93 @@ public class ChatActionEditScreen extends BaseScreen {
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
             } else if (action.type == ConfigManager.ActionStepType.ROTATE) {
+                GridRow topRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Insta Snap", action.instaSnap, val -> {
+                    action.instaSnap = val;
+                    ActionManager.getInstance().save();
+                    rebuildActions();
+                }), 0);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Use Coords", action.useCoordinates, val -> {
+                    action.useCoordinates = val;
+                    ActionManager.getInstance().save();
+                    rebuildActions();
+                }), (itemWidth / 2) + 2);
+                group.addChild(topRow);
+
+                if (!action.instaSnap) {
+                    SettingWrapper speedWrap = new SettingWrapper(0, 0, itemWidth, "Rotation Speed", "Override speed (0 = use global)", null);
+                    Slider speedSlider = new Slider(0, 0, itemWidth, 0, 100, action.rotationSpeed, val -> {
+                        action.rotationSpeed = val;
+                        speedWrap.setRightLabel(val == 0 ? "Global" : String.format(java.util.Locale.ROOT, "%.1f", val));
+                        ActionManager.getInstance().save();
+                    });
+                    speedWrap.setControl(speedSlider);
+                    speedWrap.setRightLabel(action.rotationSpeed == 0 ? "Global" : String.format(java.util.Locale.ROOT, "%.1f", action.rotationSpeed));
+                    group.addChild(speedWrap);
+                }
+
                 if (!action.useCoordinates) {
-                    SettingWrapper yawWrap = new SettingWrapper(0, 0, itemWidth, "Yaw", "Target horizontal rotation", null);
-                    Slider yawSlider = new Slider(0, 0, itemWidth, -180, 180, action.yaw, val -> {
+                    GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
+                    SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Yaw", null, null);
+                    Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, action.yaw, val -> {
                         action.yaw = val;
                         yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
                         ActionManager.getInstance().save();
                     });
                     yawWrap.setControl(yawSlider);
                     yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
-                    group.addChild(yawWrap);
+                    angleRow.addChild(yawWrap, 0);
 
-                    SettingWrapper pitchWrap = new SettingWrapper(0, 0, itemWidth, "Pitch", "Target vertical rotation", null);
-                    Slider pitchSlider = new Slider(0, 0, itemWidth, -90, 90, action.pitch, val -> {
+                    SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Pitch", null, null);
+                    Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, action.pitch, val -> {
                         action.pitch = val;
                         pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
                         ActionManager.getInstance().save();
                     });
                     pitchWrap.setControl(pitchSlider);
                     pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
-                    group.addChild(pitchWrap);
-                }
+                    angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
+                    group.addChild(angleRow);
 
-                ToggleSwitch coordToggle = new ToggleSwitch(0, 0, itemWidth, "Use Coordinates",
-                        "Rotate to specific X, Y, Z instead of Yaw/Pitch", action.useCoordinates, val -> {
-                    action.useCoordinates = val;
-                    ActionManager.getInstance().save();
-                    rebuildActions();
-                });
-                group.addChild(coordToggle);
-
-                if (action.useCoordinates) {
-                    TextField xField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "X...");
-                    xField.setText(String.valueOf(action.targetX));
-                    xField.setOnValueChange(val -> {
-                        try { action.targetX = Double.parseDouble(val); ConfigManager.save(); } catch (Exception e) {}
+                    Button captureBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
+                        if (minecraft.player != null) {
+                            action.yaw = minecraft.player.getYRot();
+                            action.pitch = minecraft.player.getXRot();
+                            ActionManager.getInstance().save();
+                            rebuildActions();
+                        }
                     });
-                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target X", "X Coordinate", xField));
+                    group.addChild(captureBtn);
+                } else {
+                    GridRow coordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                    TextField xField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "X");
+                    xField.setText(String.format(java.util.Locale.ROOT, "%.1f", action.targetX));
+                    xField.setOnValueChange(val -> { try { action.targetX = Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(xField, 0);
 
-                    TextField yField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Y...");
-                    yField.setText(String.valueOf(action.targetY));
-                    yField.setOnValueChange(val -> {
-                        try { action.targetY = Double.parseDouble(val); ConfigManager.save(); } catch (Exception e) {}
-                    });
-                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target Y", "Y Coordinate", yField));
+                    TextField yField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Y");
+                    yField.setText(String.format(java.util.Locale.ROOT, "%.1f", action.targetY));
+                    yField.setOnValueChange(val -> { try { action.targetY = Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(yField, (itemWidth / 3) + 1);
 
-                    TextField zField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Z...");
-                    zField.setText(String.valueOf(action.targetZ));
-                    zField.setOnValueChange(val -> {
-                        try { action.targetZ = Double.parseDouble(val); ConfigManager.save(); } catch (Exception e) {}
+                    TextField zField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
+                    zField.setText(String.format(java.util.Locale.ROOT, "%.1f", action.targetZ));
+                    zField.setOnValueChange(val -> { try { action.targetZ = Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(zField, (itemWidth * 2 / 3) + 2);
+                    group.addChild(coordRow);
+
+                    Button captureBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Looking At", () -> {
+                        net.minecraft.world.phys.HitResult hr = minecraft.hitResult;
+                        if (hr instanceof net.minecraft.world.phys.BlockHitResult bhr) {
+                            net.minecraft.core.BlockPos pos = bhr.getBlockPos();
+                            action.targetX = pos.getX();
+                            action.targetY = pos.getY();
+                            action.targetZ = pos.getZ();
+                            ActionManager.getInstance().save();
+                            rebuildActions();
+                        }
                     });
-                    group.addChild(new SettingWrapper(0, 0, itemWidth, "Target Z", "Z Coordinate", zField));
+                    group.addChild(captureBtn);
                 }
             }
 

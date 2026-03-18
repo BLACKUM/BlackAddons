@@ -9,6 +9,8 @@ import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.config.ConfigManager.WaypointAction;
 import org.blackum.blackaddons.core.waypoint.Waypoint;
+import org.blackum.blackaddons.core.waypoint.WaypointGroup;
+import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import org.blackum.blackaddons.core.util.FormatUtils;
 
@@ -43,6 +45,10 @@ public class WaypointActionManager {
         for (Waypoint waypoint : waypoints) {
             java.util.List<WaypointAction> actions = waypoint.actions;
             if (!waypoint.enabled || !waypoint.dimension.equals(dimension)) continue;
+            if (waypoint.groupId != null) {
+                WaypointGroup group = WaypointManager.getInstance().getGroup(waypoint.groupId);
+                if (group != null && !group.isActive()) continue;
+            }
 
             double dx = playerX - waypoint.x;
             double dz = playerZ - waypoint.z;

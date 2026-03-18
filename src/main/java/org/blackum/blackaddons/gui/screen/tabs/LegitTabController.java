@@ -2,10 +2,16 @@ package org.blackum.blackaddons.gui.screen.tabs;
 
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
+import org.blackum.blackaddons.gui.screen.BaseScreen;
+import org.blackum.blackaddons.gui.screen.LocationOverlayPositionScreen;
+import org.blackum.blackaddons.gui.screen.OverlayEditorScreen;
+import org.blackum.blackaddons.gui.screen.RotationOverlayPositionScreen;
+import org.blackum.blackaddons.gui.screen.AutoSSOverlayPositionScreen;
 import org.blackum.blackaddons.gui.widget.*;
 
 public class LegitTabController extends SimpleTabController {
     private ResizableCard visualsCard;
+    private ResizableCard debuggersCard;
 
     public LegitTabController(BlackAddonsGUI screen) {
         super(screen);
@@ -19,17 +25,31 @@ public class LegitTabController extends SimpleTabController {
 
         if (ConfigManager.data.useCardLayout) {
             Button resetLayout = new Button(contentX + 10, contentY, contentWidth - 20, "Reset Layout", () -> {
-                screen.resetCardStates("legit_visuals");
+                screen.resetCardStates("legit_visuals", "legit_debuggers");
             });
             legitTab.addWidget(resetLayout);
 
             CardContainer legitCardContainer = new CardContainer(contentX, contentY + 30, contentWidth, 570);
             legitTab.addWidget(legitCardContainer);
 
-            int currentY = contentY + 50;
-            visualsCard = createVisualsCard(contentX + 20, currentY);
+            int containerY = contentY + 30;
+            boolean isSingleColumn = contentWidth < 680;
+            int col1X = contentX + 20;
+            int col2X = contentX + 340;
+
+            if (isSingleColumn) {
+                int currentY = containerY + 20;
+                visualsCard = createVisualsCard(col1X, currentY);
+                currentY += visualsCard.getHeight() + 10;
+                debuggersCard = createDebuggersCard(col1X, currentY);
+            } else {
+                int currentY = containerY + 20;
+                visualsCard = createVisualsCard(col1X, currentY);
+                debuggersCard = createDebuggersCard(col2X, currentY);
+            }
 
             legitCardContainer.addCard(visualsCard);
+            legitCardContainer.addCard(debuggersCard);
             return;
         }
 
@@ -70,6 +90,11 @@ public class LegitTabController extends SimpleTabController {
                     ConfigManager.save();
                 });
         legitTab.addWidget(disableNearbyParticlesToggle);
+
+        legitTab.addWidget(new Label(contentX, contentY + 170, "Debuggers", Label.Style.TITLE));
+
+        int debugY = contentY + 200;
+        addDebuggerWidgets(legitTab, contentX, debugY, contentWidth - 20);
     }
 
     private ResizableCard createVisualsCard(int x, int y) {
@@ -115,5 +140,155 @@ public class LegitTabController extends SimpleTabController {
 
         visualsCard.updateLayout();
         return visualsCard;
+    }
+
+    private ResizableCard createDebuggersCard(int x, int y) {
+        debuggersCard = screen.createResizableCard("legit_debuggers", x, y, 300, 250, "Debuggers");
+        int contentX = debuggersCard.getContentX();
+        int contentY = debuggersCard.getContentY();
+
+        ListView listView = new ListView(contentX, contentY, 260, 200);
+        addDebuggerItems(listView);
+
+        debuggersCard.addChild(listView);
+        debuggersCard.updateLayout();
+        return debuggersCard;
+    }
+
+    private void addDebuggerWidgets(TabPanel.Tab legitTab, int x, int startY, int width) {
+        int y = startY;
+
+        ToggleSwitch debugOverlayToggle = new ToggleSwitch(x, y, width,
+                "Global Debug Overlay",
+                "Shows the shared BlackAddons debug HUD",
+                BaseScreen.showDebugOverlay, value -> {
+                    BaseScreen.showDebugOverlay = value;
+                    ConfigManager.data.showDebugOverlay = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(debugOverlayToggle);
+        y += 30;
+
+        Button overlayPositionButton = new Button(x, y, width, 20, "Edit Global Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new OverlayEditorScreen(screen))));
+        legitTab.addWidget(overlayPositionButton);
+        y += 30;
+
+        ToggleSwitch autoSSDebugToggle = new ToggleSwitch(x, y, width,
+                "AutoSS Debug",
+                "Shows AutoSS overlay and writes debug logs",
+                ConfigManager.data.AutoSSDebug, value -> {
+                    ConfigManager.data.AutoSSDebug = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(autoSSDebugToggle);
+        y += 30;
+
+        Button autoSSPositionButton = new Button(x, y, width, 20, "Set AutoSS Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen))));
+        legitTab.addWidget(autoSSPositionButton);
+        y += 30;
+
+        ToggleSwitch fastLeapDebugToggle = new ToggleSwitch(x, y, width,
+                "FastLeap Debug",
+                "Shows FastLeap debug messages in chat",
+                ConfigManager.data.FastLeapDebug, value -> {
+                    ConfigManager.data.FastLeapDebug = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(fastLeapDebugToggle);
+        y += 30;
+
+        ToggleSwitch rotationDebugToggle = new ToggleSwitch(x, y, width,
+                "Rotation Debugger",
+                "Shows target rotation info and world visuals",
+                ConfigManager.data.showRotationDebug, value -> {
+                    ConfigManager.data.showRotationDebug = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(rotationDebugToggle);
+        y += 30;
+
+        Button rotationPositionButton = new Button(x, y, width, 20, "Set Rotation Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new RotationOverlayPositionScreen(screen))));
+        legitTab.addWidget(rotationPositionButton);
+        y += 30;
+
+        ToggleSwitch locationDebugToggle = new ToggleSwitch(x, y, width,
+                "Location Utils Debug",
+                "Shows location, floor, boss and phase debug info",
+                ConfigManager.data.showLocationDebug, value -> {
+                    ConfigManager.data.showLocationDebug = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(locationDebugToggle);
+        y += 30;
+
+        Button locationPositionButton = new Button(x, y, width, 20, "Set Location Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen))));
+        legitTab.addWidget(locationPositionButton);
+    }
+
+    private void addDebuggerItems(ListView listView) {
+        listView.addItem(new ToggleSwitch(0, 0, 260,
+                "Global Debug Overlay",
+                "Shows the shared BlackAddons debug HUD",
+                BaseScreen.showDebugOverlay, value -> {
+                    BaseScreen.showDebugOverlay = value;
+                    ConfigManager.data.showDebugOverlay = value;
+                    ConfigManager.save();
+                }));
+
+        listView.addItem(new Button(0, 0, 260, 20, "Edit Global Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new OverlayEditorScreen(screen)))));
+
+        listView.addItem(new ToggleSwitch(0, 0, 260,
+                "AutoSS Debug",
+                "Shows AutoSS overlay and writes debug logs",
+                ConfigManager.data.AutoSSDebug, value -> {
+                    ConfigManager.data.AutoSSDebug = value;
+                    ConfigManager.save();
+                }));
+
+        listView.addItem(new Button(0, 0, 260, 20, "Set AutoSS Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen)))));
+
+        listView.addItem(new ToggleSwitch(0, 0, 260,
+                "FastLeap Debug",
+                "Shows FastLeap debug messages in chat",
+                ConfigManager.data.FastLeapDebug, value -> {
+                    ConfigManager.data.FastLeapDebug = value;
+                    ConfigManager.save();
+                }));
+
+        listView.addItem(new ToggleSwitch(0, 0, 260,
+                "Rotation Debugger",
+                "Shows target rotation info and world visuals",
+                ConfigManager.data.showRotationDebug, value -> {
+                    ConfigManager.data.showRotationDebug = value;
+                    ConfigManager.save();
+                }));
+
+        listView.addItem(new Button(0, 0, 260, 20, "Set Rotation Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new RotationOverlayPositionScreen(screen)))));
+
+        listView.addItem(new ToggleSwitch(0, 0, 260,
+                "Location Utils Debug",
+                "Shows location, floor, boss and phase debug info",
+                ConfigManager.data.showLocationDebug, value -> {
+                    ConfigManager.data.showLocationDebug = value;
+                    ConfigManager.save();
+                }));
+
+        listView.addItem(new Button(0, 0, 260, 20, "Set Location Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen)))));
     }
 }

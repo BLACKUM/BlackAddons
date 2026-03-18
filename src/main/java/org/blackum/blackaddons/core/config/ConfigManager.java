@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import org.blackum.blackaddons.feature.cheat.AutoBM;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
+import org.blackum.blackaddons.gui.screen.BaseScreen;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.notification.NotificationType;
 import org.blackum.blackaddons.feature.modhider.SpoofMode;
@@ -32,6 +33,7 @@ public class ConfigManager {
         data = new ConfigData();
         Theme.ACCENT = data.accentColor;
         Theme.refreshColors();
+        syncOverlayState();
     }
 
     public static final Set<String> FABRIC_DEFAULT_CHANNELS = Set.of(
@@ -114,6 +116,8 @@ public class ConfigManager {
         public double targetX;
         public double targetY;
         public double targetZ;
+        public float rotationSpeed = 0;
+        public boolean instaSnap = false;
         public boolean collapsed = false;
 
         public ActionStep() {
@@ -273,6 +277,9 @@ public class ConfigManager {
         public boolean showRotationDebug = false;
         public int rotationOverlayX = -1;
         public int rotationOverlayY = 5;
+        public boolean showLocationDebug = false;
+        public int locationOverlayX = -1;
+        public int locationOverlayY = 65;
 
         public boolean rotationHumanizerEnabled = true;
         public float rotationVariance = 0.08f;
@@ -324,6 +331,11 @@ public class ConfigManager {
     public static ConfigData data = new ConfigData();
 
     public static void save() {
+        data.showHitboxes = BaseScreen.showHitboxes;
+        data.showDebugOverlay = BaseScreen.showDebugOverlay;
+        data.overlayX = BaseScreen.overlayX;
+        data.overlayY = BaseScreen.overlayY;
+        data.overlayScale = BaseScreen.overlayScale;
         try {
             File configFile = getConfigFile();
             File parent = configFile.getParentFile();
@@ -360,10 +372,19 @@ public class ConfigManager {
                 data = loadedData;
                 Theme.ACCENT = data.accentColor;
                 Theme.refreshColors();
+                syncOverlayState();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void syncOverlayState() {
+        BaseScreen.showHitboxes = data.showHitboxes;
+        BaseScreen.showDebugOverlay = data.showDebugOverlay;
+        BaseScreen.overlayX = data.overlayX;
+        BaseScreen.overlayY = data.overlayY;
+        BaseScreen.overlayScale = data.overlayScale;
     }
 
     private static void migrate() {

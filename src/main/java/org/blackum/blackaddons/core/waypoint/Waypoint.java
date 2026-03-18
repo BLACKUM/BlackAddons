@@ -4,6 +4,7 @@ import org.blackum.blackaddons.gui.render.Theme;
 
 public class Waypoint {
     public java.util.UUID id = java.util.UUID.randomUUID();
+    public java.util.UUID groupId = null;
     public String name;
     public double x;
     public double y;

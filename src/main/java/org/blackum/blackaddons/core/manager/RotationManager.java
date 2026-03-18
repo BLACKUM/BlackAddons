@@ -40,6 +40,7 @@ public class RotationManager {
     
     private float durationTicks;
     private float currentTicks;
+    private float pendingSpeedOverride = 0;
 
     private boolean active;
 
@@ -70,21 +71,54 @@ public class RotationManager {
     }
 
     public void rotateTo(float yaw, float pitch) {
+        rotateTo(yaw, pitch, 0);
+    }
+
+    public void rotateTo(float yaw, float pitch, float speedOverride) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null || mc.screen != null) return;
 
         this.active = true;
         this.targetX = Double.NaN;
         this.targetY = Double.NaN;
         this.targetZ = Double.NaN;
+        this.pendingSpeedOverride = speedOverride > 0 ? speedOverride : 0;
         
         setupBezier(mc, normalizeYaw(yaw), Mth.clamp(pitch, -90f, 90f));
     }
 
-    public void rotateToBlock(double x, double y, double z) {
+    public void snapToAngle(float yaw, float pitch) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null || mc.screen != null) return;
+        float jitterYaw = (random.nextFloat() - 0.5f) * 0.01f;
+        float jitterPitch = (random.nextFloat() - 0.5f) * 0.01f;
+        mc.player.setYRot(normalizeYaw(yaw) + jitterYaw);
+        mc.player.setXRot(Mth.clamp(pitch, -90f, 90f) + jitterPitch);
+    }
 
+    public void snapToBlock(double x, double y, double z) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.screen != null) return;
+        double dx = x + 0.5 - mc.player.getX();
+        double dy = y + 0.5 - (mc.player.getY() + mc.player.getEyeHeight());
+        double dz = z + 0.5 - mc.player.getZ();
+        double dist = Math.sqrt(dx * dx + dz * dz);
+        float rawYaw = normalizeYaw((float) Math.toDegrees(Math.atan2(dz, dx)) - 90f);
+        float rawPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(dy, dist)), -90f, 90f);
+        float jitterYaw = (random.nextFloat() - 0.5f) * 0.01f;
+        float jitterPitch = (random.nextFloat() - 0.5f) * 0.01f;
+        mc.player.setYRot(rawYaw + jitterYaw);
+        mc.player.setXRot(rawPitch + jitterPitch);
+    }
+
+    public void rotateToBlock(double x, double y, double z) {
+        rotateToBlock(x, y, z, 0);
+    }
+
+    public void rotateToBlock(double x, double y, double z, float speedOverride) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.screen != null) return;
+        this.pendingSpeedOverride = speedOverride > 0 ? speedOverride : 0;
         float randX = 0;
         float randY = 0;
         float randZ = 0;
@@ -241,7 +275,10 @@ public class RotationManager {
 
         float distance = (float) Math.sqrt(dy * dy + dp * dp);
 
-        float speed = Math.max(0.1f, ConfigManager.data.rotationSpeed);
+        float speed = (this.pendingSpeedOverride > 0)
+                ? this.pendingSpeedOverride
+                : Math.max(0.1f, ConfigManager.data.rotationSpeed);
+        this.pendingSpeedOverride = 0;
         this.durationTicks = Math.max(1.0f, distance / speed);
         
         this.currentTicks = 0.0f;

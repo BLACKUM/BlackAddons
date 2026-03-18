@@ -76,6 +76,7 @@ public class ChatActionExecutor {
 
         switch (action.type) {
             case SWITCH_SLOT:
+                if (client.screen != null) break;
                 if (action.slotIndex >= 0 && action.slotIndex < 9) {
                     KeyMapping[] hotbarKeys = client.options.keyHotbarSlots;
                     if (hotbarKeys != null && action.slotIndex < hotbarKeys.length) {
@@ -84,9 +85,11 @@ public class ChatActionExecutor {
                 }
                 break;
             case USE_ITEM:
+                if (client.screen != null) break;
                 clickKey(client.options.keyUse);
                 break;
             case ATTACK:
+                if (client.screen != null) break;
                 clickKey(client.options.keyAttack);
                 break;
             case SEND_MESSAGE:
@@ -105,6 +108,7 @@ public class ChatActionExecutor {
                 }
                 break;
             case PRESS_KEYBIND:
+                if (client.screen != null) break;
                 for (KeyMapping key : client.options.keyMappings) {
                     if (key.getName().equalsIgnoreCase(action.message)) {
                         if (action.durationTicks > 0) {
@@ -118,10 +122,17 @@ public class ChatActionExecutor {
                 }
                 break;
             case ROTATE:
-                if (action.useCoordinates) {
-                    RotationManager.getInstance().rotateToBlock(action.targetX, action.targetY, action.targetZ);
+                if (Minecraft.getInstance().screen != null) break;
+                if (action.instaSnap) {
+                    if (action.useCoordinates) {
+                        RotationManager.getInstance().snapToBlock(action.targetX, action.targetY, action.targetZ);
+                    } else {
+                        RotationManager.getInstance().snapToAngle(action.yaw, action.pitch);
+                    }
+                } else if (action.useCoordinates) {
+                    RotationManager.getInstance().rotateToBlock(action.targetX, action.targetY, action.targetZ, action.rotationSpeed);
                 } else {
-                    RotationManager.getInstance().rotateTo(action.yaw, action.pitch);
+                    RotationManager.getInstance().rotateTo(action.yaw, action.pitch, action.rotationSpeed);
                 }
                 break;
         }

@@ -12,6 +12,7 @@ import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.client.render.BlackaddonsRenderTypes;
 import org.blackum.blackaddons.core.waypoint.Waypoint;
 import org.blackum.blackaddons.core.waypoint.WaypointAnimation;
+import org.blackum.blackaddons.core.waypoint.WaypointGroup;
 import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.joml.Matrix4f;
 
@@ -30,6 +31,10 @@ public class WaypointRenderer {
         int count = 0;
         for (Waypoint waypoint : WaypointManager.getInstance().getWaypoints()) {
             if (!waypoint.enabled) continue;
+            if (waypoint.groupId != null) {
+                WaypointGroup group = WaypointManager.getInstance().getGroup(waypoint.groupId);
+                if (group != null && !group.isActive()) continue;
+            }
             if (waypoint.dimension != null && !waypoint.dimension.equals(mc.level.dimension().location().toString())) continue;
             renderWaypoint(matrix, bufferSource, waypoint, camPos);
         }
