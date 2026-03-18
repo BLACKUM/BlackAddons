@@ -179,6 +179,7 @@ public class ConfigManager {
         public boolean enabled = true;
         public boolean triggerOnEntry = true;
         public boolean triggerOnExit = false;
+        public boolean triggerOnGuiExit = false;
         public String soundId = "";
         public float volume = 1.0f;
         public float pitch = 1.0f;

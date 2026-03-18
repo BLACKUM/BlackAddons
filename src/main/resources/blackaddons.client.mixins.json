@@ -6,6 +6,7 @@
   "client": [
     "core.ClientBrandRetrieverMixin",
     "core.ConnectionMixin",
+    "core.EntityMixin",
     "core.KnownPacksManagerMixin",
     "core.MinecraftMixin",
     "gui.AnvilScreenMixin",

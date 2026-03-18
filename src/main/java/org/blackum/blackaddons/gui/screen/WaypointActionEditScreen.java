@@ -53,6 +53,13 @@ public class WaypointActionEditScreen extends BaseScreen {
             WaypointManager.getInstance().save();
         });
         widgets.add(exitToggle);
+        currentY += 25;
+
+        ToggleSwitch guiExitToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on GUI Exit", "Fire actions when closing any GUI while inside this waypoint", action.triggerOnGuiExit, val -> {
+            action.triggerOnGuiExit = val;
+            WaypointManager.getInstance().save();
+        });
+        widgets.add(guiExitToggle);
         currentY += 35;
 
         widgets.add(new Label(fieldX, currentY, "Title:", Label.Style.CAPTION));
