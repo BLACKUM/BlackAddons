@@ -138,6 +138,11 @@ public class BlackaddonsClient implements ClientModInitializer {
                 return true;
             }
 
+            if (ConfigManager.data.ircChatMode) {
+                IrcClient.getInstance().sendMessage(message.trim());
+                return false;
+            }
+
             String prefix = IrcPrefixManager.getPrefix();
 
             if (prefix.equals("#") && message.startsWith("##")) {

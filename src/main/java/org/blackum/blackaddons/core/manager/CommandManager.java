@@ -34,6 +34,23 @@ import java.util.UUID;
 
 public class CommandManager {
 
+        private static int handleIrcChatMode(FabricClientCommandSource source, boolean enabled) {
+                ConfigManager.data.ircChatMode = enabled;
+                ConfigManager.save();
+                source.sendFeedback(enabled
+                                ? ChatUtils.success("IRC chat mode enabled. Normal chat now goes to IRC.")
+                                : ChatUtils.error("IRC chat mode disabled. Use the IRC prefix to chat in IRC."));
+                return 1;
+        }
+
+        private static int sendIrcChatModeStatus(FabricClientCommandSource source) {
+                boolean enabled = ConfigManager.data.ircChatMode;
+                source.sendFeedback(enabled
+                                ? ChatUtils.success("IRC chat mode is enabled.")
+                                : ChatUtils.error("IRC chat mode is disabled."));
+                return 1;
+        }
+
         private static int handleActionTriggerMode(FabricClientCommandSource source, boolean enabled) {
                 ConfigManager.data.actionTriggersEnabled = enabled;
                 ConfigManager.save();
@@ -412,6 +429,15 @@ public class CommandManager {
                                         });
 
                         var ircNode = ClientCommandManager.literal("irc")
+                                        .then(ClientCommandManager.literal("on")
+                                                        .executes(ctx -> handleIrcChatMode(ctx.getSource(), true)))
+                                        .then(ClientCommandManager.literal("off")
+                                                        .executes(ctx -> handleIrcChatMode(ctx.getSource(), false)))
+                                        .then(ClientCommandManager.literal("toggle")
+                                                        .executes(ctx -> handleIrcChatMode(ctx.getSource(),
+                                                                        !ConfigManager.data.ircChatMode)))
+                                        .then(ClientCommandManager.literal("status")
+                                                        .executes(ctx -> sendIrcChatModeStatus(ctx.getSource())))
                                         .then(ClientCommandManager
                                                         .argument("message", StringArgumentType.greedyString())
                                                         .executes(ctx -> {

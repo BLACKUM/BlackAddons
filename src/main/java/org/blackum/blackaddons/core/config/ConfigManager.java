@@ -313,6 +313,7 @@ public class ConfigManager {
         public boolean ircEnabled = true;
         public List<String> ircChannels = new ArrayList<>(List.of("general", "announcements", "admin"));
         public String ircPrefix = "AUTO";
+        public boolean ircChatMode = false;
 
         // Mod Hider (ported from ClientSpoofer)
         public SpoofMode modHiderSpoofMode = SpoofMode.CUSTOM;
