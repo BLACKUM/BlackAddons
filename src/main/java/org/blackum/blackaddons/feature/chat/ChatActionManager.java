@@ -25,6 +25,9 @@ public class ChatActionManager {
     }
 
     public void onChatMessage(Component message) {
+        if (!ConfigManager.data.actionTriggersEnabled)
+            return;
+
         if (message == null)
             return;
 

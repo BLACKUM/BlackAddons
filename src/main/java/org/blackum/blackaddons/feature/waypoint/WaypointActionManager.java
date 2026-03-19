@@ -5,6 +5,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.config.ConfigManager.WaypointAction;
 import org.blackum.blackaddons.core.waypoint.Waypoint;
 import org.blackum.blackaddons.core.waypoint.WaypointGroup;
@@ -78,6 +79,12 @@ public class WaypointActionManager {
     }
 
     private void checkWaypoints(java.util.List<Waypoint> waypoints) {
+        if (!ConfigManager.data.actionTriggersEnabled) {
+            playerInsideWaypoint.clear();
+            hasLastPosition = false;
+            return;
+        }
+
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) {
             playerInsideWaypoint.clear();
@@ -254,6 +261,10 @@ public class WaypointActionManager {
     }
 
     private void triggerActions(Waypoint waypoint, TriggerType triggerType) {
+        if (!ConfigManager.data.actionTriggersEnabled) {
+            return;
+        }
+
         Minecraft client = Minecraft.getInstance();
         java.util.List<WaypointAction> actions = waypoint.actions;
         for (WaypointAction action : actions) {

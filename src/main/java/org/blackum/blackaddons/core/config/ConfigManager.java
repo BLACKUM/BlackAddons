@@ -336,6 +336,7 @@ public class ConfigManager {
         public boolean disableCommandConfirmation = true;
         public boolean disableUnsecureChatToast = true;
         public boolean chatVisualFiltersEnabled = false;
+        public boolean actionTriggersEnabled = true;
         public List<ChatVisualFilter> chatVisualFilters = new ArrayList<>();
 
         // Chat actions (migration) TODO: Delete migration when enough versions have passed

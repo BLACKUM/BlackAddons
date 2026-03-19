@@ -13,6 +13,7 @@ import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.Blackaddons;
+import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.util.CommandUtils;
 import org.blackum.blackaddons.feature.rng.RngTracker;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
@@ -20,6 +21,8 @@ import org.blackum.blackaddons.gui.notification.NotificationType;
 import org.blackum.blackaddons.integration.BotIntegration;
 import org.blackum.blackaddons.core.util.Constants;
 import org.blackum.blackaddons.core.manager.ProfileStateManager;
+import org.blackum.blackaddons.feature.chat.ChatUtils;
+import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import org.blackum.blackaddons.gui.screen.PartyFinderScreen;
 import org.blackum.blackaddons.gui.screen.IrcScreen;
 import org.blackum.blackaddons.gui.screen.ImagePreviewScreen;
@@ -30,6 +33,40 @@ import org.blackum.blackaddons.core.manager.RotationManager;
 import java.util.UUID;
 
 public class CommandManager {
+
+        private static int handleActionTriggerMode(FabricClientCommandSource source, boolean enabled) {
+                ConfigManager.data.actionTriggersEnabled = enabled;
+                ConfigManager.save();
+                if (!enabled) {
+                        ChatActionExecutor.getInstance().clearPendingActions();
+                }
+                source.sendFeedback(enabled ? ChatUtils.success("Action triggers enabled.")
+                                : ChatUtils.error("Action triggers disabled."));
+                return 1;
+        }
+
+        private static int sendActionTriggerModeStatus(FabricClientCommandSource source) {
+                boolean enabled = ConfigManager.data.actionTriggersEnabled;
+                source.sendFeedback(enabled ? ChatUtils.success("Action triggers are enabled.")
+                                : ChatUtils.error("Action triggers are disabled."));
+                return 1;
+        }
+
+        private static com.mojang.brigadier.builder.LiteralArgumentBuilder<FabricClientCommandSource> createActionTriggerModeNode(
+                        String name) {
+                return ClientCommandManager.literal(name)
+                                .executes(ctx -> handleActionTriggerMode(ctx.getSource(),
+                                                !ConfigManager.data.actionTriggersEnabled))
+                                .then(ClientCommandManager.literal("on")
+                                                .executes(ctx -> handleActionTriggerMode(ctx.getSource(), true)))
+                                .then(ClientCommandManager.literal("off")
+                                                .executes(ctx -> handleActionTriggerMode(ctx.getSource(), false)))
+                                .then(ClientCommandManager.literal("toggle")
+                                                .executes(ctx -> handleActionTriggerMode(ctx.getSource(),
+                                                                !ConfigManager.data.actionTriggersEnabled)))
+                                .then(ClientCommandManager.literal("status")
+                                                .executes(ctx -> sendActionTriggerModeStatus(ctx.getSource())));
+        }
 
         public static void register() {
                 ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -402,6 +439,8 @@ public class CommandManager {
                                 }
                                 cmd.then(pvNode);
                                 cmd.then(ircNode);
+                                cmd.then(createActionTriggerModeNode("em"));
+                                cmd.then(createActionTriggerModeNode("editmode"));
                                 cmd.then(CommandUtils.subcommand);
                                 cmd.then(ClientCommandManager.literal("pf").executes(ctx -> {
                                         Minecraft.getInstance().execute(() -> {

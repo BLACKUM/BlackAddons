@@ -28,6 +28,11 @@ public class ChatActionExecutor {
     }
 
     private void onTick(Minecraft client) {
+        if (!ConfigManager.data.actionTriggersEnabled) {
+            clearPendingActions();
+            return;
+        }
+
         if (client.player == null) {
             activeKeybinds.keySet().forEach(k -> setKeyState(k, false));
             activeKeybinds.clear();
@@ -74,6 +79,12 @@ public class ChatActionExecutor {
 
     public boolean isKeySimulated(KeyMapping key) {
         return activeKeybinds.containsKey(key);
+    }
+
+    public void clearPendingActions() {
+        activeKeybinds.keySet().forEach(k -> setKeyState(k, false));
+        activeKeybinds.clear();
+        queue.clear();
     }
 
     private void executeAction(Minecraft client, ConfigManager.ActionStep action, String[] groups) {

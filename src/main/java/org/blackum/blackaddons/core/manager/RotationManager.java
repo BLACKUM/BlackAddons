@@ -303,8 +303,10 @@ public class RotationManager {
             float r1 = (random.nextFloat() * 2.0f - 1.0f) * curveScale;
             float r2 = (random.nextFloat() * 2.0f - 1.0f) * curveScale;
 
-            this.cp1Yaw = this.startYaw + dy * 0.33f + perpYaw * r1;
-            this.cp1Pitch = this.startPitch + dp * 0.33f + perpPitch * r1;
+            float speedOffset1 = (random.nextFloat() * 0.2f - 0.1f);
+
+            this.cp1Yaw = this.startYaw + dy * (0.33f + speedOffset1) + perpYaw * r1;
+            this.cp1Pitch = this.startPitch + dp * (0.33f + speedOffset1) + perpPitch * r1;
 
             if (this.splinePoints != null && this.currentSplineIndex < this.splinePoints.size() - 1) {
                 Vec3 nextNextPoint = this.splinePoints.get(this.currentSplineIndex + 1);
@@ -323,8 +325,9 @@ public class RotationManager {
                 this.cp2Yaw = targetY - nextDyaw * 0.2f + perpYaw * r2;
                 this.cp2Pitch = targetP - nextDpitch * 0.2f + perpPitch * r2;
             } else {
-                this.cp2Yaw = this.startYaw + dy * 0.66f + perpYaw * r2;
-                this.cp2Pitch = this.startPitch + dp * 0.66f + perpPitch * r2;
+                float overshoot = 0.8f + (random.nextFloat() * 0.35f); 
+                this.cp2Yaw = this.startYaw + dy * overshoot + perpYaw * r2;
+                this.cp2Pitch = this.startPitch + dp * overshoot + perpPitch * r2;
             }
         } else {
             this.cp1Yaw = this.startYaw + dy * 0.333f;
@@ -432,7 +435,9 @@ public class RotationManager {
                 float easedT = t;
                 if (ConfigManager.data.rotationSmoothness > 0) {
                     float sineInOut = (float) (0.5 * (1 - Math.cos(Math.PI * t)));
-                    easedT = t + (sineInOut - t) * ConfigManager.data.rotationSmoothness;
+                    float expOut = (float) (t == 1.0f ? 1.0f : 1.0f - Math.pow(2.0, -10.0 * t));
+                    float combinedEasing = (sineInOut + expOut) * 0.5f;
+                    easedT = t + (combinedEasing - t) * ConfigManager.data.rotationSmoothness;
                 }
 
                 float u = 1.0f - easedT;
@@ -450,6 +455,16 @@ public class RotationManager {
                                          + 3 * uu * easedT * cp1Pitch
                                          + 3 * u * tt * cp2Pitch
                                          + ttt * targetPitch;
+
+                if (ConfigManager.data.rotationHumanizerEnabled) {
+                    float timeSec = (System.currentTimeMillis() % 10000) / 1000.0f;
+                    float noiseY = (float) (Math.sin(timeSec * 15.0) * Math.cos(timeSec * 7.0));
+                    float noiseP = (float) (Math.cos(timeSec * 13.0) * Math.sin(timeSec * 11.0));
+                    
+                    float noiseScale = (1.0f - t) * 0.5f; 
+                    currentTargetYaw += noiseY * noiseScale;
+                    currentTargetPitch += noiseP * noiseScale;
+                }
 
                 if (!Float.isNaN(currentTargetYaw) && !Float.isNaN(currentTargetPitch)) {
                     mc.player.setYRot(currentTargetYaw);
