@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WaypointActionEditScreen extends BaseScreen {
+    private static final int CUSTOM_INPUT_WIDTH = 90;
+    private static final float SAFE_ACTION_TIME_SECONDS = 5.0f;
     private final Waypoint waypoint;
     private final ConfigManager.WaypointAction action;
     private ListView stepsList;
@@ -182,25 +184,59 @@ public class WaypointActionEditScreen extends BaseScreen {
             typeDropdown.setSelectedIndex(step.type.ordinal());
             group.addChild(new SettingWrapper(0, 0, itemWidth, "Step Type", "What this step does", typeDropdown));
 
-            SettingWrapper delayWrap = new SettingWrapper(0, 0, itemWidth, "Delay (Ticks)", "Wait (Ticks) before this step", null);
-            Slider delaySlider = new Slider(0, 0, itemWidth, 0, 100, step.delayTicks, val -> {
-                step.delayTicks = Math.round(val);
-                delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.delayTicks, step.delayTicks / 20.0));
+            step.normalizeTiming();
+
+            SettingWrapper delayWrap = new SettingWrapper(0, 0, itemWidth, "Delay (Seconds)", "Wait before this step", null);
+            GridRow delayRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+            final Slider[] delaySliderRef = new Slider[1];
+            final TextField[] delayFieldRef = new TextField[1];
+            TextField delayField = createNonNegativeSecondsField(step.delaySeconds, value -> {
+                step.setDelaySeconds(value);
+                delaySliderRef[0].setValue(Math.min(value, SAFE_ACTION_TIME_SECONDS));
+                delayWrap.setRightLabel(formatSeconds(step.delaySeconds));
+                updateTextField(delayFieldRef[0], step.delaySeconds);
                 WaypointManager.getInstance().save();
             });
-            delayWrap.setControl(delaySlider);
-            delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.delayTicks, step.delayTicks / 20.0));
+            delayFieldRef[0] = delayField;
+            Slider delaySlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0, SAFE_ACTION_TIME_SECONDS,
+                    Math.max(0.0f, Math.min(step.delaySeconds, SAFE_ACTION_TIME_SECONDS)), val -> {
+                step.setDelaySeconds(roundToMillis(val));
+                delayWrap.setRightLabel(formatSeconds(step.delaySeconds));
+                updateTextField(delayFieldRef[0], step.delaySeconds);
+                WaypointManager.getInstance().save();
+            });
+            delaySliderRef[0] = delaySlider;
+            delayRow.addChild(delaySlider, 0);
+            delayRow.addChild(delayField, itemWidth - CUSTOM_INPUT_WIDTH);
+            delayWrap.setControl(delayRow);
+            delayWrap.setRightLabel(formatSeconds(step.delaySeconds));
             group.addChild(delayWrap);
 
             if (step.type == ConfigManager.ActionStepType.USE_ITEM || step.type == ConfigManager.ActionStepType.ATTACK || step.type == ConfigManager.ActionStepType.PRESS_KEYBIND) {
-                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, "Duration (Ticks)", "How long to hold (0 = click)", null);
-                Slider durationSlider = new Slider(0, 0, itemWidth, 0, 100, step.durationTicks, val -> {
-                    step.durationTicks = Math.round(val);
-                    durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.durationTicks, step.durationTicks / 20.0));
+                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, "Duration (Seconds)", "How long to hold. 0 = click.", null);
+                GridRow durationRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                final Slider[] durationSliderRef = new Slider[1];
+                final TextField[] durationFieldRef = new TextField[1];
+                TextField durationField = createNonNegativeSecondsField(step.durationSeconds, value -> {
+                    step.setDurationSeconds(value);
+                    durationSliderRef[0].setValue(Math.min(value, SAFE_ACTION_TIME_SECONDS));
+                    durationWrap.setRightLabel(formatSeconds(step.durationSeconds));
+                    updateTextField(durationFieldRef[0], step.durationSeconds);
                     WaypointManager.getInstance().save();
                 });
-                durationWrap.setControl(durationSlider);
-                durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", step.durationTicks, step.durationTicks / 20.0));
+                durationFieldRef[0] = durationField;
+                Slider durationSlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0, SAFE_ACTION_TIME_SECONDS,
+                        Math.max(0.0f, Math.min(step.durationSeconds, SAFE_ACTION_TIME_SECONDS)), val -> {
+                    step.setDurationSeconds(roundToMillis(val));
+                    durationWrap.setRightLabel(formatSeconds(step.durationSeconds));
+                    updateTextField(durationFieldRef[0], step.durationSeconds);
+                    WaypointManager.getInstance().save();
+                });
+                durationSliderRef[0] = durationSlider;
+                durationRow.addChild(durationSlider, 0);
+                durationRow.addChild(durationField, itemWidth - CUSTOM_INPUT_WIDTH);
+                durationWrap.setControl(durationRow);
+                durationWrap.setRightLabel(formatSeconds(step.durationSeconds));
                 group.addChild(durationWrap);
             }
 
@@ -265,13 +301,27 @@ public class WaypointActionEditScreen extends BaseScreen {
                 }
 
                 SettingWrapper lookAtWrap = new SettingWrapper(0, 0, itemWidth, "Look At Time", "Keep aiming at the target after rotation completes", null);
-                Slider lookAtSlider = new Slider(0, 0, itemWidth, 0, 10, step.lookAtSeconds, val -> {
-                    step.lookAtSeconds = Math.round(val * 1000.0f) / 1000.0f;
-                    lookAtWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.3fs", step.lookAtSeconds));
+                GridRow lookAtRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                final TextField[] lookAtFieldRef = new TextField[1];
+                Slider lookAtSlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0, 10,
+                        Math.max(0.0f, Math.min(step.lookAtSeconds, 10.0f)), val -> {
+                    step.lookAtSeconds = roundToMillis(val);
+                    lookAtWrap.setRightLabel(formatSeconds(step.lookAtSeconds));
+                    updateTextField(lookAtFieldRef[0], step.lookAtSeconds);
                     WaypointManager.getInstance().save();
                 });
-                lookAtWrap.setControl(lookAtSlider);
-                lookAtWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.3fs", step.lookAtSeconds));
+                TextField lookAtField = createNonNegativeDecimalField(step.lookAtSeconds, value -> {
+                    step.lookAtSeconds = value;
+                    lookAtSlider.setValue(Math.min(value, 10.0f));
+                    lookAtWrap.setRightLabel(formatSeconds(step.lookAtSeconds));
+                    updateTextField(lookAtFieldRef[0], step.lookAtSeconds);
+                    WaypointManager.getInstance().save();
+                });
+                lookAtFieldRef[0] = lookAtField;
+                lookAtRow.addChild(lookAtSlider, 0);
+                lookAtRow.addChild(lookAtField, itemWidth - CUSTOM_INPUT_WIDTH);
+                lookAtWrap.setControl(lookAtRow);
+                lookAtWrap.setRightLabel(formatSeconds(step.lookAtSeconds));
                 group.addChild(lookAtWrap);
 
                 if (!step.useCoordinates) {
@@ -387,5 +437,43 @@ public class WaypointActionEditScreen extends BaseScreen {
             title += String.format(java.util.Locale.ROOT, " (%.1fm)", dist);
         }
         RenderHelper.drawCenteredString(graphics, font, title, containerX + containerWidth / 2, containerY + 20, Theme.TEXT_PRIMARY);
+    }
+
+    private static String formatSeconds(float seconds) {
+        return String.format(java.util.Locale.ROOT, "%.3fs", seconds);
+    }
+
+    private static float roundToMillis(float value) {
+        return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
+    }
+
+    private void updateTextField(TextField field, float value) {
+        String formatted = String.format(java.util.Locale.ROOT, "%.3f", roundToMillis(value));
+        if (!formatted.equals(field.getText())) {
+            field.setText(formatted);
+        }
+    }
+
+    private TextField createNonNegativeSecondsField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = createNonNegativeDecimalField(initialValue, onValidValue);
+        updateTextField(field, initialValue);
+        return field;
+    }
+
+    private TextField createNonNegativeDecimalField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = new TextField(0, 0, CUSTOM_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, "Custom");
+        field.setMaxLength(10);
+        field.setCharFilter(c -> Character.isDigit(c) || c == '.');
+        updateTextField(field, initialValue);
+        field.setOnValueChange(val -> {
+            if (val == null || val.isEmpty() || ".".equals(val)) {
+                return;
+            }
+            try {
+                onValidValue.accept(roundToMillis(Float.parseFloat(val)));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        return field;
     }
 }

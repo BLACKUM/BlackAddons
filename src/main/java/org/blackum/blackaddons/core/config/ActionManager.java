@@ -82,6 +82,9 @@ public class ActionManager {
             if (loaded != null) {
                 chatActions.clear();
                 chatActions.addAll(loaded);
+                for (ConfigManager.ChatAction action : chatActions) {
+                    ConfigManager.normalizeActionSteps(action.actions);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -135,6 +138,9 @@ public class ActionManager {
             if (data != null) {
                 if (data.chatActions != null) {
                     chatActions.addAll(data.chatActions);
+                    for (ConfigManager.ChatAction action : chatActions) {
+                        ConfigManager.normalizeActionSteps(action.actions);
+                    }
                 }
                 if (data.waypointActions != null) {
                     org.blackum.blackaddons.core.waypoint.WaypointManager.getInstance().mergeActions(data.waypointActions);

@@ -39,6 +39,10 @@ public abstract class Widget {
         return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
     }
 
+    public boolean hasActiveOverlay() {
+        return false;
+    }
+
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         return false;
     }

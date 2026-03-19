@@ -72,7 +72,7 @@ public class ChatActionExecutor {
     public void execute(List<ConfigManager.ActionStep> actions, String[] groups) {
         int totalDelay = 0;
         for (ConfigManager.ActionStep action : actions) {
-            totalDelay += action.delayTicks;
+            totalDelay += action.getDelayTicks();
             queue.add(new QueuedAction(action, totalDelay, groups));
         }
     }
@@ -102,14 +102,14 @@ public class ChatActionExecutor {
                 break;
             case USE_ITEM:
                 if (client.screen != null) break;
-                holdOrClickKey(client.options.keyUse, action.durationTicks);
+                holdOrClickKey(client.options.keyUse, action.getDurationTicks());
                 break;
             case ATTACK:
                 if (client.screen != null) break;
                 if (FastLeap.tryTriggerFromAttackAction(client, true)) {
                     break;
                 }
-                holdOrClickKey(client.options.keyAttack, action.durationTicks);
+                holdOrClickKey(client.options.keyAttack, action.getDurationTicks());
                 break;
             case SEND_MESSAGE:
                 String msg = action.message;
@@ -130,14 +130,14 @@ public class ChatActionExecutor {
                 if (client.screen != null) break;
                 for (KeyMapping key : client.options.keyMappings) {
                     if (key.getName().equalsIgnoreCase(action.message)) {
-                        holdOrClickKey(key, action.durationTicks);
+                        holdOrClickKey(key, action.getDurationTicks());
                         break;
                     }
                 }
                 break;
             case ROTATE:
                 if (Minecraft.getInstance().screen != null) break;
-                float lookAtTicks = action.lookAtSeconds * 20.0f;
+                float lookAtTicks = Math.max(0.0f, action.lookAtSeconds) * 20.0f;
                 if (action.instaSnap) {
                     if (action.useCoordinates) {
                         RotationManager.getInstance().snapToBlock(action.targetX, action.targetY, action.targetZ, lookAtTicks);
@@ -160,9 +160,10 @@ public class ChatActionExecutor {
     }
 
     private void holdOrClickKey(KeyMapping key, int durationTicks) {
-        if (durationTicks > 0) {
+        int clampedDuration = Math.max(0, durationTicks);
+        if (clampedDuration > 0) {
             setKeyState(key, true);
-            activeKeybinds.put(key, durationTicks);
+            activeKeybinds.put(key, clampedDuration);
             return;
         }
         clickKey(key);

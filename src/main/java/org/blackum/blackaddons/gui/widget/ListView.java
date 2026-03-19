@@ -67,7 +67,7 @@ public class ListView extends Widget {
     @Override
     public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
-        if (!visible || !isMouseOver(mouseX, mouseY))
+        if (!visible || !(super.isMouseOver(mouseX, mouseY) || hasActiveOverlay()))
             return;
 
         int currentY = y - scrollOffset;
@@ -81,6 +81,29 @@ public class ListView extends Widget {
             }
             currentY += item.getHeight() + itemSpacing;
         }
+    }
+
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (super.isMouseOver(mouseX, mouseY)) {
+            return true;
+        }
+        for (Widget item : items) {
+            if (item.isVisible() && item.isMouseOver(mouseX, mouseY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasActiveOverlay() {
+        for (Widget item : items) {
+            if (item.isVisible() && item.hasActiveOverlay()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void renderScrollbar(GuiGraphics graphics, int mouseX, int mouseY) {

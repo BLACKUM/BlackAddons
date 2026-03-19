@@ -152,6 +152,13 @@ public class WaypointManager {
             if (loaded != null) {
                 waypoints.clear();
                 waypoints.addAll(loaded);
+                for (Waypoint waypoint : waypoints) {
+                    if (waypoint.actions != null) {
+                        for (WaypointAction action : waypoint.actions) {
+                            ConfigManager.normalizeActionSteps(action.actions);
+                        }
+                    }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -191,6 +198,9 @@ public class WaypointManager {
         for (Waypoint waypoint : waypoints) {
             List<WaypointAction> actions = actionsMap.get(waypoint.id);
             if (actions != null && !actions.isEmpty()) {
+                for (WaypointAction action : actions) {
+                    ConfigManager.normalizeActionSteps(action.actions);
+                }
                 waypoint.actions.addAll(actions);
                 changed = true;
             }

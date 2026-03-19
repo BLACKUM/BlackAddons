@@ -156,6 +156,34 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (super.isMouseOver(mouseX, mouseY) || header.isMouseOver(mouseX, mouseY)) {
+            return true;
+        }
+        if (expanded || expandAnimation.getValue() > 0) {
+            for (Widget child : children) {
+                if (child.isVisible() && child.isMouseOver(mouseX, mouseY)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasActiveOverlay() {
+        if (!(expanded || expandAnimation.getValue() > 0)) {
+            return false;
+        }
+        for (Widget child : children) {
+            if (child.isVisible() && child.hasActiveOverlay()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!enabled || !visible)
             return false;

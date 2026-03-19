@@ -26,6 +26,7 @@ public class Dropdown extends Widget {
     private double menuScrollOffset = 0;
     private static final int MAX_MENU_HEIGHT = 130;
     private static final int OPTION_HEIGHT = 25;
+    private static final int MENU_GAP = 2;
 
     public Dropdown(int x, int y, int width, String label, List<String> options, Consumer<String> onSelect) {
         this(x, y, width, Theme.BUTTON_HEIGHT, label, options, onSelect);
@@ -89,6 +90,34 @@ public class Dropdown extends Widget {
     }
 
     @Override
+    public boolean hasActiveOverlay() {
+        return visible && expanded;
+    }
+
+    private int getTotalMenuHeight() {
+        return options.size() * OPTION_HEIGHT;
+    }
+
+    private int getMenuHeight() {
+        return Math.min(getTotalMenuHeight(), MAX_MENU_HEIGHT);
+    }
+
+    private int getViewportHeight() {
+        return (int) (Minecraft.getInstance().getWindow().getGuiScaledHeight() / RenderHelper.getGuiScaleFactor());
+    }
+
+    private boolean shouldOpenUpward() {
+        int menuHeight = getMenuHeight();
+        int spaceBelow = getViewportHeight() - (y + height + MENU_GAP);
+        int spaceAbove = y - MENU_GAP;
+        return spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    }
+
+    private int getMenuBaseY() {
+        return shouldOpenUpward() ? y - MENU_GAP - getMenuHeight() : y + height + MENU_GAP;
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
@@ -118,9 +147,9 @@ public class Dropdown extends Widget {
             return;
 
         int scrollOffset = mouseY - rawMouseY;
-        int totalHeight = options.size() * OPTION_HEIGHT;
-        int menuHeight = Math.min(totalHeight, MAX_MENU_HEIGHT);
-        int menuY = (y - scrollOffset) + height + 2;
+        int totalHeight = getTotalMenuHeight();
+        int menuHeight = getMenuHeight();
+        int menuY = getMenuBaseY() - scrollOffset;
 
         graphics.fill(x - 3, menuY - 3, x + width + 3, menuY + menuHeight + 3, 0xFF000000);
         RenderHelper.renderSurface(graphics, x, menuY, width, menuHeight, Theme.BORDER_RADIUS_SMALL, false);
@@ -185,9 +214,8 @@ public class Dropdown extends Widget {
         }
 
         if (expanded) {
-            int menuY = y + height + 2;
-            int totalHeight = options.size() * OPTION_HEIGHT;
-            int menuHeight = Math.min(totalHeight, MAX_MENU_HEIGHT);
+            int menuY = getMenuBaseY();
+            int menuHeight = getMenuHeight();
 
             if (mouseX >= x && mouseX <= x + width && mouseY >= menuY && mouseY <= menuY + menuHeight) {
                 int clickedIndex = (int) ((mouseY - menuY + menuScrollOffset) / OPTION_HEIGHT);
@@ -214,7 +242,7 @@ public class Dropdown extends Widget {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (expanded && isMouseOver(mouseX, mouseY)) {
-            int totalHeight = options.size() * OPTION_HEIGHT;
+            int totalHeight = getTotalMenuHeight();
             if (totalHeight > MAX_MENU_HEIGHT) {
                 menuScrollOffset -= scrollY * 15;
                 if (menuScrollOffset < 0)
@@ -236,9 +264,8 @@ public class Dropdown extends Widget {
             return true;
 
         if (expanded) {
-            int totalHeight = options.size() * OPTION_HEIGHT;
-            int menuHeight = Math.min(totalHeight, MAX_MENU_HEIGHT);
-            int menuY = y + height + 2;
+            int menuHeight = getMenuHeight();
+            int menuY = getMenuBaseY();
             return mouseX >= x && mouseX <= x + width && mouseY >= menuY && mouseY <= menuY + menuHeight;
         }
         return false;

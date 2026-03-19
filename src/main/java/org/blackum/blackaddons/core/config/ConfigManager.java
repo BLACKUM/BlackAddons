@@ -108,6 +108,8 @@ public class ConfigManager {
         public ActionStepType type;
         public int slotIndex;
         public String message = "";
+        public float delaySeconds = 0;
+        public float durationSeconds = 0;
         public int delayTicks;
         public int durationTicks;
         public float yaw;
@@ -130,6 +132,8 @@ public class ConfigManager {
             this.message = message;
             this.delayTicks = delayTicks;
             this.durationTicks = durationTicks;
+            this.delaySeconds = ticksToSeconds(delayTicks);
+            this.durationSeconds = ticksToSeconds(durationTicks);
         }
 
         public ActionStep(ActionStepType type, float yaw, float pitch, int delayTicks) {
@@ -137,6 +141,60 @@ public class ConfigManager {
             this.yaw = yaw;
             this.pitch = pitch;
             this.delayTicks = delayTicks;
+            this.delaySeconds = ticksToSeconds(delayTicks);
+        }
+
+        public void normalizeTiming() {
+            delaySeconds = normalizeSeconds(delaySeconds, delayTicks);
+            durationSeconds = normalizeSeconds(durationSeconds, durationTicks);
+            lookAtSeconds = Math.max(0.0f, lookAtSeconds);
+            delayTicks = secondsToTicks(delaySeconds);
+            durationTicks = secondsToTicks(durationSeconds);
+        }
+
+        public void setDelaySeconds(float delaySeconds) {
+            this.delaySeconds = normalizeSeconds(delaySeconds, 0);
+            this.delayTicks = secondsToTicks(this.delaySeconds);
+        }
+
+        public void setDurationSeconds(float durationSeconds) {
+            this.durationSeconds = normalizeSeconds(durationSeconds, 0);
+            this.durationTicks = secondsToTicks(this.durationSeconds);
+        }
+
+        public int getDelayTicks() {
+            normalizeTiming();
+            return delayTicks;
+        }
+
+        public int getDurationTicks() {
+            normalizeTiming();
+            return durationTicks;
+        }
+
+        private static float normalizeSeconds(float seconds, int legacyTicks) {
+            if (seconds > 0.0f) {
+                return Math.max(0.0f, roundToMillis(seconds));
+            }
+            if (seconds < 0.0f) {
+                return 0.0f;
+            }
+            if (legacyTicks > 0) {
+                return ticksToSeconds(legacyTicks);
+            }
+            return 0.0f;
+        }
+
+        private static int secondsToTicks(float seconds) {
+            return Math.max(0, Math.round(Math.max(0.0f, seconds) * 20.0f));
+        }
+
+        private static float ticksToSeconds(int ticks) {
+            return roundToMillis(Math.max(0, ticks) / 20.0f);
+        }
+
+        private static float roundToMillis(float value) {
+            return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
         }
     }
 
@@ -402,6 +460,7 @@ public class ConfigManager {
                     loadedData.chatVisualFilters = new ArrayList<>();
                 }
                 data = loadedData;
+                normalizeLegacyActionTimings();
                 Theme.ACCENT = data.accentColor;
                 Theme.refreshColors();
                 syncOverlayState();
@@ -417,6 +476,25 @@ public class ConfigManager {
         BaseScreen.overlayX = data.overlayX;
         BaseScreen.overlayY = data.overlayY;
         BaseScreen.overlayScale = data.overlayScale;
+    }
+
+    public static void normalizeLegacyActionTimings() {
+        if (data.chatActions != null) {
+            for (ChatAction chatAction : data.chatActions) {
+                normalizeActionSteps(chatAction.actions);
+            }
+        }
+    }
+
+    public static void normalizeActionSteps(List<ActionStep> steps) {
+        if (steps == null) {
+            return;
+        }
+        for (ActionStep step : steps) {
+            if (step != null) {
+                step.normalizeTiming();
+            }
+        }
     }
 
     private static void migrate() {

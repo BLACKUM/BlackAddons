@@ -64,6 +64,31 @@ public class GridRow extends Widget {
     }
 
     @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (super.isMouseOver(mouseX, mouseY)) {
+            return true;
+        }
+        for (Map.Entry<Widget, Integer> entry : children) {
+            Widget child = entry.getKey();
+            if (child.isVisible() && child.isMouseOver(mouseX, mouseY)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasActiveOverlay() {
+        for (Map.Entry<Widget, Integer> entry : children) {
+            Widget child = entry.getKey();
+            if (child.isVisible() && child.hasActiveOverlay()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void tick() {
         for (Map.Entry<Widget, Integer> entry : children) {
             entry.getKey().tick();

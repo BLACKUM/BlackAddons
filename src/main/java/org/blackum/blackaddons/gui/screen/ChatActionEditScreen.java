@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatActionEditScreen extends BaseScreen {
+    private static final int CUSTOM_INPUT_WIDTH = 90;
+    private static final float SAFE_ACTION_TIME_SECONDS = 5.0f;
     private final ConfigManager.ChatAction trigger;
     private ListView actionsList;
 
@@ -86,25 +88,59 @@ public class ChatActionEditScreen extends BaseScreen {
             typeDropdown.setSelectedIndex(action.type.ordinal());
             group.addChild(new SettingWrapper(0, 0, itemWidth, "Step Type", "What this step does", typeDropdown));
 
-            SettingWrapper delayWrap = new SettingWrapper(0, 0, itemWidth, "Delay (Ticks)", "Wait (Ticks) before this step", null);
-            Slider delaySlider = new Slider(0, 0, itemWidth, 0, 100, action.delayTicks, val -> {
-                action.delayTicks = Math.round(val);
-                delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.delayTicks, action.delayTicks / 20.0));
+            action.normalizeTiming();
+
+            SettingWrapper delayWrap = new SettingWrapper(0, 0, itemWidth, "Delay (Seconds)", "Wait before this step", null);
+            GridRow delayRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+            final Slider[] delaySliderRef = new Slider[1];
+            final TextField[] delayFieldRef = new TextField[1];
+            TextField delayField = createNonNegativeSecondsField(action.delaySeconds, value -> {
+                action.setDelaySeconds(value);
+                delaySliderRef[0].setValue(Math.min(value, SAFE_ACTION_TIME_SECONDS));
+                delayWrap.setRightLabel(formatSeconds(action.delaySeconds));
+                updateTextField(delayFieldRef[0], action.delaySeconds);
                 ActionManager.getInstance().save();
             });
-            delayWrap.setControl(delaySlider);
-            delayWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.delayTicks, action.delayTicks / 20.0));
+            delayFieldRef[0] = delayField;
+            Slider delaySlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0, SAFE_ACTION_TIME_SECONDS,
+                    Math.max(0.0f, Math.min(action.delaySeconds, SAFE_ACTION_TIME_SECONDS)), val -> {
+                action.setDelaySeconds(roundToMillis(val));
+                delayWrap.setRightLabel(formatSeconds(action.delaySeconds));
+                updateTextField(delayFieldRef[0], action.delaySeconds);
+                ActionManager.getInstance().save();
+            });
+            delaySliderRef[0] = delaySlider;
+            delayRow.addChild(delaySlider, 0);
+            delayRow.addChild(delayField, itemWidth - CUSTOM_INPUT_WIDTH);
+            delayWrap.setControl(delayRow);
+            delayWrap.setRightLabel(formatSeconds(action.delaySeconds));
             group.addChild(delayWrap);
 
             if (action.type == ConfigManager.ActionStepType.USE_ITEM || action.type == ConfigManager.ActionStepType.ATTACK || action.type == ConfigManager.ActionStepType.PRESS_KEYBIND) {
-                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, "Duration (Ticks)", "How long to hold (0 = click)", null);
-                Slider durationSlider = new Slider(0, 0, itemWidth, 0, 100, action.durationTicks, val -> {
-                    action.durationTicks = Math.round(val);
-                    durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.durationTicks, action.durationTicks / 20.0));
+                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, "Duration (Seconds)", "How long to hold. 0 = click.", null);
+                GridRow durationRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                final Slider[] durationSliderRef = new Slider[1];
+                final TextField[] durationFieldRef = new TextField[1];
+                TextField durationField = createNonNegativeSecondsField(action.durationSeconds, value -> {
+                    action.setDurationSeconds(value);
+                    durationSliderRef[0].setValue(Math.min(value, SAFE_ACTION_TIME_SECONDS));
+                    durationWrap.setRightLabel(formatSeconds(action.durationSeconds));
+                    updateTextField(durationFieldRef[0], action.durationSeconds);
                     ActionManager.getInstance().save();
                 });
-                durationWrap.setControl(durationSlider);
-                durationWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%dt (%.2fs)", action.durationTicks, action.durationTicks / 20.0));
+                durationFieldRef[0] = durationField;
+                Slider durationSlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0, SAFE_ACTION_TIME_SECONDS,
+                        Math.max(0.0f, Math.min(action.durationSeconds, SAFE_ACTION_TIME_SECONDS)), val -> {
+                    action.setDurationSeconds(roundToMillis(val));
+                    durationWrap.setRightLabel(formatSeconds(action.durationSeconds));
+                    updateTextField(durationFieldRef[0], action.durationSeconds);
+                    ActionManager.getInstance().save();
+                });
+                durationSliderRef[0] = durationSlider;
+                durationRow.addChild(durationSlider, 0);
+                durationRow.addChild(durationField, itemWidth - CUSTOM_INPUT_WIDTH);
+                durationWrap.setControl(durationRow);
+                durationWrap.setRightLabel(formatSeconds(action.durationSeconds));
                 group.addChild(durationWrap);
             }
 
@@ -169,13 +205,27 @@ public class ChatActionEditScreen extends BaseScreen {
                 }
 
                 SettingWrapper lookAtWrap = new SettingWrapper(0, 0, itemWidth, "Look At Time", "Keep aiming at the target after rotation completes", null);
-                Slider lookAtSlider = new Slider(0, 0, itemWidth, 0, 10, action.lookAtSeconds, val -> {
-                    action.lookAtSeconds = Math.round(val * 1000.0f) / 1000.0f;
-                    lookAtWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.3fs", action.lookAtSeconds));
+                GridRow lookAtRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                final TextField[] lookAtFieldRef = new TextField[1];
+                Slider lookAtSlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0, 10,
+                        Math.max(0.0f, Math.min(action.lookAtSeconds, 10.0f)), val -> {
+                    action.lookAtSeconds = roundToMillis(val);
+                    lookAtWrap.setRightLabel(formatSeconds(action.lookAtSeconds));
+                    updateTextField(lookAtFieldRef[0], action.lookAtSeconds);
                     ActionManager.getInstance().save();
                 });
-                lookAtWrap.setControl(lookAtSlider);
-                lookAtWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.3fs", action.lookAtSeconds));
+                TextField lookAtField = createNonNegativeDecimalField(action.lookAtSeconds, value -> {
+                    action.lookAtSeconds = value;
+                    lookAtSlider.setValue(Math.min(value, 10.0f));
+                    lookAtWrap.setRightLabel(formatSeconds(action.lookAtSeconds));
+                    updateTextField(lookAtFieldRef[0], action.lookAtSeconds);
+                    ActionManager.getInstance().save();
+                });
+                lookAtFieldRef[0] = lookAtField;
+                lookAtRow.addChild(lookAtSlider, 0);
+                lookAtRow.addChild(lookAtField, itemWidth - CUSTOM_INPUT_WIDTH);
+                lookAtWrap.setControl(lookAtRow);
+                lookAtWrap.setRightLabel(formatSeconds(action.lookAtSeconds));
                 group.addChild(lookAtWrap);
 
                 if (!action.useCoordinates) {
@@ -284,5 +334,43 @@ public class ChatActionEditScreen extends BaseScreen {
     @Override
     protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         RenderHelper.drawCenteredString(graphics, font, "Editing Steps for: " + trigger.pattern, containerX + containerWidth / 2, containerY + 20, Theme.TEXT_PRIMARY);
+    }
+
+    private static String formatSeconds(float seconds) {
+        return String.format(java.util.Locale.ROOT, "%.3fs", seconds);
+    }
+
+    private static float roundToMillis(float value) {
+        return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
+    }
+
+    private void updateTextField(TextField field, float value) {
+        String formatted = String.format(java.util.Locale.ROOT, "%.3f", roundToMillis(value));
+        if (!formatted.equals(field.getText())) {
+            field.setText(formatted);
+        }
+    }
+
+    private TextField createNonNegativeSecondsField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = createNonNegativeDecimalField(initialValue, onValidValue);
+        updateTextField(field, initialValue);
+        return field;
+    }
+
+    private TextField createNonNegativeDecimalField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = new TextField(0, 0, CUSTOM_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, "Custom");
+        field.setMaxLength(10);
+        field.setCharFilter(c -> Character.isDigit(c) || c == '.');
+        updateTextField(field, initialValue);
+        field.setOnValueChange(val -> {
+            if (val == null || val.isEmpty() || ".".equals(val)) {
+                return;
+            }
+            try {
+                onValidValue.accept(roundToMillis(Float.parseFloat(val)));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        return field;
     }
 }

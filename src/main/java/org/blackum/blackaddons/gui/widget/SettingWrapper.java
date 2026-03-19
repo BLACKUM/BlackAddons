@@ -155,6 +155,16 @@ public class SettingWrapper extends Widget {
     }
 
     @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        return super.isMouseOver(mouseX, mouseY) || control != null && control.isVisible() && control.isMouseOver(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean hasActiveOverlay() {
+        return control != null && control.isVisible() && control.hasActiveOverlay();
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!enabled || !visible)
             return false;
