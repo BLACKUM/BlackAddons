@@ -41,6 +41,8 @@ public class RotationManager {
     private float durationTicks;
     private float currentTicks;
     private float pendingSpeedOverride = 0;
+    private float holdTicksRemaining = 0;
+    private float activeTrackingSpeed = 0;
 
     private boolean active;
 
@@ -71,10 +73,14 @@ public class RotationManager {
     }
 
     public void rotateTo(float yaw, float pitch) {
-        rotateTo(yaw, pitch, 0);
+        rotateTo(yaw, pitch, 0, 0);
     }
 
     public void rotateTo(float yaw, float pitch, float speedOverride) {
+        rotateTo(yaw, pitch, speedOverride, 0);
+    }
+
+    public void rotateTo(float yaw, float pitch, float speedOverride, float lookAtTicks) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
 
@@ -83,20 +89,39 @@ public class RotationManager {
         this.targetY = Double.NaN;
         this.targetZ = Double.NaN;
         this.pendingSpeedOverride = speedOverride > 0 ? speedOverride : 0;
+        this.holdTicksRemaining = Math.max(0, lookAtTicks);
+        this.activeTrackingSpeed = speedOverride > 0 ? speedOverride : Math.max(0.1f, ConfigManager.data.rotationSpeed);
         
         setupBezier(mc, normalizeYaw(yaw), Mth.clamp(pitch, -90f, 90f));
     }
 
     public void snapToAngle(float yaw, float pitch) {
+        snapToAngle(yaw, pitch, 0);
+    }
+
+    public void snapToAngle(float yaw, float pitch, float lookAtTicks) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
         float jitterYaw = (random.nextFloat() - 0.5f) * 0.01f;
         float jitterPitch = (random.nextFloat() - 0.5f) * 0.01f;
-        mc.player.setYRot(normalizeYaw(yaw) + jitterYaw);
-        mc.player.setXRot(Mth.clamp(pitch, -90f, 90f) + jitterPitch);
+        applyPlayerRotation(mc, normalizeYaw(yaw) + jitterYaw, Mth.clamp(pitch, -90f, 90f) + jitterPitch);
+        this.active = lookAtTicks > 0;
+        this.targetX = Double.NaN;
+        this.targetY = Double.NaN;
+        this.targetZ = Double.NaN;
+        this.targetYawUnwrapped = normalizeYaw(yaw);
+        this.targetPitch = Mth.clamp(pitch, -90f, 90f);
+        this.durationTicks = 0;
+        this.currentTicks = 0;
+        this.holdTicksRemaining = Math.max(0, lookAtTicks);
+        this.activeTrackingSpeed = Math.max(0.1f, ConfigManager.data.rotationSpeed);
     }
 
     public void snapToBlock(double x, double y, double z) {
+        snapToBlock(x, y, z, 0);
+    }
+
+    public void snapToBlock(double x, double y, double z, float lookAtTicks) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
         double dx = x + 0.5 - mc.player.getX();
@@ -107,18 +132,36 @@ public class RotationManager {
         float rawPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(dy, dist)), -90f, 90f);
         float jitterYaw = (random.nextFloat() - 0.5f) * 0.01f;
         float jitterPitch = (random.nextFloat() - 0.5f) * 0.01f;
-        mc.player.setYRot(rawYaw + jitterYaw);
-        mc.player.setXRot(rawPitch + jitterPitch);
+        applyPlayerRotation(mc, rawYaw + jitterYaw, rawPitch + jitterPitch);
+        this.active = lookAtTicks > 0;
+        this.targetX = x + 0.5;
+        this.targetY = y + 0.5;
+        this.targetZ = z + 0.5;
+        this.lastTargetX = this.targetX;
+        this.lastTargetY = this.targetY;
+        this.lastTargetZ = this.targetZ;
+        this.targetYawUnwrapped = rawYaw;
+        this.targetPitch = rawPitch;
+        this.durationTicks = 0;
+        this.currentTicks = 0;
+        this.holdTicksRemaining = Math.max(0, lookAtTicks);
+        this.activeTrackingSpeed = Math.max(0.1f, ConfigManager.data.rotationSpeed);
     }
 
     public void rotateToBlock(double x, double y, double z) {
-        rotateToBlock(x, y, z, 0);
+        rotateToBlock(x, y, z, 0, 0);
     }
 
     public void rotateToBlock(double x, double y, double z, float speedOverride) {
+        rotateToBlock(x, y, z, speedOverride, 0);
+    }
+
+    public void rotateToBlock(double x, double y, double z, float speedOverride, float lookAtTicks) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
         this.pendingSpeedOverride = speedOverride > 0 ? speedOverride : 0;
+        this.holdTicksRemaining = Math.max(0, lookAtTicks);
+        this.activeTrackingSpeed = speedOverride > 0 ? speedOverride : Math.max(0.1f, ConfigManager.data.rotationSpeed);
         float randX = 0;
         float randY = 0;
         float randZ = 0;
@@ -221,8 +264,7 @@ public class RotationManager {
         updateBlockAngles(mc);
         
         if (!Double.isNaN(targetYawUnwrapped)) {
-            mc.player.setYRot(targetYawUnwrapped);
-            mc.player.setXRot(targetPitch);
+            applyPlayerRotation(mc, targetYawUnwrapped, targetPitch);
             this.currentTicks = this.durationTicks;
         }
     }
@@ -238,6 +280,8 @@ public class RotationManager {
     public void clearSpline() {
         this.splinePoints = null;
         this.active = false;
+        this.holdTicksRemaining = 0;
+        this.activeTrackingSpeed = 0;
         this.lastTargetX = Double.NaN;
         this.lastTargetY = Double.NaN;
         this.lastTargetZ = Double.NaN;
@@ -357,6 +401,10 @@ public class RotationManager {
     }
 
     private void updateBlockAngles(Minecraft mc) {
+        updateBlockAngles(mc, false);
+    }
+
+    private void updateBlockAngles(Minecraft mc, boolean unwrapFromCurrentYaw) {
         if (mc.player == null || Double.isNaN(targetX)) return;
         double dx = targetX - mc.player.getX();
         double dy = targetY - (mc.player.getY() + mc.player.getEyeHeight());
@@ -365,7 +413,8 @@ public class RotationManager {
         
         float rawTargetYaw = normalizeYaw((float) Math.toDegrees(Math.atan2(dz, dx)) - 90f);
         this.targetPitch = Mth.clamp((float) -Math.toDegrees(Math.atan2(dy, dist)), -90f, 90f);
-        this.targetYawUnwrapped = this.startYaw + yawDiff(this.startYaw, rawTargetYaw);
+        float unwrapBaseYaw = unwrapFromCurrentYaw && mc.player != null ? mc.player.getYRot() : this.startYaw;
+        this.targetYawUnwrapped = unwrapBaseYaw + yawDiff(unwrapBaseYaw, rawTargetYaw);
     }
 
     private static float normalizeYaw(float yaw) {
@@ -385,6 +434,26 @@ public class RotationManager {
     private void onTick(Minecraft mc) {
     }
 
+    private void applyPlayerRotation(Minecraft mc, float yaw, float pitch) {
+        if (mc.player == null) return;
+        mc.player.setYRot(yaw);
+        mc.player.setXRot(pitch);
+        mc.player.setYHeadRot(yaw);
+        mc.player.setYBodyRot(yaw);
+    }
+
+    private void applySmoothFollowRotation(Minecraft mc, float desiredYaw, float desiredPitch, float dt) {
+        if (mc.player == null) return;
+
+        float currentYaw = mc.player.getYRot();
+        float currentPitch = mc.player.getXRot();
+        float maxStep = Math.max(0.1f, this.activeTrackingSpeed) * Math.max(0.0f, dt);
+
+        float nextYaw = currentYaw + Mth.clamp(yawDiff(currentYaw, desiredYaw), -maxStep, maxStep);
+        float nextPitch = currentPitch + Mth.clamp(desiredPitch - currentPitch, -maxStep, maxStep);
+        applyPlayerRotation(mc, nextYaw, nextPitch);
+    }
+
     private void onFrame(GuiGraphics graphics, DeltaTracker tracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
@@ -395,8 +464,9 @@ public class RotationManager {
             } else {
                 float dt = tracker.getGameTimeDeltaTicks();
 
+                boolean inHoldPhase = this.currentTicks >= this.durationTicks;
                 if (!Double.isNaN(targetX)) {
-                    updateBlockAngles(mc);
+                    updateBlockAngles(mc, inHoldPhase);
                 }
 
 
@@ -424,13 +494,17 @@ public class RotationManager {
 
                 if (this.currentTicks >= this.durationTicks) {
                     this.currentTicks = this.durationTicks;
-                    
-                    if (this.splinePoints == null) {
+
+                    if (this.holdTicksRemaining > 0) {
+                        this.holdTicksRemaining = Math.max(0, this.holdTicksRemaining - dt);
+                    }
+
+                    if (this.holdTicksRemaining <= 0 && this.splinePoints == null) {
                         this.active = false;
                     }
                 }
 
-                float t = this.currentTicks / this.durationTicks;
+                float t = this.durationTicks > 0 ? this.currentTicks / this.durationTicks : 1.0f;
 
                 float easedT = t;
                 if (ConfigManager.data.rotationSmoothness > 0) {
@@ -467,8 +541,15 @@ public class RotationManager {
                 }
 
                 if (!Float.isNaN(currentTargetYaw) && !Float.isNaN(currentTargetPitch)) {
-                    mc.player.setYRot(currentTargetYaw);
-                    mc.player.setXRot(currentTargetPitch);
+                    if (inHoldPhase && !Double.isNaN(targetX)) {
+                        applySmoothFollowRotation(mc, this.targetYawUnwrapped, this.targetPitch, dt);
+                    } else {
+                        if (inHoldPhase) {
+                            currentTargetYaw = this.targetYawUnwrapped;
+                            currentTargetPitch = this.targetPitch;
+                        }
+                        applyPlayerRotation(mc, currentTargetYaw, currentTargetPitch);
+                    }
                 }
             }
         }
@@ -613,9 +694,17 @@ public class RotationManager {
                 float curYaw = normalizeYaw(mc.player.getYRot());
                 info.add(String.format("Yaw: %.2f -> %.2f (diff %.2f°)", curYaw, rm.targetYawUnwrapped, yawDiff(curYaw, rm.targetYawUnwrapped)));
                 info.add(String.format("Pitch: %.2f -> %.2f", mc.player.getXRot(), rm.targetPitch));
+                info.add(String.format("Phase: %s | Hold: %.2ft", rm.currentTicks >= rm.durationTicks ? "HOLD" : "ROTATE", rm.holdTicksRemaining));
+                info.add(String.format("Player: %.2f %.2f %.2f", mc.player.getX(), mc.player.getEyeY(), mc.player.getZ()));
             }
             if (!Double.isNaN(rm.targetX)) {
                 info.add(String.format("Target: %.1f %.1f %.1f", rm.targetX, rm.targetY, rm.targetZ));
+                if (mc.player != null) {
+                    double dx = rm.targetX - mc.player.getX();
+                    double dy = rm.targetY - mc.player.getEyeY();
+                    double dz = rm.targetZ - mc.player.getZ();
+                    info.add(String.format("Delta: %.2f %.2f %.2f", dx, dy, dz));
+                }
             }
             info.add(String.format("Spd: %.1f | Smooth: %.2f | Curve: %.0f%%",
                     ConfigManager.data.rotationSpeed, ConfigManager.data.rotationSmoothness, ConfigManager.data.rotationVariance * 100));

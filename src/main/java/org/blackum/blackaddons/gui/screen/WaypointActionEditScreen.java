@@ -264,6 +264,16 @@ public class WaypointActionEditScreen extends BaseScreen {
                     group.addChild(speedWrap);
                 }
 
+                SettingWrapper lookAtWrap = new SettingWrapper(0, 0, itemWidth, "Look At Time", "Keep aiming at the target after rotation completes", null);
+                Slider lookAtSlider = new Slider(0, 0, itemWidth, 0, 10, step.lookAtSeconds, val -> {
+                    step.lookAtSeconds = Math.round(val * 1000.0f) / 1000.0f;
+                    lookAtWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.3fs", step.lookAtSeconds));
+                    WaypointManager.getInstance().save();
+                });
+                lookAtWrap.setControl(lookAtSlider);
+                lookAtWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.3fs", step.lookAtSeconds));
+                group.addChild(lookAtWrap);
+
                 if (!step.useCoordinates) {
                     GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
                     SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Yaw", null, null);

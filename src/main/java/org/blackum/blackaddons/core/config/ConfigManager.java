@@ -117,6 +117,7 @@ public class ConfigManager {
         public double targetY;
         public double targetZ;
         public float rotationSpeed = 0;
+        public float lookAtSeconds = 0;
         public boolean instaSnap = false;
         public boolean collapsed = false;
 

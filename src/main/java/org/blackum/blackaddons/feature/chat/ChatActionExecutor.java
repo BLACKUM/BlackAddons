@@ -137,16 +137,17 @@ public class ChatActionExecutor {
                 break;
             case ROTATE:
                 if (Minecraft.getInstance().screen != null) break;
+                float lookAtTicks = action.lookAtSeconds * 20.0f;
                 if (action.instaSnap) {
                     if (action.useCoordinates) {
-                        RotationManager.getInstance().snapToBlock(action.targetX, action.targetY, action.targetZ);
+                        RotationManager.getInstance().snapToBlock(action.targetX, action.targetY, action.targetZ, lookAtTicks);
                     } else {
-                        RotationManager.getInstance().snapToAngle(action.yaw, action.pitch);
+                        RotationManager.getInstance().snapToAngle(action.yaw, action.pitch, lookAtTicks);
                     }
                 } else if (action.useCoordinates) {
-                    RotationManager.getInstance().rotateToBlock(action.targetX, action.targetY, action.targetZ, action.rotationSpeed);
+                    RotationManager.getInstance().rotateToBlock(action.targetX, action.targetY, action.targetZ, action.rotationSpeed, lookAtTicks);
                 } else {
-                    RotationManager.getInstance().rotateTo(action.yaw, action.pitch, action.rotationSpeed);
+                    RotationManager.getInstance().rotateTo(action.yaw, action.pitch, action.rotationSpeed, lookAtTicks);
                 }
                 break;
         }
