@@ -205,6 +205,30 @@ public class ConfigManager {
         ADJECTILS, SOOPY, SKYCRYPT
     }
 
+    public enum ChatFilterMatchType {
+        CONTAINS,
+        STARTS_WITH,
+        EXACT,
+        REGEX
+    }
+
+    public static class ChatVisualFilter {
+        public String pattern = "";
+        public ChatFilterMatchType matchType = ChatFilterMatchType.CONTAINS;
+        public boolean caseSensitive = false;
+        public boolean enabled = true;
+
+        public ChatVisualFilter() {
+        }
+
+        public ChatVisualFilter(String pattern, ChatFilterMatchType matchType, boolean caseSensitive) {
+            this.pattern = pattern;
+            this.matchType = matchType;
+            this.caseSensitive = caseSensitive;
+            this.enabled = true;
+        }
+    }
+
     public static class ConfigData {
         public int overlayX = 5;
         public int overlayY = 5;
@@ -311,6 +335,8 @@ public class ConfigManager {
         public int cacheDurationMinutes = 5;
         public boolean disableCommandConfirmation = true;
         public boolean disableUnsecureChatToast = true;
+        public boolean chatVisualFiltersEnabled = false;
+        public List<ChatVisualFilter> chatVisualFilters = new ArrayList<>();
 
         // Chat actions (migration) TODO: Delete migration when enough versions have passed
         public List<ChatAction> chatActions = new ArrayList<>(List.of(
@@ -369,6 +395,9 @@ public class ConfigManager {
                 }
                 if (loadedData.modHiderAllowedMods != null) {
                     loadedData.modHiderAllowedMods.addAll(DEFAULT_ALLOWED_MODS);
+                }
+                if (loadedData.chatVisualFilters == null) {
+                    loadedData.chatVisualFilters = new ArrayList<>();
                 }
                 data = loadedData;
                 Theme.ACCENT = data.accentColor;

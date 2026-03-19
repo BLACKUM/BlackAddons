@@ -67,20 +67,19 @@ public class ListView extends Widget {
     @Override
     public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
-        if (!visible)
+        if (!visible || !isMouseOver(mouseX, mouseY))
             return;
 
         int currentY = y - scrollOffset;
         for (Widget item : items) {
-            if (item.isVisible()) {
+            if (item.isVisible() && currentY + item.getHeight() > y && currentY < y + height) {
                 item.setX(x);
                 item.setY(currentY);
                 item.setWidth(width - scrollbarWidth - 12);
 
                 item.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
-
-                currentY += item.getHeight() + itemSpacing;
             }
+            currentY += item.getHeight() + itemSpacing;
         }
     }
 

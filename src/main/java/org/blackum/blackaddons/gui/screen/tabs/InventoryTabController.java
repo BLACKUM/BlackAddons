@@ -126,21 +126,24 @@ public class InventoryTabController extends ProfileTabController {
                     inventoryItems.add(new SkyblockItem(net.minecraft.world.item.ItemStack.EMPTY, "EMPTY", "COMMON"));
 
                 int totalGridWidth = (1 * 36 + 12) + 20 + (1 * 36 + 12) + 20 + (9 * 36 + 12);
-                int gridX = startX + (contentWidth - totalGridWidth) / 2;
+                int scrollbarSpace = 16;
+                int availableWidth = contentWidth - scrollbarSpace;
+                int gridX = Math.max(0, (availableWidth - totalGridWidth) / 2);
 
-                ItemGridWidget equipGrid = new ItemGridWidget(gridX, startY, 1, equipmentItems);
-                tab.addWidget(equipGrid);
-                currentWidgets.add(equipGrid);
+                ListView invListView = new ListView(startX, startY, contentWidth, contentHeight - 40);
+                tab.addWidget(invListView);
+                currentWidgets.add(invListView);
 
-                gridX += equipGrid.getWidth() + 20;
-                ItemGridWidget armorGrid = new ItemGridWidget(gridX, startY, 1, armorItems);
-                tab.addWidget(armorGrid);
-                currentWidgets.add(armorGrid);
+                ItemGridWidget equipGrid = new ItemGridWidget(gridX, 0, 1, equipmentItems);
+                ItemGridWidget armorGrid = new ItemGridWidget(gridX + equipGrid.getWidth() + 20, 0, 1, armorItems);
+                ItemGridWidget invGrid = new ItemGridWidget(gridX + equipGrid.getWidth() + 20 + armorGrid.getWidth() + 20, 0, 9, inventoryItems);
 
-                gridX += armorGrid.getWidth() + 20;
-                ItemGridWidget invGrid = new ItemGridWidget(gridX, startY, 9, inventoryItems);
-                tab.addWidget(invGrid);
-                currentWidgets.add(invGrid);
+                GridRow gridRow = new GridRow(availableWidth, invGrid.getHeight());
+                gridRow.addChild(equipGrid, gridX);
+                gridRow.addChild(armorGrid, gridX + equipGrid.getWidth() + 20);
+                gridRow.addChild(invGrid, gridX + equipGrid.getWidth() + 20 + armorGrid.getWidth() + 20);
+
+                invListView.addItem(gridRow);
 
             } else if (currentSubTab == SubTab.ENDER_CHEST || currentSubTab == SubTab.BACKPACKS) {
                 List<List<SkyblockItem>> sections = new ArrayList<>();
@@ -248,10 +251,13 @@ public class InventoryTabController extends ProfileTabController {
                 }
 
                 if (!otherItems.isEmpty()) {
-                    ItemGridWidget grid = new ItemGridWidget(startX + (contentWidth - (9 * 36 + 12)) / 2, startY, 9,
-                            otherItems);
-                    tab.addWidget(grid);
-                    currentWidgets.add(grid);
+                    ListView otherListView = new ListView(startX, startY, contentWidth, contentHeight - 40);
+                    tab.addWidget(otherListView);
+                    currentWidgets.add(otherListView);
+
+                    ItemGridWidget grid = new ItemGridWidget(0, 0, 9, otherItems);
+                    grid.setAlignment(ItemGridWidget.Alignment.CENTER);
+                    otherListView.addItem(grid);
                 }
             }
         }
@@ -278,11 +284,20 @@ public class InventoryTabController extends ProfileTabController {
             }
 
             if (!petItems.isEmpty()) {
-                int leftWidth = (int) (contentWidth * 0.6);
-                int rightWidth = contentWidth - leftWidth - 30;
-                int gridX = startX + 10;
+                ListView petsListView = new ListView(startX, startY, contentWidth, contentHeight - 40);
+                tab.addWidget(petsListView);
+                currentWidgets.add(petsListView);
 
-                ItemGridWidget grid = new ItemGridWidget(gridX, startY, 10, petItems);
+                int scrollbarSpace = 16;
+                int availableWidth = contentWidth - scrollbarSpace;
+                int leftWidth = (int) (availableWidth * 0.6);
+                int rightWidth = availableWidth - leftWidth - 30;
+                int totalContentWidth = leftWidth + 30 + rightWidth;
+                int startXOffset = Math.max(0, (availableWidth - totalContentWidth) / 2);
+
+                ItemGridWidget grid = new ItemGridWidget(0, 0, 10, petItems);
+                grid.setX(startXOffset);
+                grid.setWidth(leftWidth);
                 grid.setSelectedItem(selectedPet);
                 grid.setOnClick(item -> {
                     this.selectedPet = item;
@@ -291,18 +306,20 @@ public class InventoryTabController extends ProfileTabController {
                     }
                     grid.setSelectedItem(item);
                 });
-                tab.addWidget(grid);
-                currentWidgets.add(grid);
 
                 if (selectedPet == null && !petItems.isEmpty()) {
                     selectedPet = petItems.get(0);
                     grid.setSelectedItem(selectedPet);
                 }
 
-                petDetailWidget = new PetDetailWidget(gridX + leftWidth + 10, startY, rightWidth, grid.getHeight());
+                petDetailWidget = new PetDetailWidget(startXOffset + leftWidth + 10, 0, rightWidth, grid.getHeight());
                 petDetailWidget.setPet(selectedPet);
-                tab.addWidget(petDetailWidget);
-                currentWidgets.add(petDetailWidget);
+
+                GridRow gridRow = new GridRow(availableWidth, Math.max(grid.getHeight(), petDetailWidget.getHeight()));
+                gridRow.addChild(grid, startXOffset);
+                gridRow.addChild(petDetailWidget, startXOffset + leftWidth + 10);
+
+                petsListView.addItem(gridRow);
             }
         }
     }

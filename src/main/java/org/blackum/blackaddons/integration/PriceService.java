@@ -17,13 +17,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PriceService {
 
     private static Map<String, Double> priceCache = new ConcurrentHashMap<>();
     private static final AtomicLong priceCacheExpiry = new AtomicLong(0);
-    private static volatile boolean isRefreshing = false;
+    private static final AtomicBoolean isRefreshing = new AtomicBoolean(false);
+    private static final AtomicBoolean hasLoadedLocalCache = new AtomicBoolean(false);
 
     private static final Path DATA_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME).resolve(Constants.DATA_DIR_NAME);
     private static final File PRICES_FILE = DATA_DIR.resolve(Constants.PRICES_FILE_NAME).toFile();
@@ -41,16 +43,18 @@ public class PriceService {
     }
 
     private static void checkAndRefreshPrices() {
-        if (priceCache.isEmpty()) {
+        if (hasLoadedLocalCache.compareAndSet(false, true)) {
             loadPrices();
         }
-        if (!isRefreshing && System.currentTimeMillis() > priceCacheExpiry.get()) {
+        if (System.currentTimeMillis() > priceCacheExpiry.get()) {
             refreshPrices();
         }
     }
 
     private static void refreshPrices() {
-        isRefreshing = true;
+        if (!isRefreshing.compareAndSet(false, true)) {
+            return;
+        }
         Blackaddons.LOGGER.info("Refreshing local prices...");
         CompletableFuture<Map<String, Double>> bzFuture = getBazaarPrices();
         CompletableFuture<Map<String, Double>> ahFuture = getAhPrices();
@@ -74,7 +78,7 @@ public class PriceService {
             } catch (Exception e) {
                 Blackaddons.LOGGER.error("Failed to merge prices: " + e.getMessage());
             } finally {
-                isRefreshing = false;
+                isRefreshing.set(false);
             }
         });
     }
