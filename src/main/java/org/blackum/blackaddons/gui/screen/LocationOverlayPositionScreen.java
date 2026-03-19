@@ -9,7 +9,7 @@ import org.blackum.blackaddons.core.config.ConfigManager;
 
 public class LocationOverlayPositionScreen extends Screen {
     private static final int PREVIEW_WIDTH = 165;
-    private static final int PREVIEW_HEIGHT = 90;
+    private static final int PREVIEW_HEIGHT = 100;
     private static final int BORDER_COLOR = 0xFF22C55E;
     private static final int BG_COLOR = 0xC0111827;
     private static final int HINT_COLOR = 0xFFAAAAAA;
@@ -63,6 +63,8 @@ public class LocationOverlayPositionScreen extends Screen {
         g.drawString(font, "F7 Phase: N/A", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
         g.drawString(font, "Player: 12.0 70.0 44.0", overlayX + 5, ty, 0xFFFFFFFF);
+        ty += 10;
+        g.drawString(font, "Yaw/Pitch: 90.0 12.5", overlayX + 5, ty, 0xFFFFFFFF);
     }
 
     private double getScaledMouseX() {
