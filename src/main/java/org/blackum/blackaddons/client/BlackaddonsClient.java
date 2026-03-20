@@ -30,6 +30,9 @@ import org.blackum.blackaddons.feature.cheat.AutoBM;
 import org.blackum.blackaddons.feature.cheat.AutoSS;
 import org.blackum.blackaddons.feature.cheat.AutoTNT;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
+import org.blackum.blackaddons.core.util.LocationUtils;
+import org.blackum.blackaddons.core.util.MovementUtils;
+import org.blackum.blackaddons.core.util.Scheduler;
 import org.blackum.blackaddons.feature.dungeon.DungeonJoinHandler;
 import org.blackum.blackaddons.feature.rng.RngTracker;
 import org.blackum.blackaddons.feature.waypoint.WaypointActionManager;
@@ -122,6 +125,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             );
         });
 
+        ClientTickEvents.START_CLIENT_TICK.register(client -> MovementUtils.tick());
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             NotificationManager.getInstance().tick();
             WaypointActionManager.getInstance().tick(WaypointManager.getInstance().getWaypoints());

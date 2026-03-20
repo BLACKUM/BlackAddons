@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.feature.waypoint;
 
+import org.blackum.blackaddons.core.util.MovementUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -28,10 +29,12 @@ public class WaypointActionManager {
 
     private static WaypointActionManager instance;
     private final Map<Waypoint, Boolean> playerInsideWaypoint = new HashMap<>();
+    private final Map<java.util.UUID, Long> lastTriggerTimes = new HashMap<>();
     private boolean hasLastPosition;
     private double lastPlayerX;
     private double lastPlayerY;
     private double lastPlayerZ;
+    private boolean isChecking = false;
 
     private WaypointActionManager() {
     }
@@ -44,7 +47,13 @@ public class WaypointActionManager {
     }
 
     public void onPlayerPositionChanged() {
-        checkWaypoints(WaypointManager.getInstance().getWaypoints());
+        if (isChecking) return;
+        isChecking = true;
+        try {
+            checkWaypoints(WaypointManager.getInstance().getWaypoints());
+        } finally {
+            isChecking = false;
+        }
     }
 
     public void onGuiClosed() {
@@ -81,14 +90,18 @@ public class WaypointActionManager {
     private void checkWaypoints(java.util.List<Waypoint> waypoints) {
         if (!ConfigManager.data.actionTriggersEnabled) {
             playerInsideWaypoint.clear();
+            lastTriggerTimes.clear();
             hasLastPosition = false;
+            MovementUtils.cancel();
             return;
         }
 
         Minecraft client = Minecraft.getInstance();
         if (client.player == null || client.level == null) {
             playerInsideWaypoint.clear();
+            lastTriggerTimes.clear();
             hasLastPosition = false;
+            MovementUtils.cancel();
             return;
         }
 
@@ -126,8 +139,15 @@ public class WaypointActionManager {
             }
 
             if (!previouslyInside && (currentlyInside || intersectedDuringMove)) {
+                if (waypoint.align && !isOnCooldown(waypoint)) {
+                    MovementUtils.alignToCenter(waypoint);
+                    noteTriggered(waypoint);
+                }
                 triggerActions(waypoint, TriggerType.ENTRY);
             } else if (!currentlyInside && previouslyInside) {
+                if (waypoint.align && MovementUtils.isActive()) {
+                    MovementUtils.cancel();
+                }
                 triggerActions(waypoint, TriggerType.EXIT);
             }
 
@@ -135,6 +155,7 @@ public class WaypointActionManager {
         }
 
         playerInsideWaypoint.keySet().removeIf(waypoint -> !activeWaypoints.contains(waypoint));
+        lastTriggerTimes.keySet().removeIf(id -> activeWaypoints.stream().noneMatch(waypoint -> waypoint.id != null && waypoint.id.equals(id)));
         lastPlayerX = playerX;
         lastPlayerY = playerY;
         lastPlayerZ = playerZ;
@@ -264,14 +285,19 @@ public class WaypointActionManager {
         if (!ConfigManager.data.actionTriggersEnabled) {
             return;
         }
+        if (isOnCooldown(waypoint)) {
+            return;
+        }
 
         Minecraft client = Minecraft.getInstance();
         java.util.List<WaypointAction> actions = waypoint.actions;
+        boolean triggered = false;
         for (WaypointAction action : actions) {
             if (!action.enabled) continue;
             if (triggerType == TriggerType.ENTRY && !action.triggerOnEntry) continue;
             if (triggerType == TriggerType.EXIT && !action.triggerOnExit) continue;
             if (triggerType == TriggerType.GUI_EXIT && !action.triggerOnGuiExit) continue;
+            triggered = true;
 
             if (action.soundId != null && !action.soundId.isEmpty()) {
                 try {
@@ -304,5 +330,27 @@ public class WaypointActionManager {
                 ChatActionExecutor.getInstance().execute(action.actions, new String[0]);
             }
         }
+
+        if (triggered) {
+            noteTriggered(waypoint);
+        }
+    }
+
+    private void noteTriggered(Waypoint waypoint) {
+        if (waypoint != null && waypoint.id != null) {
+            lastTriggerTimes.put(waypoint.id, System.currentTimeMillis());
+        }
+    }
+
+    private boolean isOnCooldown(Waypoint waypoint) {
+        if (waypoint == null || waypoint.id == null || waypoint.reuseCooldownSeconds <= 0.0f) {
+            return false;
+        }
+        Long lastTrigger = lastTriggerTimes.get(waypoint.id);
+        if (lastTrigger == null) {
+            return false;
+        }
+        long cooldownMillis = (long) Math.ceil(waypoint.reuseCooldownSeconds * 1000.0f);
+        return System.currentTimeMillis() - lastTrigger < cooldownMillis;
     }
 }

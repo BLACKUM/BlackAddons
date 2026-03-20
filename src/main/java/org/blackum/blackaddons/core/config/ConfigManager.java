@@ -145,6 +145,9 @@ public class ConfigManager {
         }
 
         public void normalizeTiming() {
+            if (type == null) {
+                type = ActionStepType.SWITCH_SLOT;
+            }
             delaySeconds = normalizeSeconds(delaySeconds, delayTicks);
             durationSeconds = normalizeSeconds(durationSeconds, durationTicks);
             lookAtSeconds = Math.max(0.0f, lookAtSeconds);
@@ -491,10 +494,9 @@ public class ConfigManager {
         if (steps == null) {
             return;
         }
+        steps.removeIf(step -> step == null);
         for (ActionStep step : steps) {
-            if (step != null) {
-                step.normalizeTiming();
-            }
+            step.normalizeTiming();
         }
     }
 

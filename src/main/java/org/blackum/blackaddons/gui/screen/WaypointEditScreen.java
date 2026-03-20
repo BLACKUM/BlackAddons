@@ -15,6 +15,8 @@ import net.minecraft.world.level.Level;
 import java.util.function.Consumer;
 
 public class WaypointEditScreen extends BaseScreen {
+    private static final int CUSTOM_INPUT_WIDTH = 90;
+    private static final float SAFE_COOLDOWN_TIME_SECONDS = 10.0f;
     private final Waypoint waypoint;
     private final Consumer<Waypoint> onSave;
     
@@ -39,6 +41,7 @@ public class WaypointEditScreen extends BaseScreen {
         if (waypoint.animation == null) waypoint.animation = org.blackum.blackaddons.core.waypoint.WaypointAnimation.STATIC;
         if (waypoint.actions == null) waypoint.actions = new java.util.ArrayList<>();
         if (waypoint.id == null) waypoint.id = java.util.UUID.randomUUID();
+        waypoint.reuseCooldownSeconds = roundToMillis(Math.max(0.0f, waypoint.reuseCooldownSeconds));
 
         int listWidth = containerWidth - Theme.PADDING * 2;
         ListView list = new ListView(containerX + Theme.PADDING, containerY + 40, listWidth, containerHeight - 50);
@@ -136,6 +139,8 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(shapeDropdown);
         Checkbox showFullShapeCheckbox = new Checkbox(0, 0, "Show Full Shape", waypoint.showFullShape, val -> waypoint.showFullShape = val);
         list.addItem(showFullShapeCheckbox);
+        Checkbox alignCheckbox = new Checkbox(0, 0, "Align to Center", waypoint.align, val -> waypoint.align = val);
+        list.addItem(alignCheckbox);
         list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
         list.addItem(new Label(0, 0, "Radius", Label.Style.CAPTION));
@@ -184,6 +189,26 @@ public class WaypointEditScreen extends BaseScreen {
         });
         list.addItem(new Widget(0, 0, itemWidth, 15) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
+        list.addItem(new Label(0, 0, "Reuse Cooldown", Label.Style.CAPTION));
+        GridRow cooldownRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+        final TextField[] cooldownFieldRef = new TextField[1];
+        Slider cooldownSlider = new Slider(0, 0, itemWidth - CUSTOM_INPUT_WIDTH - Theme.PADDING_SMALL, 0.0f, SAFE_COOLDOWN_TIME_SECONDS,
+                Math.max(0.0f, Math.min(waypoint.reuseCooldownSeconds, SAFE_COOLDOWN_TIME_SECONDS)), val -> {
+            waypoint.reuseCooldownSeconds = roundToMillis(val);
+            updateTextField(cooldownFieldRef[0], waypoint.reuseCooldownSeconds);
+        });
+        TextField cooldownField = createNonNegativeSecondsField(waypoint.reuseCooldownSeconds, value -> {
+            waypoint.reuseCooldownSeconds = value;
+            cooldownSlider.setValue(Math.min(value, SAFE_COOLDOWN_TIME_SECONDS));
+            updateTextField(cooldownFieldRef[0], waypoint.reuseCooldownSeconds);
+        });
+        cooldownFieldRef[0] = cooldownField;
+        cooldownRow.addChild(cooldownSlider, 0);
+        cooldownRow.addChild(cooldownField, itemWidth - CUSTOM_INPUT_WIDTH);
+        list.addItem(cooldownRow);
+        list.addItem(new Label(0, 0, "0.000 = disabled", Label.Style.CAPTION));
+        list.addItem(new Widget(0, 0, itemWidth, 15) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
+
         GridRow btnRow = new GridRow(itemWidth, 20);
         Button saveBtn = new Button(0, 0, (itemWidth - Theme.PADDING) / 2, 20, "Save", () -> {
             waypoint.name = nameField.getText();
@@ -199,8 +224,12 @@ public class WaypointEditScreen extends BaseScreen {
                 try {
                     waypoint.height = Double.parseDouble(manualHeight.getText().replace(",", "."));
                 } catch (NumberFormatException ignored) {}
+                try {
+                    waypoint.reuseCooldownSeconds = roundToMillis(Float.parseFloat(cooldownField.getText().replace(",", ".")));
+                } catch (NumberFormatException ignored) {}
                 
                 waypoint.showFullShape = showFullShapeCheckbox.isChecked();
+                waypoint.align = alignCheckbox.isChecked();
 
                 if (waypoint.dimension == null && Minecraft.getInstance().level != null) {
                     waypoint.dimension = Minecraft.getInstance().level.dimension().location().toString();
@@ -220,5 +249,35 @@ public class WaypointEditScreen extends BaseScreen {
     @Override
     protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         RenderHelper.drawCenteredString(graphics, font, getTitle().getString(), containerX + containerWidth / 2, containerY + 20, Theme.TEXT_PRIMARY);
+    }
+
+    private void updateTextField(TextField field, float value) {
+        if (field == null) {
+            return;
+        }
+        String formatted = String.format(java.util.Locale.ROOT, "%.3f", roundToMillis(value));
+        if (!formatted.equals(field.getText())) {
+            field.setText(formatted);
+        }
+    }
+
+    private TextField createNonNegativeSecondsField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = new TextField(0, 0, CUSTOM_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, "0.000");
+        field.setMaxLength(10);
+        field.setCharFilter(c -> Character.isDigit(c) || c == '.');
+        updateTextField(field, initialValue);
+        field.setOnValueChange(val -> {
+            if (val == null || val.isEmpty() || ".".equals(val)) {
+                return;
+            }
+            try {
+                onValidValue.accept(roundToMillis(Float.parseFloat(val)));
+            } catch (NumberFormatException ignored) {}
+        });
+        return field;
+    }
+
+    private static float roundToMillis(float value) {
+        return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
     }
 }

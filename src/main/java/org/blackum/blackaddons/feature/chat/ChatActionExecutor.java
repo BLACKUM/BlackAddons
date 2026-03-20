@@ -70,8 +70,15 @@ public class ChatActionExecutor {
     }
 
     public void execute(List<ConfigManager.ActionStep> actions, String[] groups) {
+        if (actions == null) {
+            return;
+        }
         int totalDelay = 0;
         for (ConfigManager.ActionStep action : actions) {
+            if (action == null) {
+                continue;
+            }
+            action.normalizeTiming();
             totalDelay += action.getDelayTicks();
             queue.add(new QueuedAction(action, totalDelay, groups));
         }
@@ -88,7 +95,8 @@ public class ChatActionExecutor {
     }
 
     private void executeAction(Minecraft client, ConfigManager.ActionStep action, String[] groups) {
-        if (client.player == null) return;
+        if (client.player == null || action == null) return;
+        action.normalizeTiming();
 
         switch (action.type) {
             case SWITCH_SLOT:
