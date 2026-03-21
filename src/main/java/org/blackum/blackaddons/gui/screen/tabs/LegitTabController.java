@@ -3,6 +3,7 @@ package org.blackum.blackaddons.gui.screen.tabs;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.screen.BaseScreen;
+import org.blackum.blackaddons.gui.screen.AlignOverlayPositionScreen;
 import org.blackum.blackaddons.gui.screen.LocationOverlayPositionScreen;
 import org.blackum.blackaddons.gui.screen.OverlayEditorScreen;
 import org.blackum.blackaddons.gui.screen.RotationOverlayPositionScreen;
@@ -231,6 +232,22 @@ public class LegitTabController extends SimpleTabController {
                 net.minecraft.client.Minecraft.getInstance().execute(() ->
                         net.minecraft.client.Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen))));
         legitTab.addWidget(locationPositionButton);
+        y += 30;
+
+        ToggleSwitch alignDebugToggle = new ToggleSwitch(x, y, width,
+                "Align Debugger",
+                "Shows expected align math and measured final position",
+                ConfigManager.data.showAlignDebug, value -> {
+                    ConfigManager.data.showAlignDebug = value;
+                    ConfigManager.save();
+                });
+        legitTab.addWidget(alignDebugToggle);
+        y += 30;
+
+        Button alignPositionButton = new Button(x, y, width, 20, "Set Align Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new AlignOverlayPositionScreen(screen))));
+        legitTab.addWidget(alignPositionButton);
     }
 
     private void addDebuggerItems(ListView listView) {
@@ -290,5 +307,17 @@ public class LegitTabController extends SimpleTabController {
         listView.addItem(new Button(0, 0, 260, 20, "Set Location Overlay Position", () ->
                 net.minecraft.client.Minecraft.getInstance().execute(() ->
                         net.minecraft.client.Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen)))));
+
+        listView.addItem(new ToggleSwitch(0, 0, 260,
+                "Align Debugger",
+                "Shows expected align math and measured final position",
+                ConfigManager.data.showAlignDebug, value -> {
+                    ConfigManager.data.showAlignDebug = value;
+                    ConfigManager.save();
+                }));
+
+        listView.addItem(new Button(0, 0, 260, 20, "Set Align Overlay Position", () ->
+                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                        net.minecraft.client.Minecraft.getInstance().setScreen(new AlignOverlayPositionScreen(screen)))));
     }
 }

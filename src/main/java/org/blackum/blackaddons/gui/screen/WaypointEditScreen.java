@@ -139,8 +139,6 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(shapeDropdown);
         Checkbox showFullShapeCheckbox = new Checkbox(0, 0, "Show Full Shape", waypoint.showFullShape, val -> waypoint.showFullShape = val);
         list.addItem(showFullShapeCheckbox);
-        Checkbox alignCheckbox = new Checkbox(0, 0, "Align to Center", waypoint.align, val -> waypoint.align = val);
-        list.addItem(alignCheckbox);
         list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
         list.addItem(new Label(0, 0, "Radius", Label.Style.CAPTION));
@@ -229,7 +227,6 @@ public class WaypointEditScreen extends BaseScreen {
                 } catch (NumberFormatException ignored) {}
                 
                 waypoint.showFullShape = showFullShapeCheckbox.isChecked();
-                waypoint.align = alignCheckbox.isChecked();
 
                 if (waypoint.dimension == null && Minecraft.getInstance().level != null) {
                     waypoint.dimension = Minecraft.getInstance().level.dimension().location().toString();

@@ -145,8 +145,11 @@ public class LocationUtils {
 
         if (mc.player != null) {
             Vec3 pos = mc.player.position();
-            info.add(String.format(Locale.US, "Player: %.1f %.1f %.1f", pos.x, pos.y, pos.z));
-            info.add(String.format(Locale.US, "Yaw/Pitch: %.1f %.1f", mc.player.getYRot(), mc.player.getXRot()));
+            Vec3 velocity = mc.player.getDeltaMovement();
+            double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+            info.add(String.format(Locale.US, "Player: %.4f %.4f %.4f", pos.x, pos.y, pos.z));
+            info.add(String.format(Locale.US, "Yaw/Pitch: %.4f %.4f", mc.player.getYRot(), mc.player.getXRot()));
+            info.add(String.format(Locale.US, "Speed: %.4f (XZ)", horizontalSpeed));
         }
 
         if (floor != null && floor != DungeonFloor.ENTRANCE) {

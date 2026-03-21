@@ -7,10 +7,10 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.core.config.ConfigManager;
 
-public class LocationOverlayPositionScreen extends Screen {
+public class AlignOverlayPositionScreen extends Screen {
     private static final int PREVIEW_WIDTH = 190;
-    private static final int PREVIEW_HEIGHT = 100;
-    private static final int BORDER_COLOR = 0xFF22C55E;
+    private static final int PREVIEW_HEIGHT = 90;
+    private static final int BORDER_COLOR = 0xFFF59E0B;
     private static final int BG_COLOR = 0xC0111827;
     private static final int HINT_COLOR = 0xFFAAAAAA;
 
@@ -21,17 +21,17 @@ public class LocationOverlayPositionScreen extends Screen {
     private int overlayX;
     private int overlayY;
 
-    public LocationOverlayPositionScreen(Screen parent) {
-        super(Component.literal("Location Overlay Position"));
+    public AlignOverlayPositionScreen(Screen parent) {
+        super(Component.literal("Align Overlay Position"));
         this.parent = parent;
     }
 
     @Override
     protected void init() {
-        overlayX = ConfigManager.data.locationOverlayX < 0
+        overlayX = ConfigManager.data.alignOverlayX < 0
                 ? this.width - PREVIEW_WIDTH - 5
-                : ConfigManager.data.locationOverlayX;
-        overlayY = ConfigManager.data.locationOverlayY;
+                : ConfigManager.data.alignOverlayX;
+        overlayY = ConfigManager.data.alignOverlayY;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class LocationOverlayPositionScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, this.width, this.height, 0x80000000);
-        g.drawCenteredString(font, "Drag the location debug box to reposition it.", this.width / 2, this.height / 2, HINT_COLOR);
+        g.drawCenteredString(font, "Drag the align debug box to reposition it.", this.width / 2, this.height / 2, HINT_COLOR);
         g.drawCenteredString(font, "Right-click to reset. Press Esc to save.", this.width / 2, this.height / 2 + 12, HINT_COLOR);
 
         g.fill(overlayX, overlayY, overlayX + PREVIEW_WIDTH, overlayY + PREVIEW_HEIGHT, BG_COLOR);
@@ -52,19 +52,19 @@ public class LocationOverlayPositionScreen extends Screen {
         g.fill(overlayX + PREVIEW_WIDTH - 1, overlayY, overlayX + PREVIEW_WIDTH, overlayY + PREVIEW_HEIGHT, BORDER_COLOR);
 
         int ty = overlayY + 5;
-        g.drawString(font, "§6[Location Utils]", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "§6[Align Debug]", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Location: Catacombs (F7)", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "State: ACTIVE/1", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Dungeons: §aYES", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "Target: 12.5000 34.5000", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Boss: §cNO", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "Expected: 12.4999 34.5001", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "F7 Phase: N/A", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "Expected err: 0.000141", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Player: 12.3456 70.0000 44.1234", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "Actual@+0.5s: 12.4500 34.4970", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Yaw/Pitch: 90.1234 12.5000", overlayX + 5, ty, 0xFFFFFFFF);
+        g.drawString(font, "Actual err: 0.050090", overlayX + 5, ty, 0xFFFFFFFF);
     }
 
     private double getScaledMouseX() {
@@ -95,7 +95,7 @@ public class LocationOverlayPositionScreen extends Screen {
         }
         if (button == 1) {
             overlayX = this.width - PREVIEW_WIDTH - 5;
-            overlayY = 65;
+            overlayY = 125;
             return true;
         }
         return super.mouseClicked(event, pressed);
@@ -121,8 +121,8 @@ public class LocationOverlayPositionScreen extends Screen {
 
     @Override
     public void onClose() {
-        ConfigManager.data.locationOverlayX = overlayX;
-        ConfigManager.data.locationOverlayY = overlayY;
+        ConfigManager.data.alignOverlayX = overlayX;
+        ConfigManager.data.alignOverlayY = overlayY;
         ConfigManager.save();
         Minecraft.getInstance().setScreen(parent);
     }

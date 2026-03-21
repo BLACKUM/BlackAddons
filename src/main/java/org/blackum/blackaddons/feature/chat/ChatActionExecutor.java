@@ -7,6 +7,8 @@ import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
 import org.blackum.blackaddons.mixin.core.KeyBindingAccessor;
 import org.blackum.blackaddons.core.manager.RotationManager;
+import org.blackum.blackaddons.core.util.AlignUtils;
+import org.blackum.blackaddons.core.waypoint.Waypoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,18 +60,29 @@ public class ChatActionExecutor {
             activeKeybinds.remove(k);
         }
 
+        if (AlignUtils.isActive()) {
+            return;
+        }
+
         List<QueuedAction> toRemove = new ArrayList<>();
         for (QueuedAction action : queue) {
             action.delay--;
             if (action.delay <= 0) {
-                executeAction(client, action.action, action.groups);
+                executeAction(client, action.action, action.groups, action.waypointContext);
                 toRemove.add(action);
+                if (AlignUtils.isActive()) {
+                    break;
+                }
             }
         }
         queue.removeAll(toRemove);
     }
 
     public void execute(List<ConfigManager.ActionStep> actions, String[] groups) {
+        execute(actions, groups, null);
+    }
+
+    public void execute(List<ConfigManager.ActionStep> actions, String[] groups, Waypoint waypointContext) {
         if (actions == null) {
             return;
         }
@@ -80,7 +93,7 @@ public class ChatActionExecutor {
             }
             action.normalizeTiming();
             totalDelay += action.getDelayTicks();
-            queue.add(new QueuedAction(action, totalDelay, groups));
+            queue.add(new QueuedAction(action, totalDelay, groups, waypointContext));
         }
     }
 
@@ -94,7 +107,7 @@ public class ChatActionExecutor {
         queue.clear();
     }
 
-    private void executeAction(Minecraft client, ConfigManager.ActionStep action, String[] groups) {
+    private void executeAction(Minecraft client, ConfigManager.ActionStep action, String[] groups, Waypoint waypointContext) {
         if (client.player == null || action == null) return;
         action.normalizeTiming();
 
@@ -158,6 +171,21 @@ public class ChatActionExecutor {
                     RotationManager.getInstance().rotateTo(action.yaw, action.pitch, action.rotationSpeed, lookAtTicks);
                 }
                 break;
+            case ALIGN:
+                if (client.screen != null) break;
+                double alignX = action.targetX;
+                double alignZ = action.targetZ;
+                if (!action.useCoordinates) {
+                    if (waypointContext != null) {
+                        alignX = waypointContext.x;
+                        alignZ = waypointContext.z;
+                    } else {
+                        break;
+                    }
+                }
+                long timeoutMs = action.durationSeconds > 0 ? (long)(action.durationSeconds * 1000) : 1000L;
+                AlignUtils.alignToBlock(alignX, alignZ, timeoutMs, action.lookAfterAlign, action.useLookAfterCoords, action.alignPostYaw, action.alignPostPitch, action.alignLookAtX, action.alignLookAtY, action.alignLookAtZ);
+                break;
         }
     }
 
@@ -188,11 +216,13 @@ public class ChatActionExecutor {
         final ConfigManager.ActionStep action;
         int delay;
         final String[] groups;
+        final Waypoint waypointContext;
 
-        QueuedAction(ConfigManager.ActionStep action, int delay, String[] groups) {
+        QueuedAction(ConfigManager.ActionStep action, int delay, String[] groups, Waypoint waypointContext) {
             this.action = action;
             this.delay = delay;
             this.groups = groups;
+            this.waypointContext = waypointContext;
         }
     }
 }

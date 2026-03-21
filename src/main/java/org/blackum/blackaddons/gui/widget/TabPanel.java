@@ -226,7 +226,13 @@ public class TabPanel extends Widget {
             java.util.List<Widget> tabWidgets = currentTab.widgets;
             for (int i = tabWidgets.size() - 1; i >= 0; i--) {
                 Widget widget = tabWidgets.get(i);
-                if (widget.mouseClicked(mouseX, mouseY, button)) {
+                if (widget.isVisible() && widget.hasActiveOverlay() && widget.mouseClicked(mouseX, mouseY, button)) {
+                    return true;
+                }
+            }
+            for (int i = tabWidgets.size() - 1; i >= 0; i--) {
+                Widget widget = tabWidgets.get(i);
+                if (widget.isVisible() && widget.mouseClicked(mouseX, mouseY, button)) {
                     return true;
                 }
             }
@@ -275,8 +281,15 @@ public class TabPanel extends Widget {
 
         if (selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) {
             Tab currentTab = tabs.get(selectedTabIndex);
+            for (int i = currentTab.widgets.size() - 1; i >= 0; i--) {
+                Widget widget = currentTab.widgets.get(i);
+                if (widget.isVisible() && widget.hasActiveOverlay()
+                        && widget.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+                    return true;
+                }
+            }
             for (Widget widget : currentTab.widgets) {
-                if (widget.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+                if (widget.isVisible() && widget.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
                     return true;
                 }
             }

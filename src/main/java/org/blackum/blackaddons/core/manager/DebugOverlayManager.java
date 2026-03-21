@@ -94,7 +94,6 @@ public class DebugOverlayManager {
         debugInfo.addAll(AutoTNT.getDebugInfo());
         debugInfo.addAll(FastLeap.getDebugInfo());
         debugInfo.addAll(RotationManager.getDebugInfo());
-
         return debugInfo;
     }
 

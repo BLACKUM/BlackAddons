@@ -212,8 +212,10 @@ public class WaypointActionEditScreen extends BaseScreen {
             delayWrap.setRightLabel(formatSeconds(step.delaySeconds));
             group.addChild(delayWrap);
 
-            if (step.type == ConfigManager.ActionStepType.USE_ITEM || step.type == ConfigManager.ActionStepType.ATTACK || step.type == ConfigManager.ActionStepType.PRESS_KEYBIND) {
-                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, "Duration (Seconds)", "How long to hold. 0 = click.", null);
+            if (step.type == ConfigManager.ActionStepType.USE_ITEM || step.type == ConfigManager.ActionStepType.ATTACK || step.type == ConfigManager.ActionStepType.PRESS_KEYBIND || step.type == ConfigManager.ActionStepType.ALIGN) {
+                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, 
+                        step.type == ConfigManager.ActionStepType.ALIGN ? "Timeout (Seconds)" : "Duration (Seconds)", 
+                        step.type == ConfigManager.ActionStepType.ALIGN ? "Max time to wait for alignment" : "How long to hold. 0 = click.", null);
                 GridRow durationRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
                 final Slider[] durationSliderRef = new Slider[1];
                 final TextField[] durationFieldRef = new TextField[1];
@@ -359,18 +361,18 @@ public class WaypointActionEditScreen extends BaseScreen {
                 } else {
                     GridRow coordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
                     TextField xField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "X");
-                    xField.setText(String.format(java.util.Locale.ROOT, "%.1f", step.targetX));
-                    xField.setOnValueChange(val -> { try { step.targetX = Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    xField.setText(formatOptionalCoord(step.targetX));
+                    xField.setOnValueChange(val -> { try { step.targetX = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
                     coordRow.addChild(xField, 0);
 
                     TextField yField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Y");
-                    yField.setText(String.format(java.util.Locale.ROOT, "%.1f", step.targetY));
-                    yField.setOnValueChange(val -> { try { step.targetY = Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    yField.setText(formatOptionalCoord(step.targetY));
+                    yField.setOnValueChange(val -> { try { step.targetY = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
                     coordRow.addChild(yField, (itemWidth / 3) + 1);
 
                     TextField zField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
-                    zField.setText(String.format(java.util.Locale.ROOT, "%.1f", step.targetZ));
-                    zField.setOnValueChange(val -> { try { step.targetZ = Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    zField.setText(formatOptionalCoord(step.targetZ));
+                    zField.setOnValueChange(val -> { try { step.targetZ = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
                     coordRow.addChild(zField, (itemWidth * 2 / 3) + 2);
                     group.addChild(coordRow);
 
@@ -386,6 +388,143 @@ public class WaypointActionEditScreen extends BaseScreen {
                         }
                     });
                     group.addChild(captureBtn);
+                }
+            } else if (step.type == ConfigManager.ActionStepType.ALIGN) {
+                GridRow topRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Use Coords", step.useCoordinates, val -> {
+                    step.useCoordinates = val;
+                    WaypointManager.getInstance().save();
+                    rebuildSteps();
+                }), 0);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Look After", step.lookAfterAlign, val -> {
+                    step.lookAfterAlign = val;
+                    WaypointManager.getInstance().save();
+                    rebuildSteps();
+                }), (itemWidth / 2) + 2);
+                group.addChild(topRow);
+
+                if (step.useCoordinates) {
+                    GridRow coordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                    TextField xField = new TextField(0, 0, (itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT, "X");
+                    xField.setText(formatOptionalCoord(step.targetX));
+                    xField.setOnValueChange(val -> { try { step.targetX = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(xField, 0);
+
+                    TextField zField = new TextField(0, 0, (itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
+                    zField.setText(formatOptionalCoord(step.targetZ));
+                    zField.setOnValueChange(val -> { try { step.targetZ = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(zField, (itemWidth / 2) + 2);
+                    group.addChild(coordRow);
+
+                    GridRow captureRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                    Button captureBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Looking At", () -> {
+                        net.minecraft.world.phys.HitResult hr = minecraft.hitResult;
+                        if (hr instanceof net.minecraft.world.phys.BlockHitResult bhr) {
+                            net.minecraft.core.BlockPos pos = bhr.getBlockPos();
+                            step.targetX = pos.getX() + 0.5D;
+                            step.targetZ = pos.getZ() + 0.5D;
+                            WaypointManager.getInstance().save();
+                            rebuildSteps();
+                        }
+                    });
+                    captureRow.addChild(captureBtn, 0);
+
+                    Button capturePosBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Current Pos", () -> {
+                        if (minecraft.player != null) {
+                            step.targetX = minecraft.player.getX();
+                            step.targetZ = minecraft.player.getZ();
+                            WaypointManager.getInstance().save();
+                            rebuildSteps();
+                        }
+                    });
+                    captureRow.addChild(capturePosBtn, (itemWidth / 2) + 2);
+                    group.addChild(captureRow);
+                }
+
+                if (step.lookAfterAlign) {
+                    ToggleSwitch useLookCoordsToggle = new ToggleSwitch(0, 0, itemWidth, "Look At Coordinates", "Look at specific XYZ", step.useLookAfterCoords, val -> {
+                        step.useLookAfterCoords = val;
+                        WaypointManager.getInstance().save();
+                        rebuildSteps();
+                    });
+                    group.addChild(useLookCoordsToggle);
+
+                    if (step.useLookAfterCoords) {
+                        GridRow lookCoordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                        TextField lxField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "X");
+                        lxField.setText(formatOptionalCoord(step.alignLookAtX));
+                        lxField.setOnValueChange(val -> { try { step.alignLookAtX = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                        lookCoordRow.addChild(lxField, 0);
+
+                        TextField lyField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Y");
+                        lyField.setText(formatOptionalCoord(step.alignLookAtY));
+                        lyField.setOnValueChange(val -> { try { step.alignLookAtY = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                        lookCoordRow.addChild(lyField, (itemWidth / 3) + 1);
+
+                        TextField lzField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
+                        lzField.setText(formatOptionalCoord(step.alignLookAtZ));
+                        lzField.setOnValueChange(val -> { try { step.alignLookAtZ = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); WaypointManager.getInstance().save(); } catch (Exception ignored) {} });
+                        lookCoordRow.addChild(lzField, (itemWidth * 2 / 3) + 2);
+                        group.addChild(lookCoordRow);
+
+                        GridRow lookCaptureRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                        Button captureLookBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Looking At", () -> {
+                            net.minecraft.world.phys.HitResult hr = minecraft.hitResult;
+                            if (hr instanceof net.minecraft.world.phys.BlockHitResult bhr) {
+                                net.minecraft.core.BlockPos pos = bhr.getBlockPos();
+                                step.alignLookAtX = pos.getX() + 0.5D;
+                                step.alignLookAtY = pos.getY() + 0.5D;
+                                step.alignLookAtZ = pos.getZ() + 0.5D;
+                                WaypointManager.getInstance().save();
+                                rebuildSteps();
+                            }
+                        });
+                        lookCaptureRow.addChild(captureLookBtn, 0);
+
+                        Button captureLookPosBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Current Pos", () -> {
+                            if (minecraft.player != null) {
+                                step.alignLookAtX = minecraft.player.getX();
+                                step.alignLookAtY = minecraft.player.getY();
+                                step.alignLookAtZ = minecraft.player.getZ();
+                                WaypointManager.getInstance().save();
+                                rebuildSteps();
+                            }
+                        });
+                        lookCaptureRow.addChild(captureLookPosBtn, (itemWidth / 2) + 2);
+                        group.addChild(lookCaptureRow);
+                    } else {
+                        GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
+                        SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Yaw", null, null);
+                        Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, step.alignPostYaw, val -> {
+                            step.alignPostYaw = val;
+                            yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostYaw));
+                            WaypointManager.getInstance().save();
+                        });
+                        yawWrap.setControl(yawSlider);
+                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostYaw));
+                        angleRow.addChild(yawWrap, 0);
+
+                        SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Pitch", null, null);
+                        Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, step.alignPostPitch, val -> {
+                            step.alignPostPitch = val;
+                            pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostPitch));
+                            WaypointManager.getInstance().save();
+                        });
+                        pitchWrap.setControl(pitchSlider);
+                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostPitch));
+                        angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
+                        group.addChild(angleRow);
+
+                        Button captureRotBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
+                            if (minecraft.player != null) {
+                                step.alignPostYaw = minecraft.player.getYRot();
+                                step.alignPostPitch = minecraft.player.getXRot();
+                                WaypointManager.getInstance().save();
+                                rebuildSteps();
+                            }
+                        });
+                        group.addChild(captureRotBtn);
+                    }
                 }
             }
 
@@ -437,6 +576,11 @@ public class WaypointActionEditScreen extends BaseScreen {
             title += String.format(java.util.Locale.ROOT, " (%.1fm)", dist);
         }
         RenderHelper.drawCenteredString(graphics, font, title, containerX + containerWidth / 2, containerY + 20, Theme.TEXT_PRIMARY);
+    }
+
+    private String formatOptionalCoord(double value) {
+        if (value == 0.0) return "";
+        return String.format(java.util.Locale.ROOT, "%.2f", value);
     }
 
     private static String formatSeconds(float seconds) {

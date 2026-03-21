@@ -323,6 +323,16 @@ public abstract class BaseScreen extends Screen {
 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
+            if (widget.isVisible() && widget.isEnabled() && widget.hasActiveOverlay()) {
+                if (widget.mouseClicked(mouseX, mouseY, button)) {
+                    setFocusedWidget(widget);
+                    return true;
+                }
+            }
+        }
+
+        for (int i = widgets.size() - 1; i >= 0; i--) {
+            Widget widget = widgets.get(i);
             if (widget.isVisible() && widget.isEnabled() && widget.isMouseOver(mouseX, mouseY)) {
                 if (widget.mouseClicked(mouseX, mouseY, button)) {
                     setFocusedWidget(widget);
@@ -393,6 +403,15 @@ public abstract class BaseScreen extends Screen {
         float scale = getGuiScaleFactor();
         double scaledMouseX = mouseX / scale;
         double scaledMouseY = mouseY / scale;
+
+        for (int i = widgets.size() - 1; i >= 0; i--) {
+            Widget widget = widgets.get(i);
+            if (widget.isVisible() && widget.isEnabled() && widget.hasActiveOverlay()) {
+                if (widget.mouseScrolled(scaledMouseX, scaledMouseY + scrollOffset, scrollX, scrollY)) {
+                    return true;
+                }
+            }
+        }
 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);

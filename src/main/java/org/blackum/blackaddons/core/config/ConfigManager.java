@@ -82,7 +82,8 @@ public class ConfigManager {
         ATTACK("Attack"),
         SEND_MESSAGE("Send Message"),
         PRESS_KEYBIND("Press Keybind"),
-        ROTATE("Rotate Camera");
+        ROTATE("Rotate Camera"),
+        ALIGN("Align [Cheat]");
 
         private final String displayName;
 
@@ -122,6 +123,13 @@ public class ConfigManager {
         public float lookAtSeconds = 0;
         public boolean instaSnap = false;
         public boolean collapsed = false;
+        public boolean lookAfterAlign = false;
+        public float alignPostYaw = 0;
+        public float alignPostPitch = 0;
+        public boolean useLookAfterCoords = false;
+        public double alignLookAtX = 0;
+        public double alignLookAtY = 0;
+        public double alignLookAtZ = 0;
 
         public ActionStep() {
         }
@@ -365,6 +373,9 @@ public class ConfigManager {
         public boolean showRotationDebug = false;
         public int rotationOverlayX = -1;
         public int rotationOverlayY = 5;
+        public boolean showAlignDebug = false;
+        public int alignOverlayX = -1;
+        public int alignOverlayY = 125;
         public boolean showLocationDebug = false;
         public int locationOverlayX = -1;
         public int locationOverlayY = 65;

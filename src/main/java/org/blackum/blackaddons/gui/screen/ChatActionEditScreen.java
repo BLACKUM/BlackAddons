@@ -116,8 +116,10 @@ public class ChatActionEditScreen extends BaseScreen {
             delayWrap.setRightLabel(formatSeconds(action.delaySeconds));
             group.addChild(delayWrap);
 
-            if (action.type == ConfigManager.ActionStepType.USE_ITEM || action.type == ConfigManager.ActionStepType.ATTACK || action.type == ConfigManager.ActionStepType.PRESS_KEYBIND) {
-                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, "Duration (Seconds)", "How long to hold. 0 = click.", null);
+            if (action.type == ConfigManager.ActionStepType.USE_ITEM || action.type == ConfigManager.ActionStepType.ATTACK || action.type == ConfigManager.ActionStepType.PRESS_KEYBIND || action.type == ConfigManager.ActionStepType.ALIGN) {
+                SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, 
+                        action.type == ConfigManager.ActionStepType.ALIGN ? "Timeout (Seconds)" : "Duration (Seconds)", 
+                        action.type == ConfigManager.ActionStepType.ALIGN ? "Max time to wait for alignment" : "How long to hold. 0 = click.", null);
                 GridRow durationRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
                 final Slider[] durationSliderRef = new Slider[1];
                 final TextField[] durationFieldRef = new TextField[1];
@@ -263,18 +265,18 @@ public class ChatActionEditScreen extends BaseScreen {
                 } else {
                     GridRow coordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
                     TextField xField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "X");
-                    xField.setText(String.format(java.util.Locale.ROOT, "%.1f", action.targetX));
-                    xField.setOnValueChange(val -> { try { action.targetX = Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    xField.setText(formatOptionalCoord(action.targetX));
+                    xField.setOnValueChange(val -> { try { action.targetX = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
                     coordRow.addChild(xField, 0);
 
                     TextField yField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Y");
-                    yField.setText(String.format(java.util.Locale.ROOT, "%.1f", action.targetY));
-                    yField.setOnValueChange(val -> { try { action.targetY = Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    yField.setText(formatOptionalCoord(action.targetY));
+                    yField.setOnValueChange(val -> { try { action.targetY = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
                     coordRow.addChild(yField, (itemWidth / 3) + 1);
 
                     TextField zField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
-                    zField.setText(String.format(java.util.Locale.ROOT, "%.1f", action.targetZ));
-                    zField.setOnValueChange(val -> { try { action.targetZ = Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    zField.setText(formatOptionalCoord(action.targetZ));
+                    zField.setOnValueChange(val -> { try { action.targetZ = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
                     coordRow.addChild(zField, (itemWidth * 2 / 3) + 2);
                     group.addChild(coordRow);
 
@@ -290,6 +292,143 @@ public class ChatActionEditScreen extends BaseScreen {
                         }
                     });
                     group.addChild(captureBtn);
+                }
+            } else if (action.type == ConfigManager.ActionStepType.ALIGN) {
+                GridRow topRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Use Coords", action.useCoordinates, val -> {
+                    action.useCoordinates = val;
+                    ActionManager.getInstance().save();
+                    rebuildActions();
+                }), 0);
+                topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Look After", action.lookAfterAlign, val -> {
+                    action.lookAfterAlign = val;
+                    ActionManager.getInstance().save();
+                    rebuildActions();
+                }), (itemWidth / 2) + 2);
+                group.addChild(topRow);
+
+                if (action.useCoordinates) {
+                    GridRow coordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                    TextField xField = new TextField(0, 0, (itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT, "X");
+                    xField.setText(formatOptionalCoord(action.targetX));
+                    xField.setOnValueChange(val -> { try { action.targetX = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(xField, 0);
+
+                    TextField zField = new TextField(0, 0, (itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
+                    zField.setText(formatOptionalCoord(action.targetZ));
+                    zField.setOnValueChange(val -> { try { action.targetZ = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                    coordRow.addChild(zField, (itemWidth / 2) + 2);
+                    group.addChild(coordRow);
+
+                    GridRow captureRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                    Button captureBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Looking At", () -> {
+                        net.minecraft.world.phys.HitResult hr = minecraft.hitResult;
+                        if (hr instanceof net.minecraft.world.phys.BlockHitResult bhr) {
+                            net.minecraft.core.BlockPos pos = bhr.getBlockPos();
+                            action.targetX = pos.getX() + 0.5D;
+                            action.targetZ = pos.getZ() + 0.5D;
+                            ActionManager.getInstance().save();
+                            rebuildActions();
+                        }
+                    });
+                    captureRow.addChild(captureBtn, 0);
+
+                    Button capturePosBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Current Pos", () -> {
+                        if (minecraft.player != null) {
+                            action.targetX = minecraft.player.getX();
+                            action.targetZ = minecraft.player.getZ();
+                            ActionManager.getInstance().save();
+                            rebuildActions();
+                        }
+                    });
+                    captureRow.addChild(capturePosBtn, (itemWidth / 2) + 2);
+                    group.addChild(captureRow);
+                }
+
+                if (action.lookAfterAlign) {
+                    ToggleSwitch useLookCoordsToggle = new ToggleSwitch(0, 0, itemWidth, "Look At Coordinates", "Look at specific XYZ", action.useLookAfterCoords, val -> {
+                        action.useLookAfterCoords = val;
+                        ActionManager.getInstance().save();
+                        rebuildActions();
+                    });
+                    group.addChild(useLookCoordsToggle);
+
+                    if (action.useLookAfterCoords) {
+                        GridRow lookCoordRow = new GridRow(itemWidth, Theme.TEXTFIELD_HEIGHT);
+                        TextField lxField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "X");
+                        lxField.setText(formatOptionalCoord(action.alignLookAtX));
+                        lxField.setOnValueChange(val -> { try { action.alignLookAtX = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                        lookCoordRow.addChild(lxField, 0);
+
+                        TextField lyField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Y");
+                        lyField.setText(formatOptionalCoord(action.alignLookAtY));
+                        lyField.setOnValueChange(val -> { try { action.alignLookAtY = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                        lookCoordRow.addChild(lyField, (itemWidth / 3) + 1);
+
+                        TextField lzField = new TextField(0, 0, (itemWidth / 3) - 2, Theme.TEXTFIELD_HEIGHT, "Z");
+                        lzField.setText(formatOptionalCoord(action.alignLookAtZ));
+                        lzField.setOnValueChange(val -> { try { action.alignLookAtZ = (val == null || val.isEmpty()) ? 0.0D : Double.parseDouble(val); ActionManager.getInstance().save(); } catch (Exception ignored) {} });
+                        lookCoordRow.addChild(lzField, (itemWidth * 2 / 3) + 2);
+                        group.addChild(lookCoordRow);
+
+                        GridRow lookCaptureRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
+                        Button captureLookBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Looking At", () -> {
+                            net.minecraft.world.phys.HitResult hr = minecraft.hitResult;
+                            if (hr instanceof net.minecraft.world.phys.BlockHitResult bhr) {
+                                net.minecraft.core.BlockPos pos = bhr.getBlockPos();
+                                action.alignLookAtX = pos.getX() + 0.5D;
+                                action.alignLookAtY = pos.getY() + 0.5D;
+                                action.alignLookAtZ = pos.getZ() + 0.5D;
+                                ActionManager.getInstance().save();
+                                rebuildActions();
+                            }
+                        });
+                        lookCaptureRow.addChild(captureLookBtn, 0);
+
+                        Button captureLookPosBtn = new Button(0, 0, (itemWidth / 2) - 2, Theme.BUTTON_HEIGHT, "Capture Current Pos", () -> {
+                            if (minecraft.player != null) {
+                                action.alignLookAtX = minecraft.player.getX();
+                                action.alignLookAtY = minecraft.player.getY();
+                                action.alignLookAtZ = minecraft.player.getZ();
+                                ActionManager.getInstance().save();
+                                rebuildActions();
+                            }
+                        });
+                        lookCaptureRow.addChild(captureLookPosBtn, (itemWidth / 2) + 2);
+                        group.addChild(lookCaptureRow);
+                    } else {
+                        GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
+                        SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Yaw", null, null);
+                        Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, action.alignPostYaw, val -> {
+                            action.alignPostYaw = val;
+                            yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostYaw));
+                            ActionManager.getInstance().save();
+                        });
+                        yawWrap.setControl(yawSlider);
+                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostYaw));
+                        angleRow.addChild(yawWrap, 0);
+
+                        SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Pitch", null, null);
+                        Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, action.alignPostPitch, val -> {
+                            action.alignPostPitch = val;
+                            pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostPitch));
+                            ActionManager.getInstance().save();
+                        });
+                        pitchWrap.setControl(pitchSlider);
+                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostPitch));
+                        angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
+                        group.addChild(angleRow);
+
+                        Button captureRotBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
+                            if (minecraft.player != null) {
+                                action.alignPostYaw = minecraft.player.getYRot();
+                                action.alignPostPitch = minecraft.player.getXRot();
+                                ActionManager.getInstance().save();
+                                rebuildActions();
+                            }
+                        });
+                        group.addChild(captureRotBtn);
+                    }
                 }
             }
 
@@ -334,6 +473,11 @@ public class ChatActionEditScreen extends BaseScreen {
     @Override
     protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         RenderHelper.drawCenteredString(graphics, font, "Editing Steps for: " + trigger.pattern, containerX + containerWidth / 2, containerY + 20, Theme.TEXT_PRIMARY);
+    }
+
+    private String formatOptionalCoord(double value) {
+        if (value == 0.0) return "";
+        return String.format(java.util.Locale.ROOT, "%.2f", value);
     }
 
     private static String formatSeconds(float seconds) {
