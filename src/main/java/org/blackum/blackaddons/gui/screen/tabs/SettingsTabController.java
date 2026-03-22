@@ -1,6 +1,7 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BaseScreen;
@@ -174,18 +175,15 @@ public class SettingsTabController extends SimpleTabController {
         listView.addItem(layoutToggle);
 
         Label guiScaleLabel = new Label(0, 0,
-                "Forced GUI Scale: "
-                        + (ConfigManager.data.forcedGuiScale == 0 ? "Off" : ConfigManager.data.forcedGuiScale),
+                "Forced GUI Scale: " + formatGuiScale(ConfigManager.data.forcedGuiScale),
                 Label.Style.BODY);
         listView.addItem(guiScaleLabel);
 
         Slider guiScaleSlider = new Slider(0, 0, width, 0f, 5f,
                 ConfigManager.data.forcedGuiScale, (val) -> {
-                    int scale = Math.round(val);
-                    guiScaleLabel.setText("Forced GUI Scale: " + (scale == 0 ? "Off" : scale));
+                    guiScaleLabel.setText("Forced GUI Scale: " + formatGuiScale(val));
                 }).onRelease((val) -> {
-                    int scale = Math.round(val);
-                    ConfigManager.data.forcedGuiScale = scale;
+                    ConfigManager.data.forcedGuiScale = roundGuiScale(val);
                     ConfigManager.save();
 
                     Minecraft mc = Minecraft.getInstance();
@@ -246,5 +244,14 @@ public class SettingsTabController extends SimpleTabController {
             default:
                 return priority.name();
         }
+    }
+
+    private static float roundGuiScale(float value) {
+        return Math.round(Math.max(0.0f, value) * 100.0f) / 100.0f;
+    }
+
+    private static String formatGuiScale(float value) {
+        float normalized = roundGuiScale(value);
+        return normalized <= 0.0f ? "Off" : String.format(Locale.ROOT, "%.2f", normalized);
     }
 }

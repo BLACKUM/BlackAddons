@@ -307,7 +307,7 @@ public class ConfigManager {
         public boolean showDebugOverlay = false;
         public int accentColor = Theme.DEFAULT_ACCENT;
         public boolean useCardLayout = true;
-        public int forcedGuiScale = 2;
+        public float forcedGuiScale = 1.5f;
         public Map<String, CardState> cardStates = new HashMap<>();
 
         // Bot

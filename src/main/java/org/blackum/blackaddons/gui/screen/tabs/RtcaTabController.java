@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 public class RtcaTabController extends ProfileTabController {
+    private static final RtcaViewState LAST_VIEW_STATE = new RtcaViewState();
 
     private ListView simResultsList;
     private Button simulateBtn;
@@ -41,6 +42,7 @@ public class RtcaTabController extends ProfileTabController {
 
     public RtcaTabController(ProfileViewerScreen screen, JsonObject profileData) {
         super(screen, profileData);
+        restoreViewState();
     }
 
     @Override
@@ -60,6 +62,10 @@ public class RtcaTabController extends ProfileTabController {
         simResultsList = new ListView(cx, currentY, w - 10, Math.max(100, listHeight));
         addSectionHeader(simResultsList, "Results");
         tab.addWidget(simResultsList);
+
+        if (LAST_VIEW_STATE.hasResults) {
+            runSimulation();
+        }
     }
 
     private int initControls(TabPanel.Tab tab, int cx, int y, int w) {
@@ -70,6 +76,7 @@ public class RtcaTabController extends ProfileTabController {
         Button[] ringBtnRef = new Button[1];
         ringBtnRef[0] = new Button(cx, currentY, btnW, btnH, getRingLabel(), () -> {
             simRing = !simRing;
+            rememberViewState();
             if (ringBtnRef[0] != null)
                 ringBtnRef[0].setText(getRingLabel());
         });
@@ -77,12 +84,14 @@ public class RtcaTabController extends ProfileTabController {
         Button[] hecaBtnRef = new Button[1];
         hecaBtnRef[0] = new Button(cx + btnW + 10, currentY, btnW, btnH, getHecatombLabel(), () -> {
             simHecatombLvl = (simHecatombLvl + 1) % 11;
+            rememberViewState();
             if (hecaBtnRef[0] != null)
                 hecaBtnRef[0].setText(getHecatombLabel());
         });
         tab.addWidget(ringBtnRef[0]);
         tab.addWidget(hecaBtnRef[0].setOnRightClick(() -> {
             simHecatombLvl = (simHecatombLvl - 1 + 11) % 11;
+            rememberViewState();
             if (hecaBtnRef[0] != null)
                 hecaBtnRef[0].setText(getHecatombLabel());
         }));
@@ -91,6 +100,7 @@ public class RtcaTabController extends ProfileTabController {
         Button[] scarfAccBtnRef = new Button[1];
         scarfAccBtnRef[0] = new Button(cx, currentY, btnW, btnH, getScarfAccLabel(), () -> {
             simScarfAccIndex = (simScarfAccIndex + 1) % 4;
+            rememberViewState();
             if (scarfAccBtnRef[0] != null)
                 scarfAccBtnRef[0].setText(getScarfAccLabel());
         });
@@ -98,16 +108,19 @@ public class RtcaTabController extends ProfileTabController {
         Button[] scarfAttrBtnRef = new Button[1];
         scarfAttrBtnRef[0] = new Button(cx + btnW + 10, currentY, btnW, btnH, getScarfAttrLabel(), () -> {
             simScarfAttrLvl = (simScarfAttrLvl + 1) % 11;
+            rememberViewState();
             if (scarfAttrBtnRef[0] != null)
                 scarfAttrBtnRef[0].setText(getScarfAttrLabel());
         });
         tab.addWidget(scarfAccBtnRef[0].setOnRightClick(() -> {
             simScarfAccIndex = (simScarfAccIndex - 1 + 4) % 4;
+            rememberViewState();
             if (scarfAccBtnRef[0] != null)
                 scarfAccBtnRef[0].setText(getScarfAccLabel());
         }));
         tab.addWidget(scarfAttrBtnRef[0].setOnRightClick(() -> {
             simScarfAttrLvl = (simScarfAttrLvl - 1 + 11) % 11;
+            rememberViewState();
             if (scarfAttrBtnRef[0] != null)
                 scarfAttrBtnRef[0].setText(getScarfAttrLabel());
         }));
@@ -116,6 +129,7 @@ public class RtcaTabController extends ProfileTabController {
         Button[] globalBtnRef = new Button[1];
         globalBtnRef[0] = new Button(cx, currentY, btnW, btnH, getGlobalLabel(), () -> {
             simGlobalIndex = (simGlobalIndex + 1) % 6;
+            rememberViewState();
             if (globalBtnRef[0] != null)
                 globalBtnRef[0].setText(getGlobalLabel());
         });
@@ -123,16 +137,19 @@ public class RtcaTabController extends ProfileTabController {
         Button[] mayorBtnRef = new Button[1];
         mayorBtnRef[0] = new Button(cx + btnW + 10, currentY, btnW, btnH, getMayorLabel(), () -> {
             simMayorIndex = (simMayorIndex + 1) % 3;
+            rememberViewState();
             if (mayorBtnRef[0] != null)
                 mayorBtnRef[0].setText(getMayorLabel());
         });
         tab.addWidget(globalBtnRef[0].setOnRightClick(() -> {
             simGlobalIndex = (simGlobalIndex - 1 + 6) % 6;
+            rememberViewState();
             if (globalBtnRef[0] != null)
                 globalBtnRef[0].setText(getGlobalLabel());
         }));
         tab.addWidget(mayorBtnRef[0].setOnRightClick(() -> {
             simMayorIndex = (simMayorIndex - 1 + 3) % 3;
+            rememberViewState();
             if (mayorBtnRef[0] != null)
                 mayorBtnRef[0].setText(getMayorLabel());
         }));
@@ -140,13 +157,17 @@ public class RtcaTabController extends ProfileTabController {
 
         rtcaFloorDropdown = new Dropdown(cx, currentY, (w - 30) / 2, 20, "Floor: M7", FLOOR_OPTIONS, (val) -> {
             rtcaFloor = val;
+            rememberViewState();
             updateSimulateButtonText();
         });
         rtcaFloorDropdown.setSelectedOption(rtcaFloor);
         tab.addWidget(rtcaFloorDropdown);
 
         desiredLvlField = new TextField(cx + (w - 30) / 2 + 10, currentY, (w - 30) / 2, 20, "Desired Lvl (50)");
-        desiredLvlField.setText("50");
+        desiredLvlField.setText(LAST_VIEW_STATE.desiredLevelText);
+        desiredLvlField.setOnValueChange(value -> {
+            LAST_VIEW_STATE.desiredLevelText = value == null || value.isBlank() ? "50" : value;
+        });
         tab.addWidget(desiredLvlField);
 
         currentY += 25;
@@ -270,6 +291,8 @@ public class RtcaTabController extends ProfileTabController {
     private void runSimulation() {
         if (simResultsList != null)
             simResultsList.clearItems();
+        rememberViewState();
+        LAST_VIEW_STATE.hasResults = true;
 
         String playerName = screen.getPlayer();
         if (playerName == null || playerName.isEmpty()) {
@@ -441,6 +464,42 @@ public class RtcaTabController extends ProfileTabController {
             addInfoRow(simResultsList, "Error:", "Failed to parse results.");
             e.printStackTrace();
         }
+    }
+
+    private void restoreViewState() {
+        simRing = LAST_VIEW_STATE.simRing;
+        simHecatombLvl = LAST_VIEW_STATE.simHecatombLvl;
+        simScarfAccIndex = LAST_VIEW_STATE.simScarfAccIndex;
+        simScarfAttrLvl = LAST_VIEW_STATE.simScarfAttrLvl;
+        simGlobalIndex = LAST_VIEW_STATE.simGlobalIndex;
+        simMayorIndex = LAST_VIEW_STATE.simMayorIndex;
+        rtcaFloor = LAST_VIEW_STATE.rtcaFloor;
+    }
+
+    private void rememberViewState() {
+        LAST_VIEW_STATE.simRing = simRing;
+        LAST_VIEW_STATE.simHecatombLvl = simHecatombLvl;
+        LAST_VIEW_STATE.simScarfAccIndex = simScarfAccIndex;
+        LAST_VIEW_STATE.simScarfAttrLvl = simScarfAttrLvl;
+        LAST_VIEW_STATE.simGlobalIndex = simGlobalIndex;
+        LAST_VIEW_STATE.simMayorIndex = simMayorIndex;
+        LAST_VIEW_STATE.rtcaFloor = rtcaFloor;
+        if (desiredLvlField != null) {
+            String desiredLevel = desiredLvlField.getText();
+            LAST_VIEW_STATE.desiredLevelText = desiredLevel == null || desiredLevel.isBlank() ? "50" : desiredLevel;
+        }
+    }
+
+    private static final class RtcaViewState {
+        private boolean simRing = true;
+        private int simHecatombLvl = 10;
+        private int simScarfAccIndex = 3;
+        private int simScarfAttrLvl = 10;
+        private int simGlobalIndex = 0;
+        private int simMayorIndex = 0;
+        private String rtcaFloor = "M7";
+        private String desiredLevelText = "50";
+        private boolean hasResults = false;
     }
 
 }

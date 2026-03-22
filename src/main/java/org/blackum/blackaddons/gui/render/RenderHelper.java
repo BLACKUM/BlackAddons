@@ -8,13 +8,13 @@ import net.minecraft.client.gui.GuiGraphics;
 public class RenderHelper {
 
     public static float getGuiScaleFactor() {
-        int forcedScale = ConfigManager.data.forcedGuiScale;
-        if (forcedScale <= 0) return 1.0f;
+        float forcedScale = ConfigManager.data.forcedGuiScale;
+        if (forcedScale <= 0.0f) return 1.0f;
         
-        int vanillaScale = (int)Minecraft.getInstance().getWindow().getGuiScale();
+        float vanillaScale = (float) Minecraft.getInstance().getWindow().getGuiScale();
         if (forcedScale >= vanillaScale) return 1.0f;
         
-        return (float)forcedScale / vanillaScale;
+        return forcedScale / vanillaScale;
     }
 
     public static void renderSurface(GuiGraphics graphics, int x, int y, int width, int height, int radius,
