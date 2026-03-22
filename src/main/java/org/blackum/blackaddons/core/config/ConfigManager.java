@@ -343,6 +343,13 @@ public class ConfigManager {
         public AutoTNT.FeatureConfig autoTntConfig = new AutoTNT.FeatureConfig();
         public AutoBM.FeatureConfig autoBMConfig = new AutoBM.FeatureConfig();
 
+        public boolean freecamEnabled = false;
+        public float freecamSpeed = 1.0f;
+        public float freecamScrollSpeed = 0.25f;
+        public boolean freecamShowHands = true;
+        public int freecamKeyCode = -1;
+        public boolean freecamHoldMode = false;
+
         public boolean AutoSSEnabled = false;
         public int AutoSSDelay = 2;
         public float AutoSSDistanceLimit = 4.5f;

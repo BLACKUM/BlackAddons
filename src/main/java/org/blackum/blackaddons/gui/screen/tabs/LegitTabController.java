@@ -85,7 +85,7 @@ public class LegitTabController extends SimpleTabController {
 
         ToggleSwitch disableNearbyParticlesToggle = new ToggleSwitch(contentX, contentY + 120, contentWidth - 20,
                 "Disable Nearby Particles",
-                "Visually disables particles within 2 blocks of the player",
+                "Visually disables particles within 3 blocks of the player",
                 ConfigManager.data.disableNearbyParticles, value -> {
                     ConfigManager.data.disableNearbyParticles = value;
                     ConfigManager.save();

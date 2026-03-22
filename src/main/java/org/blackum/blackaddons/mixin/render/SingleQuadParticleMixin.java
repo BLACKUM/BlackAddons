@@ -28,7 +28,7 @@ public abstract class SingleQuadParticleMixin {
                 double dy = py - mc.player.getY();
                 double dz = pz - mc.player.getZ();
                 
-                if (dx * dx + dy * dy + dz * dz < 4.0) {
+                if (dx * dx + dy * dy + dz * dz < 9.0) {
                     ci.cancel();
                 }
             }

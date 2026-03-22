@@ -8,7 +8,8 @@
     "gui.ToastManagerMixin",
     "gui.SystemToastAccessor",
     "core.LanguageAccessor",
-    "core.GameRendererAccessor"
+    "core.GameRendererAccessor",
+    "render.CameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1

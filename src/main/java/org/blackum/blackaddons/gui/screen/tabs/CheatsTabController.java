@@ -4,6 +4,7 @@ import org.blackum.blackaddons.gui.screen.AutoSSOverlayPositionScreen;
 import org.blackum.blackaddons.gui.screen.RotationOverlayPositionScreen;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
+import org.blackum.blackaddons.feature.cheat.Freecam;
 import org.blackum.blackaddons.gui.widget.*;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class CheatsTabController extends SimpleTabController {
     private ResizableCard fastLeapCard;
     private ResizableCard rotationCard;
     private ResizableCard autoBMCard;
+    private ResizableCard freecamCard;
     private Dropdown s1Dropdown;
     private Dropdown s2Dropdown;
     private Dropdown s3Dropdown;
@@ -111,7 +113,7 @@ public class CheatsTabController extends SimpleTabController {
         }
 
         Button resetLayout = new Button(contentX + 10, contentY, contentWidth - 20, "Reset Layout", () -> {
-            screen.resetCardStates("autoTnt", "autoSS", "fastLeap", "rotationSet", "autoBM");
+            screen.resetCardStates("autoTnt", "autoSS", "fastLeap", "rotationSet", "autoBM", "freecam");
         });
         cheatsTab.addWidget(resetLayout);
 
@@ -138,6 +140,9 @@ public class CheatsTabController extends SimpleTabController {
 
             autoBMCard = createAutoBM(col1X, currentY);
             currentY += autoBMCard.getHeight() + 10;
+
+            freecamCard = createFreecamCard(col1X, currentY);
+            currentY += freecamCard.getHeight() + 10;
         } else {
             int currentY1 = containerY + 20;
             int currentY2 = containerY + 20;
@@ -151,6 +156,9 @@ public class CheatsTabController extends SimpleTabController {
             autoBMCard = createAutoBM(col1X, currentY1);
             currentY1 += autoBMCard.getHeight() + 10;
 
+            freecamCard = createFreecamCard(col1X, currentY1);
+            currentY1 += freecamCard.getHeight() + 10;
+
             autoSSCard = createAutoSSCard(col2X, currentY2);
             currentY2 += autoSSCard.getHeight() + 10;
 
@@ -163,6 +171,7 @@ public class CheatsTabController extends SimpleTabController {
         cheatsCardContainer.addCard(fastLeapCard);
         cheatsCardContainer.addCard(rotationCard);
         cheatsCardContainer.addCard(autoBMCard);
+        cheatsCardContainer.addCard(freecamCard);
     }
 
     private ResizableCard createAutoTntCard(int x, int y) {
@@ -679,6 +688,73 @@ public class CheatsTabController extends SimpleTabController {
         rotationCard.addChild(listView);
         rotationCard.updateLayout();
         return rotationCard;
+    }
+
+    private ResizableCard createFreecamCard(int x, int y) {
+        freecamCard = screen.createResizableCard("freecam", x, y, 300, 300, "Freecam");
+        int contentX = freecamCard.getContentX();
+        int contentY = freecamCard.getContentY();
+
+        ListView listView = new ListView(contentX, contentY, 260, 250);
+
+        ToggleSwitch enableToggle = new ToggleSwitch(0, 0, 260,
+                "Enabled",
+                "Detaches camera from player",
+                ConfigManager.data.freecamEnabled, value -> {
+            if (value) {
+                Freecam.getInstance().activate();
+            } else {
+                Freecam.getInstance().deactivate();
+            }
+            ConfigManager.data.freecamEnabled = Freecam.getInstance().isActive();
+            ConfigManager.save();
+        });
+        listView.addItem(enableToggle);
+
+        KeybindButton keybindButton = new KeybindButton(0, 0, 260,
+                "Keybind",
+                ConfigManager.data.freecamKeyCode,
+                keyCode -> {
+                    ConfigManager.data.freecamKeyCode = keyCode;
+                    ConfigManager.save();
+                });
+        listView.addItem(keybindButton);
+
+        Dropdown activationModeDropdown = new Dropdown(0, 0, 260,
+                "Activation Mode",
+                List.of("Toggle On/Off", "Hold Key"),
+                mode -> {
+                    ConfigManager.data.freecamHoldMode = mode.equals("Hold Key");
+                    ConfigManager.save();
+                });
+        activationModeDropdown.setSelectedIndex(ConfigManager.data.freecamHoldMode ? 1 : 0);
+        listView.addItem(activationModeDropdown);
+
+        Label speedLabel = new Label(0, 0,
+                String.format(java.util.Locale.ROOT, "Speed: %.1f", ConfigManager.data.freecamSpeed),
+                Label.Style.BODY);
+        listView.addItem(speedLabel);
+
+        Slider speedSlider = new Slider(0, 0, 260, 0.1f, 10.0f,
+                ConfigManager.data.freecamSpeed, val -> {
+            ConfigManager.data.freecamSpeed = val;
+            speedLabel.setText(String.format(java.util.Locale.ROOT, "Speed: %.1f", val));
+            ConfigManager.save();
+        });
+        listView.addItem(speedSlider);
+
+        ToggleSwitch showHandsToggle = new ToggleSwitch(0, 0, 260,
+                "Show Hands",
+                "Shows player hands in freecam",
+                ConfigManager.data.freecamShowHands, value -> {
+            ConfigManager.data.freecamShowHands = value;
+            ConfigManager.save();
+        });
+        listView.addItem(showHandsToggle);
+
+        freecamCard.addChild(listView);
+        freecamCard.updateLayout();
+        return freecamCard;
     }
     private static String delayLabel(int ticks) {
         String base = "Action Delay: " + ticks + (ticks == 1 ? " tick" : " ticks");
