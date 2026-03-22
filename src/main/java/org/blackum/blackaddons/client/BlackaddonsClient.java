@@ -145,7 +145,7 @@ public class BlackaddonsClient implements ClientModInitializer {
                 return true;
             }
 
-            if (ConfigManager.data.ircChatMode) {
+            if (ConfigManager.data.ircChatMode && !message.startsWith("/")) {
                 IrcClient.getInstance().sendMessage(message.trim());
                 return false;
             }

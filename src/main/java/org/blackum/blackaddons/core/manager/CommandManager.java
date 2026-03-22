@@ -438,11 +438,28 @@ public class CommandManager {
                                                                         !ConfigManager.data.ircChatMode)))
                                         .then(ClientCommandManager.literal("status")
                                                         .executes(ctx -> sendIrcChatModeStatus(ctx.getSource())))
-                                        .then(ClientCommandManager
-                                                        .argument("message", StringArgumentType.greedyString())
+                                        .then(ClientCommandManager.literal("msg")
+                                                        .then(ClientCommandManager
+                                                                        .argument("message", StringArgumentType.greedyString())
+                                                                        .executes(ctx -> {
+                                                                                String messageArg = StringArgumentType.getString(ctx,
+                                                                                                "message");
+                                                                                if (messageArg != null) {
+                                                                                        IrcClient.getInstance().sendMessage(messageArg);
+                                                                                }
+                                                                                return 1;
+                                                                        })))
+                                        .executes(ctx -> {
+                                                Minecraft.getInstance().execute(() -> {
+                                                        Minecraft.getInstance().setScreen(new IrcScreen());
+                                                });
+                                                return 1;
+                                        });
+
+                        dispatcher.register(ClientCommandManager.literal("irc")
+                                        .then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
                                                         .executes(ctx -> {
-                                                                String messageArg = StringArgumentType.getString(ctx,
-                                                                                "message");
+                                                                String messageArg = StringArgumentType.getString(ctx, "message");
                                                                 if (messageArg != null) {
                                                                         IrcClient.getInstance().sendMessage(messageArg);
                                                                 }
@@ -454,7 +471,7 @@ public class CommandManager {
                                                                         .openScreen(new IrcScreen());
                                                 });
                                                 return 1;
-                                        });
+                                        }));
 
                         for (String alias : new String[] { Constants.BASE_COMMAND, "black", "blackaddons" }) {
                                 var cmd = ClientCommandManager.literal(alias).executes(openGui);

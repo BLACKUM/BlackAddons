@@ -9,7 +9,8 @@
     "gui.SystemToastAccessor",
     "core.LanguageAccessor",
     "core.GameRendererAccessor",
-    "render.CameraMixin"
+    "render.CameraMixin",
+    "skyhanni.CurrentChatDisplayMixin"
   ],
   "injectors": {
     "defaultRequire": 1
