@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.feature.cheat.FastLeap;
+import org.blackum.blackaddons.gui.widget.MovementKeybindSelector;
 import org.blackum.blackaddons.mixin.core.KeyBindingAccessor;
 import org.blackum.blackaddons.core.manager.RotationManager;
 import org.blackum.blackaddons.core.util.AlignUtils;
@@ -153,6 +154,15 @@ public class ChatActionExecutor {
                     if (key.getName().equalsIgnoreCase(action.message)) {
                         holdOrClickKey(key, action.getDurationTicks());
                         break;
+                    }
+                }
+                break;
+            case MOVE_KEYBINDS:
+                if (client.screen != null) break;
+                for (String movementKeybind : MovementKeybindSelector.sanitizeSelection(action.movementKeybinds)) {
+                    KeyMapping key = MovementKeybindSelector.getKeyMapping(client, movementKeybind);
+                    if (key != null) {
+                        holdOrClickKey(key, action.getDurationTicks());
                     }
                 }
                 break;

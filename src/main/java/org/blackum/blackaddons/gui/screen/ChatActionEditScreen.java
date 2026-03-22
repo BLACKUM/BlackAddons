@@ -14,6 +14,7 @@ import java.util.List;
 
 public class ChatActionEditScreen extends BaseScreen {
     private static final int CUSTOM_INPUT_WIDTH = 90;
+    private static final int ANGLE_INPUT_WIDTH = 62;
     private static final float SAFE_ACTION_TIME_SECONDS = 5.0f;
     private final ConfigManager.ChatAction trigger;
     private ListView actionsList;
@@ -116,7 +117,11 @@ public class ChatActionEditScreen extends BaseScreen {
             delayWrap.setRightLabel(formatSeconds(action.delaySeconds));
             group.addChild(delayWrap);
 
-            if (action.type == ConfigManager.ActionStepType.USE_ITEM || action.type == ConfigManager.ActionStepType.ATTACK || action.type == ConfigManager.ActionStepType.PRESS_KEYBIND || action.type == ConfigManager.ActionStepType.ALIGN) {
+            if (action.type == ConfigManager.ActionStepType.USE_ITEM
+                    || action.type == ConfigManager.ActionStepType.ATTACK
+                    || action.type == ConfigManager.ActionStepType.PRESS_KEYBIND
+                    || action.type == ConfigManager.ActionStepType.MOVE_KEYBINDS
+                    || action.type == ConfigManager.ActionStepType.ALIGN) {
                 SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, 
                         action.type == ConfigManager.ActionStepType.ALIGN ? "Timeout (Seconds)" : "Duration (Seconds)", 
                         action.type == ConfigManager.ActionStepType.ALIGN ? "Max time to wait for alignment" : "How long to hold. 0 = click.", null);
@@ -180,6 +185,18 @@ public class ChatActionEditScreen extends BaseScreen {
                     ActionManager.getInstance().save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
+            } else if (action.type == ConfigManager.ActionStepType.MOVE_KEYBINDS) {
+                action.movementKeybinds = MovementKeybindSelector.sanitizeSelection(action.movementKeybinds);
+                SettingWrapper movementWrap = new SettingWrapper(0, 0, itemWidth, "Movement Keys",
+                        "Toggle any movement keys to press together during this step.", null);
+                MovementKeybindSelector selector = new MovementKeybindSelector(0, 0, itemWidth, action.movementKeybinds, values -> {
+                    action.movementKeybinds = MovementKeybindSelector.sanitizeSelection(values);
+                    movementWrap.setRightLabel(MovementKeybindSelector.summarize(action.movementKeybinds));
+                    ActionManager.getInstance().save();
+                });
+                movementWrap.setControl(selector);
+                movementWrap.setRightLabel(MovementKeybindSelector.summarize(action.movementKeybinds));
+                group.addChild(movementWrap);
             } else if (action.type == ConfigManager.ActionStepType.ROTATE) {
                 GridRow topRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
                 topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Insta Snap", action.instaSnap, val -> {
@@ -233,30 +250,58 @@ public class ChatActionEditScreen extends BaseScreen {
                 if (!action.useCoordinates) {
                     GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
                     SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Yaw", null, null);
-                    Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, action.yaw, val -> {
-                        action.yaw = val;
-                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
+                    GridRow yawRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                    final TextField[] yawFieldRef = new TextField[1];
+                    Slider yawSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -180, 180,
+                            normalizeYaw(action.yaw), val -> {
+                        action.yaw = normalizeYaw(val);
+                        yawWrap.setRightLabel(formatAngle(action.yaw));
+                        updateAngleField(yawFieldRef[0], action.yaw);
                         ActionManager.getInstance().save();
                     });
-                    yawWrap.setControl(yawSlider);
-                    yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.yaw));
+                    TextField yawField = createYawField(action.yaw, value -> {
+                        action.yaw = value;
+                        yawSlider.setValue(action.yaw);
+                        yawWrap.setRightLabel(formatAngle(action.yaw));
+                        updateAngleField(yawFieldRef[0], action.yaw);
+                        ActionManager.getInstance().save();
+                    });
+                    yawFieldRef[0] = yawField;
+                    yawRow.addChild(yawSlider, 0);
+                    yawRow.addChild(yawField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                    yawWrap.setControl(yawRow);
+                    yawWrap.setRightLabel(formatAngle(normalizeYaw(action.yaw)));
                     angleRow.addChild(yawWrap, 0);
 
                     SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Pitch", null, null);
-                    Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, action.pitch, val -> {
-                        action.pitch = val;
-                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
+                    GridRow pitchRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                    final TextField[] pitchFieldRef = new TextField[1];
+                    Slider pitchSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -90, 90,
+                            clampPitch(action.pitch), val -> {
+                        action.pitch = clampPitch(val);
+                        pitchWrap.setRightLabel(formatAngle(action.pitch));
+                        updateAngleField(pitchFieldRef[0], action.pitch);
                         ActionManager.getInstance().save();
                     });
-                    pitchWrap.setControl(pitchSlider);
-                    pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.pitch));
+                    TextField pitchField = createPitchField(action.pitch, value -> {
+                        action.pitch = value;
+                        pitchSlider.setValue(action.pitch);
+                        pitchWrap.setRightLabel(formatAngle(action.pitch));
+                        updateAngleField(pitchFieldRef[0], action.pitch);
+                        ActionManager.getInstance().save();
+                    });
+                    pitchFieldRef[0] = pitchField;
+                    pitchRow.addChild(pitchSlider, 0);
+                    pitchRow.addChild(pitchField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                    pitchWrap.setControl(pitchRow);
+                    pitchWrap.setRightLabel(formatAngle(clampPitch(action.pitch)));
                     angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
                     group.addChild(angleRow);
 
                     Button captureBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
                         if (minecraft.player != null) {
-                            action.yaw = minecraft.player.getYRot();
-                            action.pitch = minecraft.player.getXRot();
+                            action.yaw = normalizeYaw(minecraft.player.getYRot());
+                            action.pitch = clampPitch(minecraft.player.getXRot());
                             ActionManager.getInstance().save();
                             rebuildActions();
                         }
@@ -399,30 +444,58 @@ public class ChatActionEditScreen extends BaseScreen {
                     } else {
                         GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
                         SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Yaw", null, null);
-                        Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, action.alignPostYaw, val -> {
-                            action.alignPostYaw = val;
-                            yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostYaw));
+                        GridRow yawRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                        final TextField[] yawFieldRef = new TextField[1];
+                        Slider yawSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -180, 180,
+                                normalizeYaw(action.alignPostYaw), val -> {
+                            action.alignPostYaw = normalizeYaw(val);
+                            yawWrap.setRightLabel(formatAngle(action.alignPostYaw));
+                            updateAngleField(yawFieldRef[0], action.alignPostYaw);
                             ActionManager.getInstance().save();
                         });
-                        yawWrap.setControl(yawSlider);
-                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostYaw));
+                        TextField yawField = createYawField(action.alignPostYaw, value -> {
+                            action.alignPostYaw = value;
+                            yawSlider.setValue(action.alignPostYaw);
+                            yawWrap.setRightLabel(formatAngle(action.alignPostYaw));
+                            updateAngleField(yawFieldRef[0], action.alignPostYaw);
+                            ActionManager.getInstance().save();
+                        });
+                        yawFieldRef[0] = yawField;
+                        yawRow.addChild(yawSlider, 0);
+                        yawRow.addChild(yawField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                        yawWrap.setControl(yawRow);
+                        yawWrap.setRightLabel(formatAngle(normalizeYaw(action.alignPostYaw)));
                         angleRow.addChild(yawWrap, 0);
 
                         SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Pitch", null, null);
-                        Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, action.alignPostPitch, val -> {
-                            action.alignPostPitch = val;
-                            pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostPitch));
+                        GridRow pitchRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                        final TextField[] pitchFieldRef = new TextField[1];
+                        Slider pitchSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -90, 90,
+                                clampPitch(action.alignPostPitch), val -> {
+                            action.alignPostPitch = clampPitch(val);
+                            pitchWrap.setRightLabel(formatAngle(action.alignPostPitch));
+                            updateAngleField(pitchFieldRef[0], action.alignPostPitch);
                             ActionManager.getInstance().save();
                         });
-                        pitchWrap.setControl(pitchSlider);
-                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", action.alignPostPitch));
+                        TextField pitchField = createPitchField(action.alignPostPitch, value -> {
+                            action.alignPostPitch = value;
+                            pitchSlider.setValue(action.alignPostPitch);
+                            pitchWrap.setRightLabel(formatAngle(action.alignPostPitch));
+                            updateAngleField(pitchFieldRef[0], action.alignPostPitch);
+                            ActionManager.getInstance().save();
+                        });
+                        pitchFieldRef[0] = pitchField;
+                        pitchRow.addChild(pitchSlider, 0);
+                        pitchRow.addChild(pitchField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                        pitchWrap.setControl(pitchRow);
+                        pitchWrap.setRightLabel(formatAngle(clampPitch(action.alignPostPitch)));
                         angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
                         group.addChild(angleRow);
 
                         Button captureRotBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
                             if (minecraft.player != null) {
-                                action.alignPostYaw = minecraft.player.getYRot();
-                                action.alignPostPitch = minecraft.player.getXRot();
+                                action.alignPostYaw = normalizeYaw(minecraft.player.getYRot());
+                                action.alignPostPitch = clampPitch(minecraft.player.getXRot());
                                 ActionManager.getInstance().save();
                                 rebuildActions();
                             }
@@ -488,8 +561,38 @@ public class ChatActionEditScreen extends BaseScreen {
         return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
     }
 
+    private static float roundAngle(float value) {
+        return Math.round(value * 10.0f) / 10.0f;
+    }
+
+    private static float normalizeYaw(float yaw) {
+        yaw %= 360.0f;
+        if (yaw > 180.0f) {
+            yaw -= 360.0f;
+        }
+        if (yaw < -180.0f) {
+            yaw += 360.0f;
+        }
+        return roundAngle(yaw);
+    }
+
+    private static float clampPitch(float pitch) {
+        return roundAngle(Math.max(-90.0f, Math.min(90.0f, pitch)));
+    }
+
+    private static String formatAngle(float angle) {
+        return String.format(java.util.Locale.ROOT, "%.1f°", angle);
+    }
+
     private void updateTextField(TextField field, float value) {
         String formatted = String.format(java.util.Locale.ROOT, "%.3f", roundToMillis(value));
+        if (!formatted.equals(field.getText())) {
+            field.setText(formatted);
+        }
+    }
+
+    private void updateAngleField(TextField field, float value) {
+        String formatted = String.format(java.util.Locale.ROOT, "%.1f", roundAngle(value));
         if (!formatted.equals(field.getText())) {
             field.setText(formatted);
         }
@@ -512,6 +615,32 @@ public class ChatActionEditScreen extends BaseScreen {
             }
             try {
                 onValidValue.accept(roundToMillis(Float.parseFloat(val)));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        return field;
+    }
+
+    private TextField createYawField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        return createAngleField(initialValue, true, onValidValue);
+    }
+
+    private TextField createPitchField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        return createAngleField(initialValue, false, onValidValue);
+    }
+
+    private TextField createAngleField(float initialValue, boolean yaw, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = new TextField(0, 0, ANGLE_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, yaw ? "Yaw" : "Pitch");
+        field.setMaxLength(10);
+        field.setCharFilter(c -> Character.isDigit(c) || c == '.' || c == '-');
+        updateAngleField(field, yaw ? normalizeYaw(initialValue) : clampPitch(initialValue));
+        field.setOnValueChange(val -> {
+            if (val == null || val.isEmpty() || ".".equals(val) || "-".equals(val) || "-.".equals(val)) {
+                return;
+            }
+            try {
+                float parsed = Float.parseFloat(val.replace(',', '.'));
+                onValidValue.accept(yaw ? normalizeYaw(parsed) : clampPitch(parsed));
             } catch (NumberFormatException ignored) {
             }
         });

@@ -18,6 +18,7 @@ import java.util.List;
 
 public class WaypointActionEditScreen extends BaseScreen {
     private static final int CUSTOM_INPUT_WIDTH = 90;
+    private static final int ANGLE_INPUT_WIDTH = 62;
     private static final float SAFE_ACTION_TIME_SECONDS = 5.0f;
     private final Waypoint waypoint;
     private final ConfigManager.WaypointAction action;
@@ -212,7 +213,11 @@ public class WaypointActionEditScreen extends BaseScreen {
             delayWrap.setRightLabel(formatSeconds(step.delaySeconds));
             group.addChild(delayWrap);
 
-            if (step.type == ConfigManager.ActionStepType.USE_ITEM || step.type == ConfigManager.ActionStepType.ATTACK || step.type == ConfigManager.ActionStepType.PRESS_KEYBIND || step.type == ConfigManager.ActionStepType.ALIGN) {
+            if (step.type == ConfigManager.ActionStepType.USE_ITEM
+                    || step.type == ConfigManager.ActionStepType.ATTACK
+                    || step.type == ConfigManager.ActionStepType.PRESS_KEYBIND
+                    || step.type == ConfigManager.ActionStepType.MOVE_KEYBINDS
+                    || step.type == ConfigManager.ActionStepType.ALIGN) {
                 SettingWrapper durationWrap = new SettingWrapper(0, 0, itemWidth, 
                         step.type == ConfigManager.ActionStepType.ALIGN ? "Timeout (Seconds)" : "Duration (Seconds)", 
                         step.type == ConfigManager.ActionStepType.ALIGN ? "Max time to wait for alignment" : "How long to hold. 0 = click.", null);
@@ -276,6 +281,18 @@ public class WaypointActionEditScreen extends BaseScreen {
                     WaypointManager.getInstance().save();
                 });
                 group.addChild(new SettingWrapper(0, 0, itemWidth, "Keybind Name", "Internal name (e.g. key.jump)", keyField));
+            } else if (step.type == ConfigManager.ActionStepType.MOVE_KEYBINDS) {
+                step.movementKeybinds = MovementKeybindSelector.sanitizeSelection(step.movementKeybinds);
+                SettingWrapper movementWrap = new SettingWrapper(0, 0, itemWidth, "Movement Keys",
+                        "Toggle any movement keys to press together during this step.", null);
+                MovementKeybindSelector selector = new MovementKeybindSelector(0, 0, itemWidth, step.movementKeybinds, values -> {
+                    step.movementKeybinds = MovementKeybindSelector.sanitizeSelection(values);
+                    movementWrap.setRightLabel(MovementKeybindSelector.summarize(step.movementKeybinds));
+                    WaypointManager.getInstance().save();
+                });
+                movementWrap.setControl(selector);
+                movementWrap.setRightLabel(MovementKeybindSelector.summarize(step.movementKeybinds));
+                group.addChild(movementWrap);
             } else if (step.type == ConfigManager.ActionStepType.ROTATE) {
                 GridRow topRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
                 topRow.addChild(new ToggleSwitch(0, 0, (itemWidth / 2) - 2, "Insta Snap", step.instaSnap, val -> {
@@ -329,30 +346,58 @@ public class WaypointActionEditScreen extends BaseScreen {
                 if (!step.useCoordinates) {
                     GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
                     SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Yaw", null, null);
-                    Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, step.yaw, val -> {
-                        step.yaw = val;
-                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.yaw));
+                    GridRow yawRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                    final TextField[] yawFieldRef = new TextField[1];
+                    Slider yawSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -180, 180,
+                            normalizeYaw(step.yaw), val -> {
+                        step.yaw = normalizeYaw(val);
+                        yawWrap.setRightLabel(formatAngle(step.yaw));
+                        updateAngleField(yawFieldRef[0], step.yaw);
                         WaypointManager.getInstance().save();
                     });
-                    yawWrap.setControl(yawSlider);
-                    yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.yaw));
+                    TextField yawField = createYawField(step.yaw, value -> {
+                        step.yaw = value;
+                        yawSlider.setValue(step.yaw);
+                        yawWrap.setRightLabel(formatAngle(step.yaw));
+                        updateAngleField(yawFieldRef[0], step.yaw);
+                        WaypointManager.getInstance().save();
+                    });
+                    yawFieldRef[0] = yawField;
+                    yawRow.addChild(yawSlider, 0);
+                    yawRow.addChild(yawField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                    yawWrap.setControl(yawRow);
+                    yawWrap.setRightLabel(formatAngle(normalizeYaw(step.yaw)));
                     angleRow.addChild(yawWrap, 0);
 
                     SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Pitch", null, null);
-                    Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, step.pitch, val -> {
-                        step.pitch = val;
-                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.pitch));
+                    GridRow pitchRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                    final TextField[] pitchFieldRef = new TextField[1];
+                    Slider pitchSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -90, 90,
+                            clampPitch(step.pitch), val -> {
+                        step.pitch = clampPitch(val);
+                        pitchWrap.setRightLabel(formatAngle(step.pitch));
+                        updateAngleField(pitchFieldRef[0], step.pitch);
                         WaypointManager.getInstance().save();
                     });
-                    pitchWrap.setControl(pitchSlider);
-                    pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.pitch));
+                    TextField pitchField = createPitchField(step.pitch, value -> {
+                        step.pitch = value;
+                        pitchSlider.setValue(step.pitch);
+                        pitchWrap.setRightLabel(formatAngle(step.pitch));
+                        updateAngleField(pitchFieldRef[0], step.pitch);
+                        WaypointManager.getInstance().save();
+                    });
+                    pitchFieldRef[0] = pitchField;
+                    pitchRow.addChild(pitchSlider, 0);
+                    pitchRow.addChild(pitchField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                    pitchWrap.setControl(pitchRow);
+                    pitchWrap.setRightLabel(formatAngle(clampPitch(step.pitch)));
                     angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
                     group.addChild(angleRow);
 
                     Button captureBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
                         if (minecraft.player != null) {
-                            step.yaw = minecraft.player.getYRot();
-                            step.pitch = minecraft.player.getXRot();
+                            step.yaw = normalizeYaw(minecraft.player.getYRot());
+                            step.pitch = clampPitch(minecraft.player.getXRot());
                             WaypointManager.getInstance().save();
                             rebuildSteps();
                         }
@@ -495,30 +540,58 @@ public class WaypointActionEditScreen extends BaseScreen {
                     } else {
                         GridRow angleRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT + 15);
                         SettingWrapper yawWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Yaw", null, null);
-                        Slider yawSlider = new Slider(0, 0, (itemWidth / 2) - 2, -180, 180, step.alignPostYaw, val -> {
-                            step.alignPostYaw = val;
-                            yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostYaw));
+                        GridRow yawRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                        final TextField[] yawFieldRef = new TextField[1];
+                        Slider yawSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -180, 180,
+                                normalizeYaw(step.alignPostYaw), val -> {
+                            step.alignPostYaw = normalizeYaw(val);
+                            yawWrap.setRightLabel(formatAngle(step.alignPostYaw));
+                            updateAngleField(yawFieldRef[0], step.alignPostYaw);
                             WaypointManager.getInstance().save();
                         });
-                        yawWrap.setControl(yawSlider);
-                        yawWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostYaw));
+                        TextField yawField = createYawField(step.alignPostYaw, value -> {
+                            step.alignPostYaw = value;
+                            yawSlider.setValue(step.alignPostYaw);
+                            yawWrap.setRightLabel(formatAngle(step.alignPostYaw));
+                            updateAngleField(yawFieldRef[0], step.alignPostYaw);
+                            WaypointManager.getInstance().save();
+                        });
+                        yawFieldRef[0] = yawField;
+                        yawRow.addChild(yawSlider, 0);
+                        yawRow.addChild(yawField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                        yawWrap.setControl(yawRow);
+                        yawWrap.setRightLabel(formatAngle(normalizeYaw(step.alignPostYaw)));
                         angleRow.addChild(yawWrap, 0);
 
                         SettingWrapper pitchWrap = new SettingWrapper(0, 0, (itemWidth / 2) - 2, "Post Pitch", null, null);
-                        Slider pitchSlider = new Slider(0, 0, (itemWidth / 2) - 2, -90, 90, step.alignPostPitch, val -> {
-                            step.alignPostPitch = val;
-                            pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostPitch));
+                        GridRow pitchRow = new GridRow((itemWidth / 2) - 2, Theme.TEXTFIELD_HEIGHT);
+                        final TextField[] pitchFieldRef = new TextField[1];
+                        Slider pitchSlider = new Slider(0, 0, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH - Theme.PADDING_SMALL, -90, 90,
+                                clampPitch(step.alignPostPitch), val -> {
+                            step.alignPostPitch = clampPitch(val);
+                            pitchWrap.setRightLabel(formatAngle(step.alignPostPitch));
+                            updateAngleField(pitchFieldRef[0], step.alignPostPitch);
                             WaypointManager.getInstance().save();
                         });
-                        pitchWrap.setControl(pitchSlider);
-                        pitchWrap.setRightLabel(String.format(java.util.Locale.ROOT, "%.1f°", step.alignPostPitch));
+                        TextField pitchField = createPitchField(step.alignPostPitch, value -> {
+                            step.alignPostPitch = value;
+                            pitchSlider.setValue(step.alignPostPitch);
+                            pitchWrap.setRightLabel(formatAngle(step.alignPostPitch));
+                            updateAngleField(pitchFieldRef[0], step.alignPostPitch);
+                            WaypointManager.getInstance().save();
+                        });
+                        pitchFieldRef[0] = pitchField;
+                        pitchRow.addChild(pitchSlider, 0);
+                        pitchRow.addChild(pitchField, ((itemWidth / 2) - 2) - ANGLE_INPUT_WIDTH);
+                        pitchWrap.setControl(pitchRow);
+                        pitchWrap.setRightLabel(formatAngle(clampPitch(step.alignPostPitch)));
                         angleRow.addChild(pitchWrap, (itemWidth / 2) + 2);
                         group.addChild(angleRow);
 
                         Button captureRotBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Capture Current Rotation", () -> {
                             if (minecraft.player != null) {
-                                step.alignPostYaw = minecraft.player.getYRot();
-                                step.alignPostPitch = minecraft.player.getXRot();
+                                step.alignPostYaw = normalizeYaw(minecraft.player.getYRot());
+                                step.alignPostPitch = clampPitch(minecraft.player.getXRot());
                                 WaypointManager.getInstance().save();
                                 rebuildSteps();
                             }
@@ -591,8 +664,38 @@ public class WaypointActionEditScreen extends BaseScreen {
         return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
     }
 
+    private static float roundAngle(float value) {
+        return Math.round(value * 10.0f) / 10.0f;
+    }
+
+    private static float normalizeYaw(float yaw) {
+        yaw %= 360.0f;
+        if (yaw > 180.0f) {
+            yaw -= 360.0f;
+        }
+        if (yaw < -180.0f) {
+            yaw += 360.0f;
+        }
+        return roundAngle(yaw);
+    }
+
+    private static float clampPitch(float pitch) {
+        return roundAngle(Math.max(-90.0f, Math.min(90.0f, pitch)));
+    }
+
+    private static String formatAngle(float angle) {
+        return String.format(java.util.Locale.ROOT, "%.1f°", angle);
+    }
+
     private void updateTextField(TextField field, float value) {
         String formatted = String.format(java.util.Locale.ROOT, "%.3f", roundToMillis(value));
+        if (!formatted.equals(field.getText())) {
+            field.setText(formatted);
+        }
+    }
+
+    private void updateAngleField(TextField field, float value) {
+        String formatted = String.format(java.util.Locale.ROOT, "%.1f", roundAngle(value));
         if (!formatted.equals(field.getText())) {
             field.setText(formatted);
         }
@@ -615,6 +718,32 @@ public class WaypointActionEditScreen extends BaseScreen {
             }
             try {
                 onValidValue.accept(roundToMillis(Float.parseFloat(val)));
+            } catch (NumberFormatException ignored) {
+            }
+        });
+        return field;
+    }
+
+    private TextField createYawField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        return createAngleField(initialValue, true, onValidValue);
+    }
+
+    private TextField createPitchField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+        return createAngleField(initialValue, false, onValidValue);
+    }
+
+    private TextField createAngleField(float initialValue, boolean yaw, java.util.function.Consumer<Float> onValidValue) {
+        TextField field = new TextField(0, 0, ANGLE_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, yaw ? "Yaw" : "Pitch");
+        field.setMaxLength(10);
+        field.setCharFilter(c -> Character.isDigit(c) || c == '.' || c == '-');
+        updateAngleField(field, yaw ? normalizeYaw(initialValue) : clampPitch(initialValue));
+        field.setOnValueChange(val -> {
+            if (val == null || val.isEmpty() || ".".equals(val) || "-".equals(val) || "-.".equals(val)) {
+                return;
+            }
+            try {
+                float parsed = Float.parseFloat(val.replace(',', '.'));
+                onValidValue.accept(yaw ? normalizeYaw(parsed) : clampPitch(parsed));
             } catch (NumberFormatException ignored) {
             }
         });

@@ -77,12 +77,13 @@ public class ConfigManager {
     }
 
     public enum ActionStepType {
+        MOVE_KEYBINDS("Move Keybinds"),
+        ROTATE("Rotate Camera"),
         SWITCH_SLOT("Switch Slot"),
         USE_ITEM("Use Item"),
         ATTACK("Attack"),
         SEND_MESSAGE("Send Message"),
         PRESS_KEYBIND("Press Keybind"),
-        ROTATE("Rotate Camera"),
         ALIGN("Align [Cheat]");
 
         private final String displayName;
@@ -130,6 +131,7 @@ public class ConfigManager {
         public double alignLookAtX = 0;
         public double alignLookAtY = 0;
         public double alignLookAtZ = 0;
+        public List<String> movementKeybinds = new ArrayList<>();
 
         public ActionStep() {
         }
@@ -159,6 +161,10 @@ public class ConfigManager {
             delaySeconds = normalizeSeconds(delaySeconds, delayTicks);
             durationSeconds = normalizeSeconds(durationSeconds, durationTicks);
             lookAtSeconds = Math.max(0.0f, lookAtSeconds);
+            yaw = normalizeYaw(yaw);
+            pitch = clampPitch(pitch);
+            alignPostYaw = normalizeYaw(alignPostYaw);
+            alignPostPitch = clampPitch(alignPostPitch);
             delayTicks = secondsToTicks(delaySeconds);
             durationTicks = secondsToTicks(durationSeconds);
         }
@@ -206,6 +212,21 @@ public class ConfigManager {
 
         private static float roundToMillis(float value) {
             return Math.round(Math.max(0.0f, value) * 1000.0f) / 1000.0f;
+        }
+
+        private static float normalizeYaw(float yaw) {
+            yaw %= 360.0f;
+            if (yaw > 180.0f) {
+                yaw -= 360.0f;
+            }
+            if (yaw < -180.0f) {
+                yaw += 360.0f;
+            }
+            return yaw;
+        }
+
+        private static float clampPitch(float pitch) {
+            return Math.max(-90.0f, Math.min(90.0f, pitch));
         }
     }
 
