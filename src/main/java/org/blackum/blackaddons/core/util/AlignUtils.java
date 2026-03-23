@@ -19,6 +19,7 @@ import java.util.Locale;
 public class AlignUtils {
     private static final double ALIGN_EPSILON = 1.0E-4D;
     private static final long DEBUG_SAMPLE_DELAY_MS = 500L;
+    private static final int SNAP_MOVEMENT_LOCK_TICKS = 2;
     private static final int COLOR_WHITE = 0xFFFFFFFF;
     private static final int LINE_HEIGHT = 10;
     private static final int DEBUG_STEP_COUNT = 2;
@@ -39,6 +40,9 @@ public class AlignUtils {
     private static int alignState = 0;
     private static float yaw1 = 0;
     private static float yaw2 = 0;
+    private static int movementLockTicks = 0;
+    private static boolean forcedForward = false;
+    private static boolean forcedSneak = false;
 
     private static boolean debugExpectedAvailable;
     private static double debugExpectedX;
@@ -108,6 +112,10 @@ public class AlignUtils {
     public static void tick() {
         Minecraft mc = Minecraft.getInstance();
         updateDebugMeasurement(mc);
+
+        if (movementLockTicks > 0) {
+            movementLockTicks--;
+        }
 
         if (!active) {
             return;
@@ -190,20 +198,36 @@ public class AlignUtils {
     private static void applyMovement(Minecraft mc, LocalPlayer player, float targetYaw, boolean sneak) {
         capturePendingStep(player);
         applyExactYaw(player, targetYaw);
+        forcedForward = true;
+        forcedSneak = sneak;
         setKeyState(mc.options.keyUp, true);
         if (sneak) {
             setKeyState(mc.options.keyShift, true);
+        } else {
+            setKeyState(mc.options.keyShift, false);
         }
     }
 
     public static void cancel() {
         if (!active) return;
         active = false;
+        movementLockTicks = 0;
         releasePressedKeys(Minecraft.getInstance());
     }
 
     public static boolean isActive() {
         return active;
+    }
+
+    public static boolean shouldBlockMovementInput() {
+        return active || movementLockTicks > 0;
+    }
+
+    public static boolean isAllowedMovementKey(Minecraft mc, KeyMapping keyMapping) {
+        if (mc == null || mc.options == null) return false;
+        if (keyMapping == mc.options.keyUp) return forcedForward;
+        if (keyMapping == mc.options.keyShift) return forcedSneak;
+        return false;
     }
 
     public static List<String> getDebugInfo() {
@@ -307,8 +331,10 @@ public class AlignUtils {
         debugAwaitingSample = true;
         releasePressedKeys(mc);
         if (!doLookAfter) {
+            movementLockTicks = 0;
             return;
         }
+        movementLockTicks = SNAP_MOVEMENT_LOCK_TICKS;
         if (alignUseLookAfterCoords) {
             RotationManager.getInstance().snapToBlock(alignLookAtX, alignLookAtY, alignLookAtZ, 0);
         } else {
@@ -318,6 +344,7 @@ public class AlignUtils {
 
     private static void releaseMovementKeys(Minecraft mc) {
         if (mc == null || mc.options == null) return;
+        clearForcedMovement();
         setKeyState(mc.options.keyUp, false);
         setKeyState(mc.options.keyDown, false);
         setKeyState(mc.options.keyLeft, false);
@@ -328,8 +355,14 @@ public class AlignUtils {
 
     private static void releasePressedKeys(Minecraft mc) {
         if (mc == null || mc.options == null) return;
+        clearForcedMovement();
         restorePhysicalState(mc.options.keyUp, mc);
         restorePhysicalState(mc.options.keyShift, mc);
+    }
+
+    private static void clearForcedMovement() {
+        forcedForward = false;
+        forcedSneak = false;
     }
 
     private static void setKeyState(KeyMapping key, boolean pressed) {

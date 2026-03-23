@@ -1,7 +1,9 @@
 package org.blackum.blackaddons.mixin.core;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.KeyboardInput;
+import org.blackum.blackaddons.core.util.AlignUtils;
 import org.blackum.blackaddons.feature.cheat.Freecam;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,6 +17,19 @@ public abstract class KeyboardInputMixin {
         if (Freecam.getInstance().isActive()) {
             return false;
         }
+        Minecraft mc = Minecraft.getInstance();
+        if (AlignUtils.shouldBlockMovementInput() && mc.options != null && isMovementKey(mc, keyMapping)) {
+            return AlignUtils.isAllowedMovementKey(mc, keyMapping);
+        }
         return keyMapping.isDown();
+    }
+
+    private boolean isMovementKey(Minecraft mc, KeyMapping keyMapping) {
+        return keyMapping == mc.options.keyUp
+                || keyMapping == mc.options.keyDown
+                || keyMapping == mc.options.keyLeft
+                || keyMapping == mc.options.keyRight
+                || keyMapping == mc.options.keyJump
+                || keyMapping == mc.options.keyShift;
     }
 }
