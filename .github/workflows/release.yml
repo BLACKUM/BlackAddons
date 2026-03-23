@@ -24,7 +24,7 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - id: get_version
         run: |
@@ -43,26 +43,24 @@ jobs:
         branch: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ matrix.branch }}
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.2.1'
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Build with Gradle
-        run: gradle build -Pmod_version=${{ needs.setup.outputs.version }}
+        run: ./gradlew build -Pmod_version=${{ needs.setup.outputs.version }}
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: artifacts-${{ matrix.branch }}
           path: |
@@ -76,12 +74,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Download New Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: artifacts
           merge-multiple: true
@@ -137,7 +135,7 @@ jobs:
           cat changelog.md
 
       - name: Create Stable Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.6.1
         with:
           tag_name: "v${{ env.VERSION }}"
           name: "v${{ env.VERSION }}"
@@ -152,7 +150,7 @@ jobs:
           python3 scripts/bump_version.py
         
       - name: Commit & Push Version Bump
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore: bump version"
           file_pattern: gradle.properties
