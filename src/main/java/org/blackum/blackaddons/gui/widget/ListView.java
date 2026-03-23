@@ -15,6 +15,10 @@ public class ListView extends Widget {
     private boolean draggingScrollbar = false;
     private int scrollbarWidth = 4;
 
+    private boolean isItemWithinViewport(Widget item) {
+        return item.isVisible() && item.getY() + item.getHeight() > y && item.getY() < y + height;
+    }
+
     public ListView(int x, int y, int width, int height) {
         super(x, y, width, height);
     }
@@ -30,7 +34,8 @@ public class ListView extends Widget {
                 item.setY(currentY);
                 item.setWidth(width - scrollbarWidth - 12);
 
-                if (isMouseOver(mouseX, mouseY) && currentY + item.getHeight() >= y && currentY <= y + height) {
+                if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height
+                        && currentY + item.getHeight() > y && currentY < y + height) {
                     item.updateHoverState(mouseX, mouseY);
                 } else {
                     item.updateHoverState(-1, -1);
@@ -70,6 +75,7 @@ public class ListView extends Widget {
         if (!visible || !(super.isMouseOver(mouseX, mouseY) || hasActiveOverlay()))
             return;
 
+        graphics.enableScissor(x, y, x + width, y + height);
         int currentY = y - scrollOffset;
         for (Widget item : items) {
             if (item.isVisible() && currentY + item.getHeight() > y && currentY < y + height) {
@@ -81,19 +87,20 @@ public class ListView extends Widget {
             }
             currentY += item.getHeight() + itemSpacing;
         }
+        graphics.disableScissor();
     }
 
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
-        if (super.isMouseOver(mouseX, mouseY)) {
-            return true;
+        if (!super.isMouseOver(mouseX, mouseY)) {
+            return false;
         }
         for (Widget item : items) {
-            if (item.isVisible() && item.isMouseOver(mouseX, mouseY)) {
+            if (isItemWithinViewport(item) && item.isMouseOver(mouseX, mouseY)) {
                 return true;
             }
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -148,7 +155,7 @@ public class ListView extends Widget {
         }
 
         for (Widget item : items) {
-            if (item.isVisible() && item.getY() + item.getHeight() > y && item.getY() < y + height) {
+            if (isItemWithinViewport(item)) {
                 if (item.mouseClicked(mouseX, mouseY, button)) {
                     return true;
                 }
@@ -163,7 +170,7 @@ public class ListView extends Widget {
         draggingScrollbar = false;
 
         for (Widget item : items) {
-            if (item.isVisible() && item.mouseReleased(mouseX, mouseY, button)) {
+            if (isItemWithinViewport(item) && item.mouseReleased(mouseX, mouseY, button)) {
                 return true;
             }
         }
@@ -179,7 +186,7 @@ public class ListView extends Widget {
         }
 
         for (Widget item : items) {
-            if (item.isVisible() && item.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            if (isItemWithinViewport(item) && item.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
                 return true;
             }
         }
@@ -193,7 +200,7 @@ public class ListView extends Widget {
             return false;
 
         for (Widget item : items) {
-            if (item.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+            if (isItemWithinViewport(item) && item.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
                 return true;
             }
         }
@@ -208,7 +215,7 @@ public class ListView extends Widget {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         for (Widget item : items) {
-            if (item.keyPressed(keyCode, scanCode, modifiers)) {
+            if (isItemWithinViewport(item) && item.keyPressed(keyCode, scanCode, modifiers)) {
                 return true;
             }
         }
@@ -218,7 +225,7 @@ public class ListView extends Widget {
     @Override
     public boolean charTyped(char character, int modifiers) {
         for (Widget item : items) {
-            if (item.charTyped(character, modifiers)) {
+            if (isItemWithinViewport(item) && item.charTyped(character, modifiers)) {
                 return true;
             }
         }

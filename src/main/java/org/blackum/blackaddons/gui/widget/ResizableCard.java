@@ -172,6 +172,14 @@ public class ResizableCard extends Card {
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (!collapsed) {
+            updateLayout();
+        }
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!enabled || !visible)
             return false;

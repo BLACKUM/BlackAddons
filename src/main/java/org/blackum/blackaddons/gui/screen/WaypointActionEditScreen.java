@@ -23,6 +23,24 @@ public class WaypointActionEditScreen extends BaseScreen {
     private static final float SAFE_ACTION_TIME_SECONDS = 5.0f;
     private final Waypoint waypoint;
     private final ConfigManager.WaypointAction action;
+    private boolean entryDescriptionExpanded;
+    private boolean exitDescriptionExpanded;
+    private boolean guiExitDescriptionExpanded;
+    private boolean notificationDescriptionExpanded;
+    private ToggleSwitch entryToggle;
+    private ToggleSwitch exitToggle;
+    private ToggleSwitch guiExitToggle;
+    private ToggleSwitch notifyToggle;
+    private Label titleLabel;
+    private Label stepsLabel;
+    private TextField titleField;
+    private TextField subtitleField;
+    private TextField notificationTitleField;
+    private TextField notificationMessageField;
+    private Dropdown notificationTypeDropdown;
+    private Button testNotificationButton;
+    private Button addStepButton;
+    private Button backButton;
     private ListView stepsList;
 
     public WaypointActionEditScreen(Screen parent, Waypoint waypoint, ConfigManager.WaypointAction action) {
@@ -45,31 +63,47 @@ public class WaypointActionEditScreen extends BaseScreen {
         widgets.add(new Label(fieldX, currentY, "Triggers:", Label.Style.CAPTION));
         currentY += 15;
         
-        ToggleSwitch entryToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on Entry", "Fire actions when entering radius", action.triggerOnEntry, val -> {
+        entryToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on Entry", "Fire actions when entering radius", action.triggerOnEntry, val -> {
             action.triggerOnEntry = val;
             WaypointManager.getInstance().save();
         });
+        entryToggle.setExpanded(entryDescriptionExpanded);
+        entryToggle.setOnExpandChange(() -> {
+            entryDescriptionExpanded = entryToggle.isExpanded();
+            layoutWidgets();
+        });
         widgets.add(entryToggle);
-        currentY += 25;
+        currentY += entryToggle.getHeight() + 5;
 
-        ToggleSwitch exitToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on Exit", "Fire actions when leaving radius", action.triggerOnExit, val -> {
+        exitToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on Exit", "Fire actions when leaving radius", action.triggerOnExit, val -> {
             action.triggerOnExit = val;
             WaypointManager.getInstance().save();
         });
+        exitToggle.setExpanded(exitDescriptionExpanded);
+        exitToggle.setOnExpandChange(() -> {
+            exitDescriptionExpanded = exitToggle.isExpanded();
+            layoutWidgets();
+        });
         widgets.add(exitToggle);
-        currentY += 25;
+        currentY += exitToggle.getHeight() + 5;
 
-        ToggleSwitch guiExitToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on GUI Exit", "Fire actions when closing any GUI while inside this waypoint", action.triggerOnGuiExit, val -> {
+        guiExitToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Trigger on GUI Exit", "Fire actions when closing any GUI while inside this waypoint", action.triggerOnGuiExit, val -> {
             action.triggerOnGuiExit = val;
             WaypointManager.getInstance().save();
         });
+        guiExitToggle.setExpanded(guiExitDescriptionExpanded);
+        guiExitToggle.setOnExpandChange(() -> {
+            guiExitDescriptionExpanded = guiExitToggle.isExpanded();
+            layoutWidgets();
+        });
         widgets.add(guiExitToggle);
-        currentY += 35;
+        currentY += guiExitToggle.getHeight() + 15;
 
-        widgets.add(new Label(fieldX, currentY, "Title:", Label.Style.CAPTION));
+        titleLabel = new Label(fieldX, currentY, "Title:", Label.Style.CAPTION);
+        widgets.add(titleLabel);
         currentY += 15;
 
-        TextField titleField = new TextField(fieldX, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Title");
+        titleField = new TextField(fieldX, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Title");
         titleField.setText(action.title);
         titleField.setOnValueChange(val -> {
             action.title = val;
@@ -77,7 +111,7 @@ public class WaypointActionEditScreen extends BaseScreen {
         });
         widgets.add(titleField);
 
-        TextField subtitleField = new TextField(fieldX + (fieldWidth + Theme.PADDING) / 2, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Subtitle");
+        subtitleField = new TextField(fieldX + (fieldWidth + Theme.PADDING) / 2, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Subtitle");
         subtitleField.setText(action.subtitle);
         subtitleField.setOnValueChange(val -> {
             action.subtitle = val;
@@ -86,53 +120,64 @@ public class WaypointActionEditScreen extends BaseScreen {
         widgets.add(subtitleField);
         currentY += 35;
 
-        ToggleSwitch notifyToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Show Notification",
+        notifyToggle = new ToggleSwitch(fieldX, currentY, fieldWidth, "Show Notification",
                 "Show a custom notification when triggered", action.showNotification, val -> {
             action.showNotification = val;
             WaypointManager.getInstance().save();
-            this.init();
+            rebuildLayoutPreservingScroll();
+        });
+        notifyToggle.setExpanded(notificationDescriptionExpanded);
+        notifyToggle.setOnExpandChange(() -> {
+            notificationDescriptionExpanded = notifyToggle.isExpanded();
+            layoutWidgets();
         });
         widgets.add(notifyToggle);
-        currentY += 25;
+        currentY += notifyToggle.getHeight() + 5;
 
         if (action.showNotification) {
-            TextField nTitleField = new TextField(fieldX, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Notification Title");
-            nTitleField.setText(action.notificationTitle != null ? action.notificationTitle : "");
-            nTitleField.setOnValueChange(val -> {
+            notificationTitleField = new TextField(fieldX, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Notification Title");
+            notificationTitleField.setText(action.notificationTitle != null ? action.notificationTitle : "");
+            notificationTitleField.setOnValueChange(val -> {
                 action.notificationTitle = val;
                 WaypointManager.getInstance().save();
             });
-            widgets.add(nTitleField);
+            widgets.add(notificationTitleField);
 
-            TextField nMsgField = new TextField(fieldX + (fieldWidth + Theme.PADDING) / 2, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Notification Message");
-            nMsgField.setText(action.notificationMessage != null ? action.notificationMessage : "");
-            nMsgField.setOnValueChange(val -> {
+            notificationMessageField = new TextField(fieldX + (fieldWidth + Theme.PADDING) / 2, currentY, (fieldWidth - Theme.PADDING) / 2, Theme.TEXTFIELD_HEIGHT, "Notification Message");
+            notificationMessageField.setText(action.notificationMessage != null ? action.notificationMessage : "");
+            notificationMessageField.setOnValueChange(val -> {
                 action.notificationMessage = val;
                 WaypointManager.getInstance().save();
             });
-            widgets.add(nMsgField);
+            widgets.add(notificationMessageField);
             currentY += 35;
 
             List<String> typeOptions = java.util.stream.Stream.of(NotificationType.values()).map(Enum::name).toList();
-            Dropdown typeDropdown = new Dropdown(fieldX, currentY, fieldWidth - 54, Theme.TEXTFIELD_HEIGHT, "Notification Type", typeOptions, selected -> {
+            notificationTypeDropdown = new Dropdown(fieldX, currentY, fieldWidth - 54, Theme.TEXTFIELD_HEIGHT, "Notification Type", typeOptions, selected -> {
                 action.notificationType = NotificationType.valueOf(selected);
                 WaypointManager.getInstance().save();
             });
-            typeDropdown.setSelectedIndex(action.notificationType.ordinal());
-            widgets.add(typeDropdown);
+            notificationTypeDropdown.setSelectedIndex(action.notificationType.ordinal());
+            widgets.add(notificationTypeDropdown);
 
-            Button testNotifyBtn = new Button(fieldX + fieldWidth - 50, currentY, 50, Theme.TEXTFIELD_HEIGHT, "Test", () -> {
+            testNotificationButton = new Button(fieldX + fieldWidth - 50, currentY, 50, Theme.TEXTFIELD_HEIGHT, "Test", () -> {
                 NotificationManager.addNotification(
                         org.blackum.blackaddons.core.util.FormatUtils.formatColor(action.notificationTitle != null && !action.notificationTitle.isEmpty() ? action.notificationTitle : "Test Title"),
                         org.blackum.blackaddons.core.util.FormatUtils.formatColor(action.notificationMessage != null && !action.notificationMessage.isEmpty() ? action.notificationMessage : "Test Message"),
                         action.notificationType
                 );
             });
-            widgets.add(testNotifyBtn);
+            widgets.add(testNotificationButton);
             currentY += 35;
+        } else {
+            notificationTitleField = null;
+            notificationMessageField = null;
+            notificationTypeDropdown = null;
+            testNotificationButton = null;
         }
 
-        widgets.add(new Label(fieldX, currentY, "Action Steps:", Label.Style.CAPTION));
+        stepsLabel = new Label(fieldX, currentY, "Action Steps:", Label.Style.CAPTION);
+        widgets.add(stepsLabel);
         currentY += 15;
 
         int listHeight = containerHeight - (currentY - containerY) - 40;
@@ -140,19 +185,117 @@ public class WaypointActionEditScreen extends BaseScreen {
         rebuildSteps();
         widgets.add(stepsList);
 
-        Button addBtn = new Button(fieldX, currentY + listHeight + 5, fieldWidth / 2 - 2, 20, "Add Step", () -> {
+        addStepButton = new Button(fieldX, currentY + listHeight + 5, fieldWidth / 2 - 2, 20, "Add Step", () -> {
             action.actions.add(new ConfigManager.ActionStep(ConfigManager.ActionStepType.SEND_MESSAGE, 0, "", 0, 0));
             WaypointManager.getInstance().save();
             int currentScroll = stepsList.getScrollOffset();
             rebuildSteps();
             stepsList.setScrollOffset(currentScroll);
         });
-        widgets.add(addBtn);
+        widgets.add(addStepButton);
 
-        Button backBtn = new Button(fieldX + fieldWidth / 2 + 2, currentY + listHeight + 5, fieldWidth / 2 - 2, 20, "Back", () -> {
+        backButton = new Button(fieldX + fieldWidth / 2 + 2, currentY + listHeight + 5, fieldWidth / 2 - 2, 20, "Back", () -> {
             minecraft.setScreen(parent);
         });
-        widgets.add(backBtn);
+        widgets.add(backButton);
+
+        layoutWidgets();
+    }
+
+    private void rebuildLayoutPreservingScroll() {
+        double currentScroll = scrollOffset;
+        init();
+        double maxPossibleScroll = Math.max(0, getContentHeight() - (containerHeight - 40));
+        scrollOffset = Math.max(0, Math.min(currentScroll, maxPossibleScroll));
+    }
+
+    private void layoutWidgets() {
+        if (entryToggle == null || exitToggle == null || guiExitToggle == null || notifyToggle == null
+                || titleLabel == null || titleField == null || subtitleField == null
+                || stepsLabel == null || stepsList == null || addStepButton == null || backButton == null) {
+            return;
+        }
+
+        int fieldX = containerX + Theme.PADDING;
+        int fieldWidth = containerWidth - Theme.PADDING * 2;
+        int halfWidth = (fieldWidth - Theme.PADDING) / 2;
+        int currentY = containerY + 75;
+
+        entryToggle.setX(fieldX);
+        entryToggle.setY(currentY);
+        entryToggle.setWidth(fieldWidth);
+        currentY += entryToggle.getHeight() + 5;
+
+        exitToggle.setX(fieldX);
+        exitToggle.setY(currentY);
+        exitToggle.setWidth(fieldWidth);
+        currentY += exitToggle.getHeight() + 5;
+
+        guiExitToggle.setX(fieldX);
+        guiExitToggle.setY(currentY);
+        guiExitToggle.setWidth(fieldWidth);
+        currentY += guiExitToggle.getHeight() + 15;
+
+        titleLabel.setX(fieldX);
+        titleLabel.setY(currentY);
+        currentY += 15;
+
+        titleField.setX(fieldX);
+        titleField.setY(currentY);
+        titleField.setWidth(halfWidth);
+        subtitleField.setX(fieldX + (fieldWidth + Theme.PADDING) / 2);
+        subtitleField.setY(currentY);
+        subtitleField.setWidth(halfWidth);
+        currentY += 35;
+
+        notifyToggle.setX(fieldX);
+        notifyToggle.setY(currentY);
+        notifyToggle.setWidth(fieldWidth);
+        currentY += notifyToggle.getHeight() + 5;
+
+        if (notificationTitleField != null && notificationMessageField != null) {
+            notificationTitleField.setX(fieldX);
+            notificationTitleField.setY(currentY);
+            notificationTitleField.setWidth(halfWidth);
+            notificationMessageField.setX(fieldX + (fieldWidth + Theme.PADDING) / 2);
+            notificationMessageField.setY(currentY);
+            notificationMessageField.setWidth(halfWidth);
+            currentY += 35;
+        }
+
+        if (notificationTypeDropdown != null && testNotificationButton != null) {
+            notificationTypeDropdown.setX(fieldX);
+            notificationTypeDropdown.setY(currentY);
+            notificationTypeDropdown.setWidth(fieldWidth - 54);
+            testNotificationButton.setX(fieldX + fieldWidth - 50);
+            testNotificationButton.setY(currentY);
+            currentY += 35;
+        }
+
+        stepsLabel.setX(fieldX);
+        stepsLabel.setY(currentY);
+        currentY += 15;
+
+        int listHeight = Math.max(80, containerHeight - (currentY - containerY) - 40);
+        stepsList.setX(fieldX);
+        stepsList.setY(currentY);
+        stepsList.setWidth(fieldWidth);
+        stepsList.setHeight(listHeight);
+
+        addStepButton.setX(fieldX);
+        addStepButton.setY(currentY + listHeight + 5);
+        addStepButton.setWidth(fieldWidth / 2 - 2);
+        backButton.setX(fieldX + fieldWidth / 2 + 2);
+        backButton.setY(currentY + listHeight + 5);
+        backButton.setWidth(fieldWidth / 2 - 2);
+
+        baseContentHeight = Math.max(0, (backButton.getY() + backButton.getHeight()) - containerY + 20);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        layoutWidgets();
     }
 
     private void rebuildSteps() {

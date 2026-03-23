@@ -22,6 +22,7 @@ public class ToggleSwitch extends Widget {
     private boolean value;
     private boolean expanded = false;
     private Consumer<Boolean> onChange;
+    private Runnable onExpandChange;
 
     private Animation toggleAnimation;
     private Animation hoverAnimation;
@@ -54,7 +55,7 @@ public class ToggleSwitch extends Widget {
 
     private void updateHeight() {
         int baseHeight = SWITCH_HEIGHT;
-        if (description != null && !description.isEmpty() && expanded) {
+        if (description != null && !description.isEmpty() && (expanded || expandAnimation.getValue() > 0)) {
             int lines = 1 + (int) Math.ceil((double) description.length() / 40);
             descriptionHeight = lines * 10;
             this.height = baseHeight + (int) (descriptionHeight * expandAnimation.getValue()) + 10;
@@ -76,33 +77,46 @@ public class ToggleSwitch extends Widget {
             int expandY = y + (SWITCH_HEIGHT - EXPAND_ICON_SIZE) / 2;
             int expandColor = Theme.withAlpha(Theme.TEXT_SECONDARY, 0.6f);
 
-            graphics.drawString(Minecraft.getInstance().font, expanded ? "▼" : "▶", expandX, expandY, expandColor);
+            graphics.drawString(Minecraft.getInstance().font, expandAnimation.getValue() > 0.5f ? "▼" : "▶", expandX, expandY, expandColor);
         }
 
         renderSwitch(graphics, mouseX, mouseY);
+    }
 
-        if (description != null && !description.isEmpty() && expandAnimation.getValue() > 0) {
-            int descY = y + SWITCH_HEIGHT + 5;
-            float alpha = expandAnimation.getValue();
-            int descColor = Theme.withAlpha(Theme.TEXT_SECONDARY, alpha);
+    @Override
+    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+            float partialTick) {
+        if (!visible)
+            return;
+        renderDescription(graphics);
+    }
 
-            String[] words = description.split(" ");
-            StringBuilder line = new StringBuilder();
-
-            for (String word : words) {
-                if (Minecraft.getInstance().font.width(line + word) > width - 20 && !line.isEmpty()) {
-                    graphics.drawString(Minecraft.getInstance().font, line.toString().trim(),
-                            x + 10, descY, descColor);
-                    descY += 10;
-                    line = new StringBuilder();
-                }
-                line.append(word).append(" ");
-            }
-            if (!line.isEmpty()) {
-                graphics.drawString(Minecraft.getInstance().font, line.toString().trim(),
-                        x + 10, descY, descColor);
-            }
+    private void renderDescription(GuiGraphics graphics) {
+        float expandProgress = expandAnimation.getValue();
+        if (description == null || description.isEmpty() || expandProgress <= 0) {
+            return;
         }
+
+        int descY = y + SWITCH_HEIGHT + 5;
+        int visibleDescHeight = Math.max(1, (int) (descriptionHeight * expandProgress));
+        int descColor = Theme.withAlpha(Theme.TEXT_SECONDARY, expandProgress);
+
+        graphics.enableScissor(x, descY, x + width, descY + visibleDescHeight);
+        String[] words = description.split(" ");
+        StringBuilder line = new StringBuilder();
+
+        for (String word : words) {
+            if (Minecraft.getInstance().font.width(line + word) > width - 20 && !line.isEmpty()) {
+                graphics.drawString(Minecraft.getInstance().font, line.toString().trim(), x + 10, descY, descColor);
+                descY += 10;
+                line = new StringBuilder();
+            }
+            line.append(word).append(" ");
+        }
+        if (!line.isEmpty()) {
+            graphics.drawString(Minecraft.getInstance().font, line.toString().trim(), x + 10, descY, descColor);
+        }
+        graphics.disableScissor();
     }
 
     private void renderSwitch(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -146,6 +160,10 @@ public class ToggleSwitch extends Widget {
         if (!enabled || !visible)
             return false;
 
+        if (!isMouseOver(mouseX, mouseY)) {
+            return false;
+        }
+
         if (description != null && !description.isEmpty()) {
             int expandX = x + labelWidth + 6;
             int expandY = y;
@@ -164,7 +182,7 @@ public class ToggleSwitch extends Widget {
             return true;
         }
 
-        return false;
+        return true;
     }
 
     private void toggle() {
@@ -182,6 +200,9 @@ public class ToggleSwitch extends Widget {
         expandAnimation = new Animation(expandAnimation.getValue(), expanded ? 1 : 0, Theme.ANIM_NORMAL,
                 Easing::easeOut);
         expandAnimation.start();
+        if (onExpandChange != null) {
+            onExpandChange.run();
+        }
     }
 
     public boolean getValue() {
@@ -222,6 +243,10 @@ public class ToggleSwitch extends Widget {
         if (this.expanded != expanded) {
             toggleExpand();
         }
+    }
+
+    public void setOnExpandChange(Runnable onExpandChange) {
+        this.onExpandChange = onExpandChange;
     }
 
     public void setLabelColor(int color) {
