@@ -15,6 +15,7 @@ import org.blackum.blackaddons.gui.widget.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class WaypointActionEditScreen extends BaseScreen {
     private static final int CUSTOM_INPUT_WIDTH = 90;
@@ -701,13 +702,13 @@ public class WaypointActionEditScreen extends BaseScreen {
         }
     }
 
-    private TextField createNonNegativeSecondsField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+    private TextField createNonNegativeSecondsField(float initialValue, Consumer<Float> onValidValue) {
         TextField field = createNonNegativeDecimalField(initialValue, onValidValue);
         updateTextField(field, initialValue);
         return field;
     }
 
-    private TextField createNonNegativeDecimalField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+    private TextField createNonNegativeDecimalField(float initialValue, Consumer<Float> onValidValue) {
         TextField field = new TextField(0, 0, CUSTOM_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, "Custom");
         field.setMaxLength(10);
         field.setCharFilter(c -> Character.isDigit(c) || c == '.');
@@ -724,15 +725,15 @@ public class WaypointActionEditScreen extends BaseScreen {
         return field;
     }
 
-    private TextField createYawField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+    private TextField createYawField(float initialValue, Consumer<Float> onValidValue) {
         return createAngleField(initialValue, true, onValidValue);
     }
 
-    private TextField createPitchField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+    private TextField createPitchField(float initialValue, Consumer<Float> onValidValue) {
         return createAngleField(initialValue, false, onValidValue);
     }
 
-    private TextField createAngleField(float initialValue, boolean yaw, java.util.function.Consumer<Float> onValidValue) {
+    private TextField createAngleField(float initialValue, boolean yaw, Consumer<Float> onValidValue) {
         TextField field = new TextField(0, 0, ANGLE_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, yaw ? "Yaw" : "Pitch");
         field.setMaxLength(10);
         field.setCharFilter(c -> Character.isDigit(c) || c == '.' || c == '-');

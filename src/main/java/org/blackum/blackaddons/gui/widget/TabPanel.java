@@ -223,7 +223,7 @@ public class TabPanel extends Widget {
 
         if (selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) {
             Tab currentTab = tabs.get(selectedTabIndex);
-            java.util.List<Widget> tabWidgets = currentTab.widgets;
+            List<Widget> tabWidgets = currentTab.widgets;
             for (int i = tabWidgets.size() - 1; i >= 0; i--) {
                 Widget widget = tabWidgets.get(i);
                 if (widget.isVisible() && widget.hasActiveOverlay() && widget.mouseClicked(mouseX, mouseY, button)) {

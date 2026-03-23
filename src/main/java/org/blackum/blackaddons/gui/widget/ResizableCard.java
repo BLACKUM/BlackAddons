@@ -7,6 +7,8 @@ import org.lwjgl.glfw.GLFW;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 
+import java.util.List;
+
 public class ResizableCard extends Card {
 
     private static final int RESIZE_HANDLE_SIZE = 12;
@@ -220,7 +222,7 @@ public class ResizableCard extends Card {
         double scaledMouseX = (mouseX - x) / scale + x;
         double scaledMouseY = (mouseY - y) / scale + y;
 
-        java.util.List<Widget> children = getChildren();
+        List<Widget> children = getChildren();
         for (Widget child : children) {
             if (child.isMouseOver(scaledMouseX, scaledMouseY)) {
                 if (child.mouseClicked(scaledMouseX, scaledMouseY, button)) {
@@ -263,7 +265,7 @@ public class ResizableCard extends Card {
         double scaledMouseX = (mouseX - x) / scale + x;
         double scaledMouseY = (mouseY - y) / scale + y;
 
-        java.util.List<Widget> children = getChildren();
+        List<Widget> children = getChildren();
         for (Widget child : children) {
             if (child.mouseReleased(scaledMouseX, scaledMouseY, button)) {
                 return true;
@@ -347,7 +349,7 @@ public class ResizableCard extends Card {
         double scaledDragX = dragX / scale;
         double scaledDragY = dragY / scale;
 
-        java.util.List<Widget> children = getChildren();
+        List<Widget> children = getChildren();
         for (Widget child : children) {
             if (child.mouseDragged(scaledMouseX, scaledMouseY, button, scaledDragX, scaledDragY)) {
                 return true;
@@ -444,7 +446,7 @@ public class ResizableCard extends Card {
         double scaledMouseX = (mouseX - x) / scale + x;
         double scaledMouseY = (mouseY - y) / scale + y;
 
-        java.util.List<Widget> children = getChildren();
+        List<Widget> children = getChildren();
         for (Widget child : children) {
             if (child.mouseScrolled(scaledMouseX, scaledMouseY, scrollX, scrollY)) {
                 return true;

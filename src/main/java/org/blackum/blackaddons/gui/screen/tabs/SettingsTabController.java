@@ -10,6 +10,7 @@ import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
+import org.blackum.blackaddons.feature.chat.IrcClient;
 
 public class SettingsTabController extends SimpleTabController {
 
@@ -94,9 +95,9 @@ public class SettingsTabController extends SimpleTabController {
                     ConfigManager.data.ircEnabled = val;
                     ConfigManager.save();
                     if (val) {
-                        org.blackum.blackaddons.feature.chat.IrcClient.getInstance().connect();
+                        IrcClient.getInstance().connect();
                     } else {
-                        org.blackum.blackaddons.feature.chat.IrcClient.getInstance().disconnect();
+                        IrcClient.getInstance().disconnect();
                     }
                 });
         listView.addItem(ircEnabledToggle);

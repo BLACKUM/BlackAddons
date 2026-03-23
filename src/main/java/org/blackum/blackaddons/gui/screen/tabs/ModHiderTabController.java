@@ -47,35 +47,31 @@ public class ModHiderTabController extends SimpleTabController {
         modHiderTab.addWidget(modHiderCardContainer);
 
         int containerY = contentY + 30;
-        boolean isSingleColumn = contentWidth < 680;
-        int col1X = contentX + 20;
-        int col2X = contentX + 340;
+        int numCols = contentWidth < 680 ? 1 : (contentWidth < 1000 ? 2 : 3);
+        int colWidth = 300;
+        int spacing = 20;
+        int[] colY = new int[numCols];
+        for (int i = 0; i < numCols; i++) colY[i] = containerY + 20;
 
-        if (isSingleColumn) {
-            spoofModeCard = createSpoofModeCard(col1X, containerY + 20);
-            int currentY = containerY + 20 + spoofModeCard.getHeight() + Theme.CARD_SPACING;
+        List<ResizableCard> cards = new ArrayList<>();
+        spoofModeCard = createSpoofModeCard(0, 0);
+        cards.add(spoofModeCard);
+        allowedModsCard = createAllowedModsCard(0, 0);
+        cards.add(allowedModsCard);
+        hideModsCard = createHideModsCard(0, 0);
+        cards.add(hideModsCard);
+        disablePayloadsCard = createDisablePayloadsCard(0, 0);
+        cards.add(disablePayloadsCard);
 
-            hideModsCard = createHideModsCard(col1X, currentY);
-            currentY += hideModsCard.getHeight() + Theme.CARD_SPACING;
+        for (ResizableCard card : cards) {
+            int shortestCol = 0;
+            for (int i = 1; i < numCols; i++) {
+                if (colY[i] < colY[shortestCol]) shortestCol = i;
+            }
 
-            disablePayloadsCard = createDisablePayloadsCard(col1X, currentY);
-            currentY += disablePayloadsCard.getHeight() + Theme.CARD_SPACING;
-
-            allowedModsCard = createAllowedModsCard(col1X, currentY);
-        } else {
-            int currentY1 = containerY + 20;
-            int currentY2 = containerY + 20;
-
-            spoofModeCard = createSpoofModeCard(col1X, currentY1);
-            currentY1 += spoofModeCard.getHeight() + Theme.CARD_SPACING;
-
-            allowedModsCard = createAllowedModsCard(col1X, currentY1);
-
-            hideModsCard = createHideModsCard(col2X, currentY2);
-            currentY2 += hideModsCard.getHeight() + Theme.CARD_SPACING;
-
-            disablePayloadsCard = createDisablePayloadsCard(col2X, currentY2);
-            currentY2 += disablePayloadsCard.getHeight() + Theme.CARD_SPACING;
+            card.setX(contentX + spacing + shortestCol * (colWidth + spacing));
+            card.setY(colY[shortestCol]);
+            colY[shortestCol] += card.getHeight() + Theme.CARD_SPACING;
         }
 
         modHiderCardContainer.addCard(spoofModeCard);

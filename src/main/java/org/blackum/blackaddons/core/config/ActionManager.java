@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.api.FabricLoader;
+import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.util.Constants;
+import org.blackum.blackaddons.core.waypoint.Waypoint;
+import org.blackum.blackaddons.core.waypoint.WaypointManager;
 
 import java.io.File;
 import java.io.FileReader;
@@ -102,10 +105,10 @@ public class ActionManager {
                     parent.mkdirs();
                 }
                 if (rootChatFile.renameTo(targetFile)) {
-                    org.blackum.blackaddons.Blackaddons.LOGGER.info("Successfully migrated chat_actions.json to default profile");
+                    Blackaddons.LOGGER.info("Successfully migrated chat_actions.json to default profile");
                 }
             } catch (Exception e) {
-                org.blackum.blackaddons.Blackaddons.LOGGER.error("Failed to migrate chat_actions.json", e);
+                Blackaddons.LOGGER.error("Failed to migrate chat_actions.json", e);
             }
         }
     }
@@ -119,7 +122,7 @@ public class ActionManager {
                 migrated = true;
             }
 
-            for (org.blackum.blackaddons.core.waypoint.Waypoint wp : org.blackum.blackaddons.core.waypoint.WaypointManager.getInstance().getWaypoints()) {
+            for (Waypoint wp : WaypointManager.getInstance().getWaypoints()) {
                 if (wp.actions != null && !wp.actions.isEmpty()) {
                     migrated = true;
                 }
@@ -128,7 +131,7 @@ public class ActionManager {
             if (migrated) {
                 save();
                 ConfigManager.save();
-                org.blackum.blackaddons.core.waypoint.WaypointManager.getInstance().save();
+                WaypointManager.getInstance().save();
             }
             return;
         }
@@ -143,7 +146,7 @@ public class ActionManager {
                     }
                 }
                 if (data.waypointActions != null) {
-                    org.blackum.blackaddons.core.waypoint.WaypointManager.getInstance().mergeActions(data.waypointActions);
+                    WaypointManager.getInstance().mergeActions(data.waypointActions);
                 }
                 save();
             }

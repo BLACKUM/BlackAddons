@@ -8,10 +8,7 @@ import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.gui.render.Theme;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class MovementKeybindSelector extends Widget {
@@ -160,7 +157,7 @@ public class MovementKeybindSelector extends Widget {
         if (mapping == null) {
             return "";
         }
-        return mapping.getTranslatedKeyMessage().getString().toUpperCase(java.util.Locale.ROOT);
+        return mapping.getTranslatedKeyMessage().getString().toUpperCase(Locale.ROOT);
     }
 
     public static KeyMapping getKeyMapping(Minecraft minecraft, String id) {

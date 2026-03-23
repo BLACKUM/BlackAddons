@@ -7,10 +7,13 @@ import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 
+import java.util.LinkedList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class TextField extends Widget {
+    private static TextField activeTextField;
+
     private String text = "";
     private String placeholder = "";
     private int cursorPosition = 0;
@@ -122,7 +125,7 @@ public class TextField extends Widget {
             return false;
 
         if (isMouseOver(mouseX, mouseY)) {
-            focused = true;
+            setFocused(true);
             if (button == 0) {
                 int relativeX = (int) mouseX - (x + Theme.PADDING_SMALL);
                 cursorPosition = getCursorPositionFromX(relativeX);
@@ -131,7 +134,7 @@ public class TextField extends Widget {
             }
             return true;
         } else {
-            focused = false;
+            setFocused(false);
         }
         return false;
     }
@@ -390,6 +393,15 @@ public class TextField extends Widget {
 
     @Override
     public void setFocused(boolean focused) {
+        if (focused) {
+            if (activeTextField != null && activeTextField != this) {
+                activeTextField.setFocused(false);
+            }
+            activeTextField = this;
+        } else if (activeTextField == this) {
+            activeTextField = null;
+        }
+
         super.setFocused(focused);
         if (focused) {
             cursorVisible = true;
@@ -496,7 +508,7 @@ public class TextField extends Widget {
         }
     }
 
-    private java.util.LinkedList<State> history = new java.util.LinkedList<>();
+    private LinkedList<State> history = new LinkedList<>();
     private int historyIndex = -1;
 
     private void pushHistory() {

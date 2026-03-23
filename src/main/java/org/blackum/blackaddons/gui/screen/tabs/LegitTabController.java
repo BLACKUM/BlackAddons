@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
+import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.screen.BaseScreen;
@@ -9,6 +10,9 @@ import org.blackum.blackaddons.gui.screen.OverlayEditorScreen;
 import org.blackum.blackaddons.gui.screen.RotationOverlayPositionScreen;
 import org.blackum.blackaddons.gui.screen.AutoSSOverlayPositionScreen;
 import org.blackum.blackaddons.gui.widget.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LegitTabController extends SimpleTabController {
     private ResizableCard visualsCard;
@@ -34,19 +38,27 @@ public class LegitTabController extends SimpleTabController {
             legitTab.addWidget(legitCardContainer);
 
             int containerY = contentY + 30;
-            boolean isSingleColumn = contentWidth < 680;
-            int col1X = contentX + 20;
-            int col2X = contentX + 340;
+            int numCols = contentWidth < 680 ? 1 : (contentWidth < 1000 ? 2 : 3);
+            int colWidth = 300;
+            int spacing = 20;
+            int[] colY = new int[numCols];
+            for (int i = 0; i < numCols; i++) colY[i] = containerY + 20;
 
-            if (isSingleColumn) {
-                int currentY = containerY + 20;
-                visualsCard = createVisualsCard(col1X, currentY);
-                currentY += visualsCard.getHeight() + 10;
-                debuggersCard = createDebuggersCard(col1X, currentY);
-            } else {
-                int currentY = containerY + 20;
-                visualsCard = createVisualsCard(col1X, currentY);
-                debuggersCard = createDebuggersCard(col2X, currentY);
+            List<ResizableCard> cards = new ArrayList<>();
+            visualsCard = createVisualsCard(0, 0);
+            cards.add(visualsCard);
+            debuggersCard = createDebuggersCard(0, 0);
+            cards.add(debuggersCard);
+
+            for (ResizableCard card : cards) {
+                int shortestCol = 0;
+                for (int i = 1; i < numCols; i++) {
+                    if (colY[i] < colY[shortestCol]) shortestCol = i;
+                }
+
+                card.setX(contentX + spacing + shortestCol * (colWidth + spacing));
+                card.setY(colY[shortestCol]);
+                colY[shortestCol] += card.getHeight() + 10;
             }
 
             legitCardContainer.addCard(visualsCard);
@@ -171,8 +183,8 @@ public class LegitTabController extends SimpleTabController {
         y += 30;
 
         Button overlayPositionButton = new Button(x, y, width, 20, "Edit Global Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new OverlayEditorScreen(screen))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new OverlayEditorScreen(screen))));
         legitTab.addWidget(overlayPositionButton);
         y += 30;
 
@@ -187,8 +199,8 @@ public class LegitTabController extends SimpleTabController {
         y += 30;
 
         Button autoSSPositionButton = new Button(x, y, width, 20, "Set AutoSS Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen))));
         legitTab.addWidget(autoSSPositionButton);
         y += 30;
 
@@ -213,8 +225,8 @@ public class LegitTabController extends SimpleTabController {
         y += 30;
 
         Button rotationPositionButton = new Button(x, y, width, 20, "Set Rotation Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new RotationOverlayPositionScreen(screen))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new RotationOverlayPositionScreen(screen))));
         legitTab.addWidget(rotationPositionButton);
         y += 30;
 
@@ -229,8 +241,8 @@ public class LegitTabController extends SimpleTabController {
         y += 30;
 
         Button locationPositionButton = new Button(x, y, width, 20, "Set Location Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen))));
         legitTab.addWidget(locationPositionButton);
         y += 30;
 
@@ -245,8 +257,8 @@ public class LegitTabController extends SimpleTabController {
         y += 30;
 
         Button alignPositionButton = new Button(x, y, width, 20, "Set Align Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new AlignOverlayPositionScreen(screen))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new AlignOverlayPositionScreen(screen))));
         legitTab.addWidget(alignPositionButton);
     }
 
@@ -261,8 +273,8 @@ public class LegitTabController extends SimpleTabController {
                 }));
 
         listView.addItem(new Button(0, 0, 260, 20, "Edit Global Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new OverlayEditorScreen(screen)))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new OverlayEditorScreen(screen)))));
 
         listView.addItem(new ToggleSwitch(0, 0, 260,
                 "AutoSS Debug",
@@ -273,8 +285,8 @@ public class LegitTabController extends SimpleTabController {
                 }));
 
         listView.addItem(new Button(0, 0, 260, 20, "Set AutoSS Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen)))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen)))));
 
         listView.addItem(new ToggleSwitch(0, 0, 260,
                 "FastLeap Debug",
@@ -293,8 +305,8 @@ public class LegitTabController extends SimpleTabController {
                 }));
 
         listView.addItem(new Button(0, 0, 260, 20, "Set Rotation Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new RotationOverlayPositionScreen(screen)))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new RotationOverlayPositionScreen(screen)))));
 
         listView.addItem(new ToggleSwitch(0, 0, 260,
                 "Location Utils Debug",
@@ -305,8 +317,8 @@ public class LegitTabController extends SimpleTabController {
                 }));
 
         listView.addItem(new Button(0, 0, 260, 20, "Set Location Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen)))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new LocationOverlayPositionScreen(screen)))));
 
         listView.addItem(new ToggleSwitch(0, 0, 260,
                 "Align Debugger",
@@ -317,7 +329,7 @@ public class LegitTabController extends SimpleTabController {
                 }));
 
         listView.addItem(new Button(0, 0, 260, 20, "Set Align Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(new AlignOverlayPositionScreen(screen)))));
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(new AlignOverlayPositionScreen(screen)))));
     }
 }

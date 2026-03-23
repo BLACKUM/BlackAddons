@@ -2,6 +2,7 @@ package org.blackum.blackaddons.core.waypoint;
 
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.api.FabricLoader;
+import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.config.ConfigManager.WaypointAction;
 import org.blackum.blackaddons.core.config.ProfileManager;
@@ -185,10 +186,10 @@ public class WaypointManager {
             try {
                 ensureParent(targetFile);
                 if (OLD_WAYPOINTS_FILE.renameTo(targetFile)) {
-                    org.blackum.blackaddons.Blackaddons.LOGGER.info("Successfully migrated waypoints.json to default profile");
+                    Blackaddons.LOGGER.info("Successfully migrated waypoints.json to default profile");
                 }
             } catch (Exception e) {
-                org.blackum.blackaddons.Blackaddons.LOGGER.error("Failed to migrate waypoints.json", e);
+                Blackaddons.LOGGER.error("Failed to migrate waypoints.json", e);
             }
         }
     }

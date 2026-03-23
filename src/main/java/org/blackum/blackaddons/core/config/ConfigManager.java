@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.blackum.blackaddons.Blackaddons;
 
 public class ConfigManager {
     private static final Path OLD_CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME);
@@ -548,10 +549,10 @@ public class ConfigManager {
                     parent.mkdirs();
                 }
                 if (OLD_CONFIG_FILE.renameTo(targetFile)) {
-                    org.blackum.blackaddons.Blackaddons.LOGGER.info("Successfully migrated config.json to default profile");
+                    Blackaddons.LOGGER.info("Successfully migrated config.json to default profile");
                 }
             } catch (Exception e) {
-                org.blackum.blackaddons.Blackaddons.LOGGER.error("Failed to migrate config.json", e);
+                Blackaddons.LOGGER.error("Failed to migrate config.json", e);
             }
         }
     }

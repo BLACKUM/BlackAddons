@@ -12,6 +12,7 @@ import org.blackum.blackaddons.gui.render.RenderHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ItemGridWidget extends Widget {
     private final List<SkyblockItem> items;
@@ -27,7 +28,7 @@ public class ItemGridWidget extends Widget {
     }
 
     private Alignment alignment = Alignment.LEFT;
-    private java.util.function.Consumer<SkyblockItem> onClick;
+    private Consumer<SkyblockItem> onClick;
     private SkyblockItem selectedItem;
 
     public ItemGridWidget(int x, int y, int columns, List<SkyblockItem> items) {
@@ -151,7 +152,7 @@ public class ItemGridWidget extends Widget {
         return false;
     }
 
-    public void setOnClick(java.util.function.Consumer<SkyblockItem> onClick) {
+    public void setOnClick(Consumer<SkyblockItem> onClick) {
         this.onClick = onClick;
     }
 

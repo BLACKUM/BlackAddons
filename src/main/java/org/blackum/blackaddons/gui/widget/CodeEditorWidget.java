@@ -8,6 +8,7 @@ import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class CodeEditorWidget extends Widget {
@@ -735,7 +736,7 @@ public class CodeEditorWidget extends Widget {
         }
     }
 
-    private java.util.LinkedList<State> history = new java.util.LinkedList<>();
+    private LinkedList<State> history = new LinkedList<>();
     private int historyIndex = -1;
 
     private void pushHistory() {

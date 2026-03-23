@@ -11,11 +11,15 @@ import org.blackum.blackaddons.gui.screen.ChatActionEditScreen;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
+import org.blackum.blackaddons.core.util.FormatUtils;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.stream.Stream;
 
 public class ChatActionsTabController extends SimpleTabController {
     private static int lastScrollOffset = 0;
@@ -112,14 +116,9 @@ public class ChatActionsTabController extends SimpleTabController {
                             Minecraft client = Minecraft.getInstance();
                             if (trigger.durationSeconds > 0 && trigger.title != null && !trigger.title.isEmpty() && client.gui != null) {
                                 client.gui.setTimes(10, (int) (trigger.durationSeconds * 20), 20);
-                                client.gui.setTitle(net.minecraft.network.chat.Component
-                                        .literal(org.blackum.blackaddons.core.util.FormatUtils
-                                                .formatColor(trigger.title)));
+                                client.gui.setTitle(Component.literal(FormatUtils.formatColor(trigger.title)));
                                 if (trigger.subtitle != null && !trigger.subtitle.isEmpty()) {
-                                    client.gui.setSubtitle(
-                                            net.minecraft.network.chat.Component
-                                                    .literal(org.blackum.blackaddons.core.util.FormatUtils
-                                                            .formatColor(trigger.subtitle)));
+                                    client.gui.setSubtitle(Component.literal(FormatUtils.formatColor(trigger.subtitle)));
                                 }
                             }
                         } catch (Exception e) {
@@ -132,21 +131,21 @@ public class ChatActionsTabController extends SimpleTabController {
             SettingWrapper volWrap = new SettingWrapper(0, 0, itemWidth, "Volume", "Sets the volume of the sound effect", null);
             Slider volumeSlider = new Slider(0, 0, itemWidth, 0.0f, 1.0f, trigger.volume, val -> {
                 trigger.volume = val;
-                volWrap.setRightLabel(String.format("%.2f", val));
+                volWrap.setRightLabel(String.format(Locale.ROOT, "%.2f", val));
                 ActionManager.getInstance().save();
             });
             volWrap.setControl(volumeSlider);
-            volWrap.setRightLabel(String.format("%.2f", trigger.volume));
+            volWrap.setRightLabel(String.format(Locale.ROOT, "%.2f", trigger.volume));
             triggerWidgets.add(volWrap);
 
             SettingWrapper pitchWrap = new SettingWrapper(0, 0, itemWidth, "Pitch", "Sets the pitch of the sound effect", null);
             Slider pitchSlider = new Slider(0, 0, itemWidth, 0.1f, 2.0f, trigger.pitch, val -> {
                 trigger.pitch = val;
-                pitchWrap.setRightLabel(String.format("%.2fx", val));
+                pitchWrap.setRightLabel(String.format(Locale.ROOT, "%.2f", val));
                 ActionManager.getInstance().save();
             });
             pitchWrap.setControl(pitchSlider);
-            pitchWrap.setRightLabel(String.format("%.2fx", trigger.pitch));
+            pitchWrap.setRightLabel(String.format(Locale.ROOT, "%.2f", trigger.pitch));
             triggerWidgets.add(pitchWrap);
 
             TextField titleField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Title...");
@@ -173,11 +172,11 @@ public class ChatActionsTabController extends SimpleTabController {
                     "How long the title and subtitle stay on screen", null);
             Slider durationSlider = new Slider(0, 0, itemWidth, 0.0f, 10.0f, trigger.durationSeconds, val -> {
                 trigger.durationSeconds = val;
-                durWrap.setRightLabel(String.format("%.2f seconds", val));
+                durWrap.setRightLabel(String.format(Locale.ROOT, "%.2f seconds", val));
                 ActionManager.getInstance().save();
             });
             durWrap.setControl(durationSlider);
-            durWrap.setRightLabel(String.format("%.2f seconds", trigger.durationSeconds));
+            durWrap.setRightLabel(String.format(Locale.ROOT, "%.2f seconds", trigger.durationSeconds));
             triggerWidgets.add(durWrap);
 
             ToggleSwitch regexToggle = new ToggleSwitch(0, 0, itemWidth, "Is Regex",
@@ -219,7 +218,7 @@ public class ChatActionsTabController extends SimpleTabController {
                 });
                 triggerWidgets.add(new SettingWrapper(0, 0, itemWidth, "Notification Message", "Custom notification message. Supports & colors and regex groups.", nMsgField));
 
-                List<String> typeOptions = java.util.stream.Stream.of(NotificationType.values()).map(Enum::name).toList();
+                List<String> typeOptions = Stream.of(NotificationType.values()).map(Enum::name).toList();
                 Dropdown typeDropdown = new Dropdown(0, 0, itemWidth, "Notification Type", typeOptions, selected -> {
                     trigger.notificationType = NotificationType.valueOf(selected);
                     ActionManager.getInstance().save();
@@ -229,8 +228,8 @@ public class ChatActionsTabController extends SimpleTabController {
 
                 Button testNotifyBtn = new Button(0, 0, itemWidth, Theme.BUTTON_HEIGHT, "Test Notification", () -> {
                     NotificationManager.addNotification(
-                            org.blackum.blackaddons.core.util.FormatUtils.formatColor(trigger.notificationTitle != null && !trigger.notificationTitle.isEmpty() ? trigger.notificationTitle : "Test Title"),
-                            org.blackum.blackaddons.core.util.FormatUtils.formatColor(trigger.notificationMessage != null && !trigger.notificationMessage.isEmpty() ? trigger.notificationMessage : "Test Message"),
+                            FormatUtils.formatColor(trigger.notificationTitle != null && !trigger.notificationTitle.isEmpty() ? trigger.notificationTitle : "Test Title"),
+                            FormatUtils.formatColor(trigger.notificationMessage != null && !trigger.notificationMessage.isEmpty() ? trigger.notificationMessage : "Test Message"),
                             trigger.notificationType
                     );
                 });

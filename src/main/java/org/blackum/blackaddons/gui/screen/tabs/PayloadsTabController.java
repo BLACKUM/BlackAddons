@@ -7,6 +7,9 @@ import org.blackum.blackaddons.gui.widget.*;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import org.blackum.blackaddons.gui.notification.NotificationType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PayloadsTabController extends SimpleTabController {
     private ResizableCard customClientCard;
     private ResizableCard allowedChannelsCard;
@@ -36,18 +39,27 @@ public class PayloadsTabController extends SimpleTabController {
         payloadsTab.addWidget(payloadsCardContainer);
 
         int containerY = contentY + Theme.SPACING_LARGE;
-        boolean isSingleColumn = contentWidth < 680;
-        int col1X = contentX + Theme.SPACING_NORMAL;
-        int col2X = contentX + 300 + (Theme.SPACING_NORMAL * 2);
+        int numCols = contentWidth < 680 ? 1 : (contentWidth < 1000 ? 2 : 3);
+        int colWidth = 300;
+        int spacing = 20;
+        int[] colY = new int[numCols];
+        for (int i = 0; i < numCols; i++) colY[i] = containerY + Theme.SPACING_NORMAL;
 
-        if (isSingleColumn) {
-            customClientCard = createCustomClientCard(col1X, containerY + Theme.SPACING_NORMAL);
-            int currentY = containerY + Theme.SPACING_NORMAL + customClientCard.getHeight() + Theme.CARD_SPACING;
+        List<ResizableCard> cards = new ArrayList<>();
+        customClientCard = createCustomClientCard(0, 0);
+        cards.add(customClientCard);
+        allowedChannelsCard = createPayloadChannelsCard(0, 0);
+        cards.add(allowedChannelsCard);
 
-            allowedChannelsCard = createPayloadChannelsCard(col1X, currentY);
-        } else {
-            customClientCard = createCustomClientCard(col1X, containerY + Theme.SPACING_NORMAL);
-            allowedChannelsCard = createPayloadChannelsCard(col2X, containerY + Theme.SPACING_NORMAL);
+        for (ResizableCard card : cards) {
+            int shortestCol = 0;
+            for (int i = 1; i < numCols; i++) {
+                if (colY[i] < colY[shortestCol]) shortestCol = i;
+            }
+
+            card.setX(contentX + Theme.SPACING_NORMAL + shortestCol * (colWidth + spacing));
+            card.setY(colY[shortestCol]);
+            colY[shortestCol] += card.getHeight() + Theme.CARD_SPACING;
         }
 
         payloadsCardContainer.addCard(customClientCard);

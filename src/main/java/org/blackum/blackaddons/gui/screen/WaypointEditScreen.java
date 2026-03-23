@@ -10,9 +10,22 @@ import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.gui.widget.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
-import java.util.function.Consumer;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+
+import org.blackum.blackaddons.core.waypoint.WaypointAnimation;
+import org.blackum.blackaddons.core.waypoint.WaypointShape;
 
 public class WaypointEditScreen extends BaseScreen {
     private static final int CUSTOM_INPUT_WIDTH = 90;
@@ -38,9 +51,9 @@ public class WaypointEditScreen extends BaseScreen {
 
     @Override
     protected void initWidgets() {
-        if (waypoint.animation == null) waypoint.animation = org.blackum.blackaddons.core.waypoint.WaypointAnimation.STATIC;
-        if (waypoint.actions == null) waypoint.actions = new java.util.ArrayList<>();
-        if (waypoint.id == null) waypoint.id = java.util.UUID.randomUUID();
+        if (waypoint.animation == null) waypoint.animation = WaypointAnimation.STATIC;
+        if (waypoint.actions == null) waypoint.actions = new ArrayList<>();
+        if (waypoint.id == null) waypoint.id = UUID.randomUUID();
         waypoint.reuseCooldownSeconds = roundToMillis(Math.max(0.0f, waypoint.reuseCooldownSeconds));
 
         int listWidth = containerWidth - Theme.PADDING * 2;
@@ -55,30 +68,30 @@ public class WaypointEditScreen extends BaseScreen {
 
         list.addItem(new Label(0, 0, "Coordinates", Label.Style.CAPTION));
         xField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "X");
-        xField.setText(String.format(java.util.Locale.ROOT, "%.2f", waypoint.x));
+        xField.setText(String.format(Locale.ROOT, "%.2f", waypoint.x));
         list.addItem(xField);
 
         yField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Y");
-        yField.setText(String.format(java.util.Locale.ROOT, "%.2f", waypoint.y));
+        yField.setText(String.format(Locale.ROOT, "%.2f", waypoint.y));
         list.addItem(yField);
 
         zField = new TextField(0, 0, itemWidth, Theme.TEXTFIELD_HEIGHT, "Z");
-        zField.setText(String.format(java.util.Locale.ROOT, "%.2f", waypoint.z));
+        zField.setText(String.format(Locale.ROOT, "%.2f", waypoint.z));
         list.addItem(zField);
 
         Button lookBtn = new Button(0, 0, itemWidth, 20, "Looking at Position", () -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null) {
-                net.minecraft.world.phys.HitResult hit = mc.player.pick(50.0, 0.0f, false);
-                if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-                    net.minecraft.core.BlockPos pos = ((net.minecraft.world.phys.BlockHitResult) hit).getBlockPos();
-                    xField.setText(String.format(java.util.Locale.ROOT, "%.2f", (double)pos.getX()));
-                    yField.setText(String.format(java.util.Locale.ROOT, "%.2f", (double)pos.getY()));
-                    zField.setText(String.format(java.util.Locale.ROOT, "%.2f", (double)pos.getZ()));
+                HitResult hit = mc.player.pick(50.0, 0.0f, false);
+                if (hit.getType() == HitResult.Type.BLOCK) {
+                    BlockPos pos = ((BlockHitResult) hit).getBlockPos();
+                    xField.setText(String.format(Locale.ROOT, "%.2f", (double)pos.getX()));
+                    yField.setText(String.format(Locale.ROOT, "%.2f", (double)pos.getY()));
+                    zField.setText(String.format(Locale.ROOT, "%.2f", (double)pos.getZ()));
                 } else {
-                    xField.setText(String.format(java.util.Locale.ROOT, "%.2f", mc.player.getX()));
-                    yField.setText(String.format(java.util.Locale.ROOT, "%.2f", mc.player.getY()));
-                    zField.setText(String.format(java.util.Locale.ROOT, "%.2f", mc.player.getZ()));
+                    xField.setText(String.format(Locale.ROOT, "%.2f", mc.player.getX()));
+                    yField.setText(String.format(Locale.ROOT, "%.2f", mc.player.getY()));
+                    zField.setText(String.format(Locale.ROOT, "%.2f", mc.player.getZ()));
                 }
             }
         });
@@ -87,23 +100,23 @@ public class WaypointEditScreen extends BaseScreen {
         Button currentPosBtn = new Button(0, 0, itemWidth, 20, "Current Position", () -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null) {
-                xField.setText(String.format(java.util.Locale.ROOT, "%.2f", mc.player.getX()));
-                yField.setText(String.format(java.util.Locale.ROOT, "%.2f", mc.player.getY()));
-                zField.setText(String.format(java.util.Locale.ROOT, "%.2f", mc.player.getZ()));
+                xField.setText(String.format(Locale.ROOT, "%.2f", mc.player.getX()));
+                yField.setText(String.format(Locale.ROOT, "%.2f", mc.player.getY()));
+                zField.setText(String.format(Locale.ROOT, "%.2f", mc.player.getZ()));
             }
         });
         list.addItem(currentPosBtn);
         list.addItem(new Widget(0, 0, itemWidth, 5) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
         list.addItem(new Label(0, 0, "Animation style", Label.Style.CAPTION));
-        org.blackum.blackaddons.core.waypoint.WaypointAnimation[] anims = org.blackum.blackaddons.core.waypoint.WaypointAnimation.values();
-        java.util.List<String> animOptions = java.util.Arrays.stream(anims)
+        WaypointAnimation[] anims = WaypointAnimation.values();
+        List<String> animOptions = Arrays.stream(anims)
             .map(Object::toString)
-            .collect(java.util.stream.Collectors.toList());
+            .collect(Collectors.toList());
 
         Dropdown animDropdown = new Dropdown(0, 0, itemWidth, 20, "Select Animation", animOptions, 
             val -> {
-                for (org.blackum.blackaddons.core.waypoint.WaypointAnimation a : anims) {
+                for (WaypointAnimation a : anims) {
                     if (a.toString().equals(val)) {
                         waypoint.animation = a;
                         break;
@@ -121,14 +134,14 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(new Widget(0, 0, itemWidth, 10) { @Override public void render(GuiGraphics g, int mx, int my, float pt) {} });
 
         list.addItem(new Label(0, 0, "Shape", Label.Style.CAPTION));
-        org.blackum.blackaddons.core.waypoint.WaypointShape[] shapes = org.blackum.blackaddons.core.waypoint.WaypointShape.values();
-        java.util.List<String> shapeOptions = java.util.Arrays.stream(shapes)
+        WaypointShape[] shapes = WaypointShape.values();
+        List<String> shapeOptions = Arrays.stream(shapes)
             .map(Object::toString)
-            .collect(java.util.stream.Collectors.toList());
+            .collect(Collectors.toList());
 
         Dropdown shapeDropdown = new Dropdown(0, 0, itemWidth, 20, "Select Shape", shapeOptions, 
             val -> {
-                for (org.blackum.blackaddons.core.waypoint.WaypointShape s : shapes) {
+                for (WaypointShape s : shapes) {
                     if (s.toString().equals(val)) {
                         waypoint.shape = s;
                         break;
@@ -144,10 +157,10 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(new Label(0, 0, "Radius", Label.Style.CAPTION));
         GridRow radiusRow = new GridRow(itemWidth, 20);
         TextField manualRadius = new TextField(0, 0, 50, 14, "Radius");
-        manualRadius.setText(String.format(java.util.Locale.ROOT, "%.2f", waypoint.radius));
+        manualRadius.setText(String.format(Locale.ROOT, "%.2f", waypoint.radius));
         Slider radiusSlider = new Slider(0, 0, itemWidth - 60, 0.01f, 10.00f, (float)waypoint.radius, val -> {
             waypoint.radius = val;
-            manualRadius.setText(String.format(java.util.Locale.ROOT, "%.2f", val));
+            manualRadius.setText(String.format(Locale.ROOT, "%.2f", val));
         });
         radiusRow.addChild(radiusSlider, 0);
         radiusRow.addChild(manualRadius, itemWidth - 55);
@@ -167,10 +180,10 @@ public class WaypointEditScreen extends BaseScreen {
         list.addItem(new Label(0, 0, "Height", Label.Style.CAPTION));
         GridRow heightRow = new GridRow(itemWidth, 20);
         TextField manualHeight = new TextField(0, 0, 50, 14, "Height");
-        manualHeight.setText(String.format(java.util.Locale.ROOT, "%.2f", waypoint.height));
+        manualHeight.setText(String.format(Locale.ROOT, "%.2f", waypoint.height));
         Slider heightSlider = new Slider(0, 0, itemWidth - 60, 0.01f, 10.00f, (float)waypoint.height, val -> {
             waypoint.height = val;
-            manualHeight.setText(String.format(java.util.Locale.ROOT, "%.2f", val));
+            manualHeight.setText(String.format(Locale.ROOT, "%.2f", val));
         });
         heightRow.addChild(heightSlider, 0);
         heightRow.addChild(manualHeight, itemWidth - 55);
@@ -252,13 +265,13 @@ public class WaypointEditScreen extends BaseScreen {
         if (field == null) {
             return;
         }
-        String formatted = String.format(java.util.Locale.ROOT, "%.3f", roundToMillis(value));
+        String formatted = String.format(Locale.ROOT, "%.3f", roundToMillis(value));
         if (!formatted.equals(field.getText())) {
             field.setText(formatted);
         }
     }
 
-    private TextField createNonNegativeSecondsField(float initialValue, java.util.function.Consumer<Float> onValidValue) {
+    private TextField createNonNegativeSecondsField(float initialValue, Consumer<Float> onValidValue) {
         TextField field = new TextField(0, 0, CUSTOM_INPUT_WIDTH, Theme.TEXTFIELD_HEIGHT, "0.000");
         field.setMaxLength(10);
         field.setCharFilter(c -> Character.isDigit(c) || c == '.');

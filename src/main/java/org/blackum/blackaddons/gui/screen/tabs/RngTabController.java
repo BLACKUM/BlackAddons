@@ -22,7 +22,10 @@ import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.gui.widget.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class RngTabController extends ProfileTabController {
@@ -114,12 +117,12 @@ public class RngTabController extends ProfileTabController {
     private void parseRngData(JsonObject data) {
         if (data.has("drops")) {
             JsonObject drops = JsonUtils.getObject(data, "drops");
-            rngDropCounts = new java.util.HashMap<>();
+            rngDropCounts = new HashMap<>();
             for (String cat : drops.keySet()) {
                 if (cat.startsWith("_"))
                     continue;
                 JsonObject catData = JsonUtils.getObject(drops, cat);
-                Map<String, Integer> itemMap = new java.util.HashMap<>();
+                Map<String, Integer> itemMap = new HashMap<>();
                 for (String item : catData.keySet()) {
                     itemMap.put(item, catData.get(item).getAsInt());
                 }
@@ -129,7 +132,7 @@ public class RngTabController extends ProfileTabController {
 
         if (data.has("prices")) {
             JsonObject prices = JsonUtils.getObject(data, "prices");
-            rngPrices = new java.util.HashMap<>();
+            rngPrices = new HashMap<>();
             for (String id : prices.keySet()) {
                 rngPrices.put(id, prices.get(id).getAsDouble());
             }
@@ -137,7 +140,7 @@ public class RngTabController extends ProfileTabController {
 
         if (data.has("run_counts")) {
             JsonObject runs = JsonUtils.getObject(data, "run_counts");
-            rngRunCounts = new java.util.HashMap<>();
+            rngRunCounts = new HashMap<>();
             for (String floor : runs.keySet()) {
                 rngRunCounts.put(floor, JsonUtils.getObject(runs, floor));
             }
@@ -145,7 +148,7 @@ public class RngTabController extends ProfileTabController {
 
         if (data.has("chest_costs")) {
             JsonObject costs = JsonUtils.getObject(data, "chest_costs");
-            rngChestCosts = new java.util.HashMap<>();
+            rngChestCosts = new HashMap<>();
             for (String item : costs.keySet()) {
                 rngChestCosts.put(item, costs.get(item).getAsInt());
             }
@@ -153,7 +156,7 @@ public class RngTabController extends ProfileTabController {
 
         if (data.has("categories")) {
             JsonObject cats = JsonUtils.getObject(data, "categories");
-            rngCategories = new java.util.LinkedHashMap<>();
+            rngCategories = new LinkedHashMap<>();
             for (String cat : cats.keySet()) {
                 JsonArray subs = cats.getAsJsonArray(cat);
                 List<String> subList = new ArrayList<>();
@@ -166,7 +169,7 @@ public class RngTabController extends ProfileTabController {
 
         if (data.has("items")) {
             JsonObject items = JsonUtils.getObject(data, "items");
-            rngItems = new java.util.HashMap<>();
+            rngItems = new HashMap<>();
             for (String sub : items.keySet()) {
                 JsonArray itemArray = items.getAsJsonArray(sub);
                 List<String> itemList = new ArrayList<>();
@@ -187,7 +190,7 @@ public class RngTabController extends ProfileTabController {
 
         if (data.has("item_ids")) {
             JsonObject ids = JsonUtils.getObject(data, "item_ids");
-            rngItemIds = new java.util.HashMap<>();
+            rngItemIds = new HashMap<>();
             for (String itemName : ids.keySet()) {
                 rngItemIds.put(itemName, ids.get(itemName).getAsString());
             }
@@ -351,7 +354,7 @@ public class RngTabController extends ProfileTabController {
         }
 
         String profitStr = formatNumber(totalProfit);
-        String stats = String.format("%sTotal Profit: %s%s %s| %sItems: %s%d",
+        String stats = String.format(Locale.ROOT, "%sTotal Profit: %s%s %s| %sItems: %s%d",
                 ChatFormatting.GOLD, ChatFormatting.WHITE, profitStr, ChatFormatting.GRAY,
                 ChatFormatting.GOLD, ChatFormatting.WHITE, totalItems);
 
@@ -364,7 +367,7 @@ public class RngTabController extends ProfileTabController {
 
                 if (totalRuns > 0) {
                     double profitPerRun = totalProfit / totalRuns;
-                    stats += String.format(" %s| %sRuns: %s%,d %s| %sProfit/Run: %s%s",
+                    stats += String.format(Locale.ROOT, " %s| %sRuns: %s%,d %s| %sProfit/Run: %s%s",
                             ChatFormatting.GRAY, ChatFormatting.GOLD, ChatFormatting.WHITE, totalRuns,
                             ChatFormatting.GRAY, ChatFormatting.GOLD, ChatFormatting.WHITE, formatNumber(profitPerRun));
                 }
@@ -417,9 +420,9 @@ public class RngTabController extends ProfileTabController {
 
     private void updateRngDropCountLocal(String category, String item, int newCount) {
         if (rngDropCounts == null) {
-            rngDropCounts = new java.util.HashMap<>();
+            rngDropCounts = new HashMap<>();
         }
-        rngDropCounts.putIfAbsent(category, new java.util.HashMap<>());
+        rngDropCounts.putIfAbsent(category, new HashMap<>());
         rngDropCounts.get(category).put(item, newCount);
     }
 

@@ -2,10 +2,13 @@ package org.blackum.blackaddons.core.waypoint;
 
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.core.config.ConfigManager.WaypointAction;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class Waypoint {
-    public java.util.UUID id = java.util.UUID.randomUUID();
-    public java.util.UUID groupId = null;
+    public UUID id = UUID.randomUUID();
+    public UUID groupId = null;
     public String name;
     public double x;
     public double y;
@@ -19,7 +22,7 @@ public class Waypoint {
     public boolean showFullShape = false;
     public WaypointAnimation animation = WaypointAnimation.STATIC;
     public float reuseCooldownSeconds = 0.0f;
-    public java.util.List<WaypointAction> actions = new java.util.ArrayList<>();
+    public List<WaypointAction> actions = new ArrayList<>();
 
     public Waypoint() {
     }

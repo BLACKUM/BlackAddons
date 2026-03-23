@@ -1,5 +1,6 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
+import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.gui.screen.AutoSSOverlayPositionScreen;
 import org.blackum.blackaddons.gui.screen.RotationOverlayPositionScreen;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -7,7 +8,9 @@ import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.feature.cheat.Freecam;
 import org.blackum.blackaddons.gui.widget.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class CheatsTabController extends SimpleTabController {
     private ResizableCard autoTntCard;
@@ -87,13 +90,13 @@ public class CheatsTabController extends SimpleTabController {
             cheatsTab.addWidget(ssTickSlider);
 
             Label ssDistLabel = new Label(contentX, contentY + 290,
-                    String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
+                    String.format(Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
             cheatsTab.addWidget(ssDistLabel);
 
             Slider ssDistSlider = new Slider(contentX, contentY + 310, contentWidth - 20, 2.0f, 10.0f,
                     ConfigManager.data.AutoSSDistanceLimit, val -> {
                         ConfigManager.data.AutoSSDistanceLimit = val;
-                        ssDistLabel.setText(String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", val));
+                        ssDistLabel.setText(String.format(Locale.ROOT, "Max Distance: %.1f blocks", val));
                         ConfigManager.save();
                     });
             cheatsTab.addWidget(ssDistSlider);
@@ -121,49 +124,35 @@ public class CheatsTabController extends SimpleTabController {
         cheatsTab.addWidget(cheatsCardContainer);
 
         int containerY = contentY + 30;
-        boolean isSingleColumn = contentWidth < 680;
-        int col1X = contentX + 20;
-        int col2X = contentX + 340;
+        int numCols = contentWidth < 680 ? 1 : (contentWidth < 1000 ? 2 : 3);
+        int colWidth = 300;
+        int spacing = 20;
+        int[] colY = new int[numCols];
+        for (int i = 0; i < numCols; i++) colY[i] = containerY + 20;
 
-        if (isSingleColumn) {
-            autoTntCard = createAutoTntCard(col1X, containerY + 20);
-            int currentY = containerY + 20 + autoTntCard.getHeight() + 10;
+        List<ResizableCard> cards = new ArrayList<>();
+        autoTntCard = createAutoTntCard(0, 0);
+        cards.add(autoTntCard);
+        autoSSCard = createAutoSSCard(0, 0);
+        cards.add(autoSSCard);
+        fastLeapCard = createFastLeapCard(0, 0);
+        cards.add(fastLeapCard);
+        rotationCard = createRotationCard(0, 0);
+        cards.add(rotationCard);
+        autoBMCard = createAutoBM(0, 0);
+        cards.add(autoBMCard);
+        freecamCard = createFreecamCard(0, 0);
+        cards.add(freecamCard);
 
-            autoSSCard = createAutoSSCard(col1X, currentY);
-            currentY += autoSSCard.getHeight() + 10;
+        for (ResizableCard card : cards) {
+            int shortestCol = 0;
+            for (int i = 1; i < numCols; i++) {
+                if (colY[i] < colY[shortestCol]) shortestCol = i;
+            }
 
-            fastLeapCard = createFastLeapCard(col1X, currentY);
-            currentY += fastLeapCard.getHeight() + 10;
-
-            rotationCard = createRotationCard(col1X, currentY);
-            currentY += rotationCard.getHeight() + 10;
-
-            autoBMCard = createAutoBM(col1X, currentY);
-            currentY += autoBMCard.getHeight() + 10;
-
-            freecamCard = createFreecamCard(col1X, currentY);
-            currentY += freecamCard.getHeight() + 10;
-        } else {
-            int currentY1 = containerY + 20;
-            int currentY2 = containerY + 20;
-
-            autoTntCard = createAutoTntCard(col1X, currentY1);
-            currentY1 += autoTntCard.getHeight() + 10;
-
-            fastLeapCard = createFastLeapCard(col1X, currentY1);
-            currentY1 += fastLeapCard.getHeight() + 10;
-
-            autoBMCard = createAutoBM(col1X, currentY1);
-            currentY1 += autoBMCard.getHeight() + 10;
-
-            freecamCard = createFreecamCard(col1X, currentY1);
-            currentY1 += freecamCard.getHeight() + 10;
-
-            autoSSCard = createAutoSSCard(col2X, currentY2);
-            currentY2 += autoSSCard.getHeight() + 10;
-
-            rotationCard = createRotationCard(col2X, currentY2);
-            currentY2 += rotationCard.getHeight() + 10;
+            card.setX(contentX + spacing + shortestCol * (colWidth + spacing));
+            card.setY(colY[shortestCol]);
+            colY[shortestCol] += card.getHeight() + 10;
         }
 
         cheatsCardContainer.addCard(autoTntCard);
@@ -265,37 +254,37 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(tickSlider);
 
         Label distLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
+                String.format(Locale.ROOT, "Max Distance: %.1f blocks", ConfigManager.data.AutoSSDistanceLimit), Label.Style.BODY);
         listView.addItem(distLabel);
 
         Slider distSlider = new Slider(0, 0, 260, 2.0f, 10.0f,
                 ConfigManager.data.AutoSSDistanceLimit, val -> {
             ConfigManager.data.AutoSSDistanceLimit = val;
-            distLabel.setText(String.format(java.util.Locale.ROOT, "Max Distance: %.1f blocks", val));
+            distLabel.setText(String.format(Locale.ROOT, "Max Distance: %.1f blocks", val));
             ConfigManager.save();
         });
         listView.addItem(distSlider);
 
         Label speedLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Rotation Speed: %.1f", ConfigManager.data.AutoSSRotationSpeed), Label.Style.BODY);
+                String.format(Locale.ROOT, "Rotation Speed: %.1f", ConfigManager.data.AutoSSRotationSpeed), Label.Style.BODY);
         listView.addItem(speedLabel);
 
         Slider speedSlider = new Slider(0, 0, 260, 1.0f, 50.0f,
                 ConfigManager.data.AutoSSRotationSpeed, val -> {
             ConfigManager.data.AutoSSRotationSpeed = val;
-            speedLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Speed: %.1f", val));
+            speedLabel.setText(String.format(Locale.ROOT, "Rotation Speed: %.1f", val));
             ConfigManager.save();
         });
         listView.addItem(speedSlider);
 
         Label curveLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Rotation Curve: %.0f%%", ConfigManager.data.AutoSSRotationCurve * 100), Label.Style.BODY);
+                String.format(Locale.ROOT, "Rotation Curve: %.0f%%", ConfigManager.data.AutoSSRotationCurve * 100), Label.Style.BODY);
         listView.addItem(curveLabel);
 
         Slider curveSlider = new Slider(0, 0, 260, 0.0f, 200.0f,
                 ConfigManager.data.AutoSSRotationCurve * 100, val -> {
             ConfigManager.data.AutoSSRotationCurve = val / 100f;
-            curveLabel.setText(String.format(java.util.Locale.ROOT, "Rotation Curve: %.0f%%", val));
+            curveLabel.setText(String.format(Locale.ROOT, "Rotation Curve: %.0f%%", val));
             ConfigManager.save();
         });
         listView.addItem(curveSlider);
@@ -369,8 +358,8 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(debugToggle);
 
         Button moveOverlayButton = new Button(0, 0, 260, 20, "Set Overlay Position", () -> {
-            net.minecraft.client.Minecraft.getInstance().execute(() -> {
-                net.minecraft.client.Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen));
+            Minecraft.getInstance().execute(() -> {
+                Minecraft.getInstance().setScreen(new AutoSSOverlayPositionScreen(screen));
             });
         });
         listView.addItem(moveOverlayButton);
@@ -575,8 +564,8 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(rotationDebugToggle);
 
         Button positionButton = new Button(0, 0, 260, 20, "Set Overlay Position", () ->
-                net.minecraft.client.Minecraft.getInstance().execute(() ->
-                        net.minecraft.client.Minecraft.getInstance().setScreen(
+                Minecraft.getInstance().execute(() ->
+                        Minecraft.getInstance().setScreen(
                                 new RotationOverlayPositionScreen(screen))));
         listView.addItem(positionButton);
 
@@ -602,25 +591,25 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(curveSlider);
 
         Label randomLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Target Randomness: %.2f blocks", ConfigManager.data.rotationTargetRandomness),
+                String.format(Locale.ROOT, "Target Randomness: %.2f blocks", ConfigManager.data.rotationTargetRandomness),
                 Label.Style.BODY);
         listView.addItem(randomLabel);
         Slider randomSlider = new Slider(0, 0, 260, 0.0f, 0.49f,
                 ConfigManager.data.rotationTargetRandomness, val -> {
                     ConfigManager.data.rotationTargetRandomness = val;
-                    randomLabel.setText(String.format(java.util.Locale.ROOT, "Target Randomness: %.2f blocks", val));
+                    randomLabel.setText(String.format(Locale.ROOT, "Target Randomness: %.2f blocks", val));
                     ConfigManager.save();
                 });
         listView.addItem(randomSlider);
 
         Label speedLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Speed: %.1f", ConfigManager.data.rotationSpeed),
+                String.format(Locale.ROOT, "Speed: %.1f", ConfigManager.data.rotationSpeed),
                 Label.Style.BODY);
         listView.addItem(speedLabel);
         Slider speedSlider = new Slider(0, 0, 260, 0.5f, 50.0f,
                 ConfigManager.data.rotationSpeed, val -> {
                     ConfigManager.data.rotationSpeed = val;
-                    speedLabel.setText(String.format(java.util.Locale.ROOT, "Speed: %.1f", val));
+                    speedLabel.setText(String.format(Locale.ROOT, "Speed: %.1f", val));
                     ConfigManager.save();
                 });
         listView.addItem(speedSlider);
@@ -638,49 +627,49 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(slowdownSlider);
 
         Label slowdownRadiusLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Max Slowdown Distance: %.0f blocks", ConfigManager.data.rotationDistanceRadius),
+                String.format(Locale.ROOT, "Max Slowdown Distance: %.0f blocks", ConfigManager.data.rotationDistanceRadius),
                 Label.Style.BODY);
         listView.addItem(slowdownRadiusLabel);
         Slider slowdownRadiusSlider = new Slider(0, 0, 260, 5.0f, 150.0f,
                 ConfigManager.data.rotationDistanceRadius, val -> {
                     ConfigManager.data.rotationDistanceRadius = val;
-                    slowdownRadiusLabel.setText(String.format(java.util.Locale.ROOT, "Max Slowdown Distance: %.0f blocks", val));
+                    slowdownRadiusLabel.setText(String.format(Locale.ROOT, "Max Slowdown Distance: %.0f blocks", val));
                     ConfigManager.save();
                 });
         listView.addItem(slowdownRadiusSlider);
 
         Label fovLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Distance Slowdown FOV: %.0f°", ConfigManager.data.rotationFovSlowdown),
+                String.format(Locale.ROOT, "Distance Slowdown FOV: %.0f\u00b0", ConfigManager.data.rotationFovSlowdown),
                 Label.Style.BODY);
         listView.addItem(fovLabel);
         Slider fovSlider = new Slider(0, 0, 260, 0.0f, 180.0f,
                 ConfigManager.data.rotationFovSlowdown, val -> {
                     ConfigManager.data.rotationFovSlowdown = val;
-                    fovLabel.setText(String.format(java.util.Locale.ROOT, "Distance Slowdown FOV: %.0f°", val));
+                    fovLabel.setText(String.format(Locale.ROOT, "Distance Slowdown FOV: %.0f\u00b0", val));
                     ConfigManager.save();
                 });
         listView.addItem(fovSlider);
 
         Label smoothLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Smoothness: %.2f", ConfigManager.data.rotationSmoothness),
+                String.format(Locale.ROOT, "Smoothness: %.2f", ConfigManager.data.rotationSmoothness),
                 Label.Style.BODY);
         listView.addItem(smoothLabel);
         Slider smoothSlider = new Slider(0, 0, 260, 0.0f, 1.0f,
                 ConfigManager.data.rotationSmoothness, val -> {
                     ConfigManager.data.rotationSmoothness = val;
-                    smoothLabel.setText(String.format(java.util.Locale.ROOT, "Smoothness: %.2f", val));
+                    smoothLabel.setText(String.format(Locale.ROOT, "Smoothness: %.2f", val));
                     ConfigManager.save();
                 });
         listView.addItem(smoothSlider);
 
         Label thresholdLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Stop Threshold: %.2f", ConfigManager.data.rotationStopThreshold),
+                String.format(Locale.ROOT, "Stop Threshold: %.2f", ConfigManager.data.rotationStopThreshold),
                 Label.Style.BODY);
         listView.addItem(thresholdLabel);
         Slider thresholdSlider = new Slider(0, 0, 260, 0.01f, 5.0f,
                 ConfigManager.data.rotationStopThreshold, val -> {
                     ConfigManager.data.rotationStopThreshold = val;
-                    thresholdLabel.setText(String.format(java.util.Locale.ROOT, "Stop Threshold: %.2f", val));
+                    thresholdLabel.setText(String.format(Locale.ROOT, "Stop Threshold: %.2f", val));
                     ConfigManager.save();
                 });
         listView.addItem(thresholdSlider);
@@ -731,14 +720,14 @@ public class CheatsTabController extends SimpleTabController {
         listView.addItem(activationModeDropdown);
 
         Label speedLabel = new Label(0, 0,
-                String.format(java.util.Locale.ROOT, "Speed: %.1f", ConfigManager.data.freecamSpeed),
+                String.format(Locale.ROOT, "Speed: %.1f", ConfigManager.data.freecamSpeed),
                 Label.Style.BODY);
         listView.addItem(speedLabel);
 
         Slider speedSlider = new Slider(0, 0, 260, 0.1f, 10.0f,
                 ConfigManager.data.freecamSpeed, val -> {
             ConfigManager.data.freecamSpeed = val;
-            speedLabel.setText(String.format(java.util.Locale.ROOT, "Speed: %.1f", val));
+            speedLabel.setText(String.format(Locale.ROOT, "Speed: %.1f", val));
             ConfigManager.save();
         });
         listView.addItem(speedSlider);
@@ -763,7 +752,7 @@ public class CheatsTabController extends SimpleTabController {
 
     private static String startDelayLabel(int ticks) {
         double seconds = ticks * 0.05;
-        String base = String.format(java.util.Locale.US, "Auto Start Delay: %d ticks (%.3f seconds)", ticks, seconds);
+        String base = String.format(Locale.US, "Auto Start Delay: %d ticks (%.3f seconds)", ticks, seconds);
         if (ticks <= 2) {
             base += " §c(not safe)";
         }
