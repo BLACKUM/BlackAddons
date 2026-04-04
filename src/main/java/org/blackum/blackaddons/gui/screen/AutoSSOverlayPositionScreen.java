@@ -1,13 +1,17 @@
 package org.blackum.blackaddons.gui.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
+import org.blackum.blackaddons.gui.render.RenderHelper;
 
-public class AutoSSOverlayPositionScreen extends Screen {
+public class AutoSSOverlayPositionScreen extends BaseScreen {
+    @Override
+    public void initWidgets() {}
+
     private static final int PREVIEW_WIDTH = 145;
     private static final int PREVIEW_HEIGHT = 80;
     private static final int BORDER_COLOR = 0xFFFACC15;
@@ -27,7 +31,7 @@ public class AutoSSOverlayPositionScreen extends Screen {
     }
 
     @Override
-    protected void init() {
+    public void init() {
         overlayX = ConfigManager.data.AutoSSOverlayX < 0
                 ? 10
                 : ConfigManager.data.AutoSSOverlayX;
@@ -40,10 +44,10 @@ public class AutoSSOverlayPositionScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, this.width, this.height, 0x80000000);
-        g.drawCenteredString(font, "Drag the AutoSS debug box to reposition it.", this.width / 2, this.height / 2, HINT_COLOR);
-        g.drawCenteredString(font, "Press Esc to save.", this.width / 2, this.height / 2 + 12, HINT_COLOR);
+        RenderHelper.drawCenteredString(g, font, "Drag the AutoSS debug box to reposition it.", this.width / 2, this.height / 2, HINT_COLOR);
+        RenderHelper.drawCenteredString(g, font, "Press Esc to save.", this.width / 2, this.height / 2 + 12, HINT_COLOR);
 
         g.fill(overlayX, overlayY, overlayX + PREVIEW_WIDTH, overlayY + PREVIEW_HEIGHT, BG_COLOR);
         g.fill(overlayX, overlayY, overlayX + PREVIEW_WIDTH, overlayY + 1, BORDER_COLOR);
@@ -52,25 +56,15 @@ public class AutoSSOverlayPositionScreen extends Screen {
         g.fill(overlayX + PREVIEW_WIDTH - 1, overlayY, overlayX + PREVIEW_WIDTH, overlayY + PREVIEW_HEIGHT, BORDER_COLOR);
 
         int ty = overlayY + 5;
-        g.drawString(font, "§6[AutoSS Debug] §aSolving...", overlayX + 5, ty, 0xFFFFFFFF);
+        g.text(font, "§6[AutoSS Debug] §aSolving...", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Target: 110, 121, 91", overlayX + 5, ty, 0xFFFFFFFF);
+        g.text(font, "Target: 110, 121, 91", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "On Target: §aYES", overlayX + 5, ty, 0xFFFFFFFF);
+        g.text(font, "On Target: §aYES", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Rot Done: §aYES", overlayX + 5, ty, 0xFFFFFFFF);
+        g.text(font, "Rot Done: §aYES", overlayX + 5, ty, 0xFFFFFFFF);
         ty += 10;
-        g.drawString(font, "Rot: 90.0, -30.0", overlayX + 5, ty, 0xFFFFFFFF);
-    }
-
-    private double getScaledMouseX() {
-        Minecraft mc = Minecraft.getInstance();
-        return mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth());
-    }
-
-    private double getScaledMouseY() {
-        Minecraft mc = Minecraft.getInstance();
-        return mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight());
+        g.text(font, "Rot: 90.0, -30.0", overlayX + 5, ty, 0xFFFFFFFF);
     }
 
     private boolean isOverPreview(double mx, double my) {
@@ -79,7 +73,7 @@ public class AutoSSOverlayPositionScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean pressed) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mx = getScaledMouseX();
         double my = getScaledMouseY();
         int button = event.button();
@@ -89,7 +83,7 @@ public class AutoSSOverlayPositionScreen extends Screen {
             dragOffsetY = my - overlayY;
             return true;
         }
-        return super.mouseClicked(event, pressed);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override

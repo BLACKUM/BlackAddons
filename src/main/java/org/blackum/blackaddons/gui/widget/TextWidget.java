@@ -1,7 +1,7 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.render.Theme;
 
 public class TextWidget extends Widget {
@@ -21,13 +21,13 @@ public class TextWidget extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
         if (centered) {
-            graphics.drawCenteredString(Minecraft.getInstance().font, text, x + width / 2, y, color);
+            graphics.centeredText(Minecraft.getInstance().font, text, x + width / 2, y, color);
         } else {
-            graphics.drawString(Minecraft.getInstance().font, text, x, y, color);
+            graphics.text(Minecraft.getInstance().font, text, x, y, color);
         }
     }
 

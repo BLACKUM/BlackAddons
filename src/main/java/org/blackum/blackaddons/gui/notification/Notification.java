@@ -1,7 +1,7 @@
 package org.blackum.blackaddons.gui.notification;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -59,7 +59,7 @@ public class Notification {
         return expiring && exitAnimation.isFinished();
     }
 
-    public void render(GuiGraphics graphics, int x, int y) {
+    public void render(GuiGraphicsExtractor graphics, int x, int y) {
         float animValue = slideAnimation.getValue();
 
         if (expiring) {
@@ -80,12 +80,12 @@ public class Notification {
 
         Minecraft mc = Minecraft.getInstance();
 
-        graphics.drawString(mc.font, title, renderX + MARGIN_X, y + MARGIN_Y, type.getColor(), false);
+        graphics.text(mc.font, title, renderX + MARGIN_X, y + MARGIN_Y, type.getColor(), false);
 
         int textStart = y + MARGIN_Y + TITLE_HEIGHT + GAP_Y;
         int textY = textStart;
         for (FormattedCharSequence line : messageLines) {
-            graphics.drawString(mc.font, line, renderX + MARGIN_X, textY, Theme.TEXT_SECONDARY, false);
+            graphics.text(mc.font, line, renderX + MARGIN_X, textY, Theme.TEXT_SECONDARY, false);
             textY += mc.font.lineHeight;
         }
     }

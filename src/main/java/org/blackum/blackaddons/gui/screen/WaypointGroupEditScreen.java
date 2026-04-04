@@ -1,6 +1,6 @@
 package org.blackum.blackaddons.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.core.model.DungeonFloor;
@@ -36,7 +36,7 @@ public class WaypointGroupEditScreen extends BaseScreen {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         int listWidth = containerWidth - Theme.PADDING * 2;
         ListView list = new ListView(containerX + Theme.PADDING, containerY + 40, listWidth, containerHeight - 50);
         int itemWidth = list.getWidth() - 16;
@@ -111,7 +111,7 @@ public class WaypointGroupEditScreen extends BaseScreen {
         list.addItem(phaseWrapper);
 
         list.addItem(new Widget(0, 0, itemWidth, 10) {
-            @Override public void render(GuiGraphics g, int mx, int my, float pt) {}
+            @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) {}
         });
 
         GridRow btnRow = new GridRow(itemWidth, Theme.BUTTON_HEIGHT);
@@ -130,7 +130,7 @@ public class WaypointGroupEditScreen extends BaseScreen {
     }
 
     @Override
-    protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void extractScrolledContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         RenderHelper.drawCenteredString(graphics, font, "Edit Group", containerX + containerWidth / 2, containerY + 20, Theme.TEXT_PRIMARY);
     }
 }

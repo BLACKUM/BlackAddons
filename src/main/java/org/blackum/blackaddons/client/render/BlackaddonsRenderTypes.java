@@ -1,11 +1,12 @@
 package org.blackum.blackaddons.client.render;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import org.blackum.blackaddons.core.util.McCompat;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 
 public class BlackaddonsRenderTypes {
-    public static VertexConsumer getWaypointBuffer(MultiBufferSource bufferSource) {
-        return McCompat.getWaypointBuffer(bufferSource);
+    public static RenderType getWaypoint() {
+        Identifier whiteTexture = Identifier.tryParse("minecraft:textures/block/white_concrete.png");
+        return RenderTypes.entityTranslucent(whiteTexture);
     }
 }

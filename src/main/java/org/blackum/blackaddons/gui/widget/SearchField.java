@@ -1,7 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 
 import java.util.function.Consumer;
@@ -17,21 +19,21 @@ public class SearchField extends TextField {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         if (getText().isEmpty() && !focused) {
             int iconX = x + Theme.PADDING_SMALL;
             int iconY = y + (height - 8) / 2;
             int iconColor = Theme.withAlpha(Theme.TEXT_SECONDARY, 0.6f);
-            graphics.drawString(Minecraft.getInstance().font, "🔍 Search...", iconX, iconY, iconColor);
+            graphics.text(Minecraft.getInstance().font, "🔍 Search...", iconX, iconY, iconColor);
         }
 
         if (!getText().isEmpty()) {
             int clearX = x + width - Theme.PADDING_SMALL - 8;
             int clearY = y + (height - 8) / 2;
             int clearColor = Theme.withAlpha(Theme.TEXT_SECONDARY, hovered ? 1.0f : 0.6f);
-            graphics.drawString(Minecraft.getInstance().font, "✕", clearX, clearY, clearColor);
+            graphics.text(Minecraft.getInstance().font, "✕", clearX, clearY, clearColor);
         }
     }
 
@@ -48,7 +50,7 @@ public class SearchField extends TextField {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
@@ -67,7 +69,7 @@ public class SearchField extends TextField {
             }
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(mouseX, mouseY, event);
     }
 
     public void setOnSearch(Consumer<String> onSearch) {

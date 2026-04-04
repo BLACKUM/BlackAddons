@@ -1,7 +1,7 @@
 package org.blackum.blackaddons.gui.notification;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public class NotificationManager {
         }
     }
 
-    public void render(GuiGraphics graphics) {
+    public void render(GuiGraphicsExtractor graphics) {
         if (notifications.isEmpty())
             return;
 

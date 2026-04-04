@@ -2,7 +2,9 @@ package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 import org.blackum.blackaddons.gui.animation.Animation;
@@ -118,7 +120,7 @@ public class Dropdown extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -132,16 +134,16 @@ public class Dropdown extends Widget {
         }
 
         int textY = y + (height - 8) / 2;
-        graphics.drawString(Minecraft.getInstance().font, text, x + 10, textY, textColor);
+        graphics.text(Minecraft.getInstance().font, text, x + 10, textY, textColor);
 
         String arrow = expanded ? "▲" : "▼";
         int arrowWidth = Minecraft.getInstance().font.width(arrow);
-        graphics.drawString(Minecraft.getInstance().font, arrow, x + width - 15 - arrowWidth / 2, textY,
+        graphics.text(Minecraft.getInstance().font, arrow, x + width - 15 - arrowWidth / 2, textY,
                 Theme.TEXT_SECONDARY);
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible || !expanded)
             return;
@@ -174,10 +176,10 @@ public class Dropdown extends Widget {
             }
 
             if (i == selectedIndex) {
-                graphics.drawString(Minecraft.getInstance().font, ChatFormatting.AQUA + option, x + 10,
+                graphics.text(Minecraft.getInstance().font, ChatFormatting.AQUA + option, x + 10,
                         optY + (OPTION_HEIGHT - 8) / 2, Theme.ACCENT);
             } else {
-                graphics.drawString(Minecraft.getInstance().font, option, x + 10, optY + (OPTION_HEIGHT - 8) / 2,
+                graphics.text(Minecraft.getInstance().font, option, x + 10, optY + (OPTION_HEIGHT - 8) / 2,
                         Theme.TEXT_PRIMARY);
             }
         }
@@ -197,9 +199,11 @@ public class Dropdown extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
+
+        int button = event.buttonInfo().button();
 
         if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
             expanded = !expanded;
@@ -240,11 +244,12 @@ public class Dropdown extends Widget {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double horizontalAmount,
+            double verticalAmount) {
         if (expanded && isMouseOver(mouseX, mouseY)) {
             int totalHeight = getTotalMenuHeight();
             if (totalHeight > MAX_MENU_HEIGHT) {
-                menuScrollOffset -= scrollY * 15;
+                menuScrollOffset -= verticalAmount * 15;
                 if (menuScrollOffset < 0)
                     menuScrollOffset = 0;
                 if (menuScrollOffset > totalHeight - MAX_MENU_HEIGHT)

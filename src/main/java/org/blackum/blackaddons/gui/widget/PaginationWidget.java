@@ -1,7 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import java.util.function.Consumer;
 
 public class PaginationWidget extends Widget {
@@ -41,7 +43,7 @@ public class PaginationWidget extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -51,23 +53,23 @@ public class PaginationWidget extends Widget {
         next.setX(mid + 40);
         next.setY(y + 2);
 
-        prev.render(graphics, mouseX, mouseY, partialTick);
-        next.render(graphics, mouseX, mouseY, partialTick);
+        prev.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        next.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         String pageStr = currentPage + " / " + (totalPages > 0 ? totalPages : "?");
-        graphics.drawCenteredString(Minecraft.getInstance().font, pageStr, mid, y + 8, 0xFFAAAAAA);
+        graphics.centeredText(Minecraft.getInstance().font, pageStr, mid, y + 8, 0xFFAAAAAA);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!visible || !enabled)
             return false;
-        return prev.mouseClicked(mouseX, mouseY, button) || next.mouseClicked(mouseX, mouseY, button);
+        return prev.mouseClicked(mouseX, mouseY, event) || next.mouseClicked(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return prev.mouseReleased(mouseX, mouseY, button) || next.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        return prev.mouseReleased(mouseX, mouseY, event) || next.mouseReleased(mouseX, mouseY, event);
     }
 
     @Override

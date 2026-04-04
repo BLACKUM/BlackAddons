@@ -1,6 +1,7 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
 import com.google.gson.JsonObject;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
 import org.blackum.blackaddons.gui.widget.*;
 import org.blackum.blackaddons.core.util.ItemDeserializer;
@@ -84,7 +85,7 @@ public class EnderChestTabController extends ProfileTabController {
 
             listView.addItem(new Widget(0, 0, 0, 20) {
                 @Override
-                public void render(net.minecraft.client.gui.GuiGraphics graphics, int mouseX, int mouseY,
+                public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                         float partialTick) {
                 }
             });

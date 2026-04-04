@@ -3,10 +3,10 @@ package org.blackum.blackaddons.feature.chat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
-import org.blackum.blackaddons.core.util.McCompat;
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -70,10 +70,10 @@ public class ChatActionManager {
                 client.execute(() -> {
                     if (trigger.soundId != null && !trigger.soundId.isEmpty()) {
                         try {
-                            Object location = McCompat.tryParseResource(trigger.soundId);
+                            Identifier location = Identifier.tryParse(trigger.soundId);
                             if (location == null)
-                                location = McCompat.resource("minecraft", trigger.soundId);
-                            SoundEvent event = McCompat.createVariableRangeEvent(location);
+                                location = Identifier.fromNamespaceAndPath("minecraft", trigger.soundId);
+                            SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                             client.getSoundManager().play(SimpleSoundInstance.forUI(event, trigger.pitch, trigger.volume));
                         } catch (Exception e) {
                         }

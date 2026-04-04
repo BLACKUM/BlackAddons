@@ -43,7 +43,7 @@ public class PartyCreationScreen extends BaseScreen {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         int contentX = containerX + Theme.PADDING_LARGE;
         int contentY = containerY + Theme.PADDING_LARGE;
 

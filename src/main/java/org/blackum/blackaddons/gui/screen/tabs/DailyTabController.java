@@ -6,8 +6,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import org.blackum.blackaddons.core.util.McCompat;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.util.Util;
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -339,21 +340,21 @@ public class DailyTabController extends ProfileTabController {
         Button linkBtn = new Button(0, 0, list.getWidth() - 20, 20,
                 ChatFormatting.AQUA + "Want to be on leaderboard? Link Discord", () -> {
                     String url = Constants.DISCORD_AUTH_URL;
-                    McCompat.openUri(url);
+                    Util.getPlatform().openUri(url);
                 });
 
         Widget wrapper = new Widget(0, 0, list.getWidth(), 30) {
             @Override
-            public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
                 linkBtn.setX(this.x + 10);
                 linkBtn.setY(this.y + 5);
                 linkBtn.setWidth(this.width - 20);
-                linkBtn.render(g, mouseX, mouseY, partialTick);
+                linkBtn.extractRenderState(g, mouseX, mouseY, partialTick);
             }
 
             @Override
-            public boolean mouseClicked(double mouseX, double mouseY, int button) {
-                return linkBtn.mouseClicked(mouseX, mouseY, button);
+            public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+                return linkBtn.mouseClicked(mouseX, mouseY, event);
             }
 
             @Override
@@ -367,8 +368,8 @@ public class DailyTabController extends ProfileTabController {
             }
 
             @Override
-            public boolean mouseReleased(double mouseX, double mouseY, int button) {
-                return linkBtn.mouseReleased(mouseX, mouseY, button);
+            public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+                return linkBtn.mouseReleased(mouseX, mouseY, event);
             }
         };
         list.addItem(wrapper);
@@ -394,8 +395,8 @@ public class DailyTabController extends ProfileTabController {
 
         Widget header = new Widget(0, 0, dailyPersonalList.getWidth(), 30) {
             @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-                graphics.drawCenteredString(Minecraft.getInstance().font,
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+                graphics.centeredText(Minecraft.getInstance().font,
                         ChatFormatting.BOLD.toString() + "📊 Personal Stats: " + playerName,
                         x + width / 2, y + 10,
                         Theme.ACCENT);
@@ -417,7 +418,7 @@ public class DailyTabController extends ProfileTabController {
 
         dailyPersonalList.addItem(new Widget(0, 0, 0, 40) {
             @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             }
         });
     }
@@ -473,21 +474,21 @@ public class DailyTabController extends ProfileTabController {
 
         Widget w = new Widget(0, 0, list.getWidth(), 55) {
             @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
                 RenderHelper.renderRoundedRect(graphics, x, y, width - 4, height - 2,
                         3, Theme.BACKGROUND_SECONDARY);
                 Minecraft mc = Minecraft.getInstance();
-                graphics.drawString(mc.font, ChatFormatting.AQUA + title, x + 5, y + 5, Theme.TEXT_PRIMARY);
+                graphics.text(mc.font, ChatFormatting.AQUA + title, x + 5, y + 5, Theme.TEXT_PRIMARY);
 
                 int rowY = y + 18;
                 if (fHasDaily) {
                     String dStr = "Day: " + ChatFormatting.GREEN + "+" + FormatUtils.formatNumber(fdGained) + " XP "
                             + ChatFormatting.GRAY + "("
                             + String.format("%.2f", fdStart) + " ➤ " + String.format("%.2f", fdEnd) + ")";
-                    graphics.drawString(mc.font, dStr, x + 10, rowY, Theme.TEXT_PRIMARY);
+                    graphics.text(mc.font, dStr, x + 10, rowY, Theme.TEXT_PRIMARY);
                     rowY += 12;
                 } else {
-                    graphics.drawString(mc.font, "Day: " + ChatFormatting.GRAY + "No Gain", x + 10, rowY,
+                    graphics.text(mc.font, "Day: " + ChatFormatting.GRAY + "No Gain", x + 10, rowY,
                             Theme.TEXT_SECONDARY);
                     rowY += 12;
                 }
@@ -496,9 +497,9 @@ public class DailyTabController extends ProfileTabController {
                     String mStr = "Month: " + ChatFormatting.GREEN + "+" + FormatUtils.formatNumber(fmGained) + " XP "
                             + ChatFormatting.GRAY + "("
                             + String.format("%.2f", fmStart) + " ➤ " + String.format("%.2f", fmEnd) + ")";
-                    graphics.drawString(mc.font, mStr, x + 10, rowY, Theme.TEXT_PRIMARY);
+                    graphics.text(mc.font, mStr, x + 10, rowY, Theme.TEXT_PRIMARY);
                 } else {
-                    graphics.drawString(mc.font, "Month: " + ChatFormatting.GRAY + "No Gain", x + 10, rowY,
+                    graphics.text(mc.font, "Month: " + ChatFormatting.GRAY + "No Gain", x + 10, rowY,
                             Theme.TEXT_SECONDARY);
                 }
             }
@@ -527,12 +528,12 @@ public class DailyTabController extends ProfileTabController {
 
         Widget w = new Widget(0, 0, list.getWidth(), 45) {
             @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
                 RenderHelper.renderRoundedRect(graphics, x, y, width - 4, height - 2,
                         3, Theme.BACKGROUND_SECONDARY);
                 Minecraft mc = Minecraft.getInstance();
-                graphics.drawString(mc.font, "Daily: " + dText, x + 5, y + 8, Theme.TEXT_PRIMARY);
-                graphics.drawString(mc.font, "Monthly: " + mText, x + 5, y + 25, Theme.TEXT_PRIMARY);
+                graphics.text(mc.font, "Daily: " + dText, x + 5, y + 8, Theme.TEXT_PRIMARY);
+                graphics.text(mc.font, "Monthly: " + mText, x + 5, y + 25, Theme.TEXT_PRIMARY);
             }
         };
         list.addItem(w);

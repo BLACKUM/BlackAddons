@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "org.blackum.blackaddons.mixin",
   "compatibilityLevel": "JAVA_21",
-  "client": [
+  "mixins": [
     "core.ClientBrandRetrieverMixin",
     "core.ConnectionMixin",
     "core.EntityMixin",
@@ -30,7 +30,8 @@
     "gui.GuiMixin",
     "gui.EffectsInInventoryMixin",
     "core.TextColorMixin",
-    "core.TextColorAccessor"
+    "core.TextColorAccessor",
+    "render.LevelRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

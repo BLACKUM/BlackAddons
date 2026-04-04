@@ -1,6 +1,6 @@
 package org.blackum.blackaddons.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.core.config.ActionManager;
@@ -55,7 +55,7 @@ public class WaypointActionEditScreen extends BaseScreen {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         int fieldX = containerX + Theme.PADDING;
         int fieldWidth = containerWidth - Theme.PADDING * 2;
         int currentY = containerY + 60;
@@ -784,7 +784,7 @@ public class WaypointActionEditScreen extends BaseScreen {
     }
 
     @Override
-    protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void extractScrolledContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         String title = "Editing Actions for: " + (waypoint.name != null && !waypoint.name.isEmpty() ? waypoint.name : "Unnamed Waypoint");
         if (minecraft.player != null) {
             double dist = Math.sqrt(Math.pow(waypoint.x - minecraft.player.getX(), 2) +

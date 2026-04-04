@@ -1,6 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 
 public abstract class Widget {
     protected int x;
@@ -19,9 +22,9 @@ public abstract class Widget {
         this.height = height;
     }
 
-    public abstract void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick);
+    public abstract void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick);
 
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
     }
 
@@ -43,27 +46,27 @@ public abstract class Widget {
         return false;
     }
 
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         return false;
     }
 
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         return false;
     }
 
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double deltaX, double deltaY) {
         return false;
     }
 
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         return false;
     }
 
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         return false;
     }
 
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         return false;
     }
 

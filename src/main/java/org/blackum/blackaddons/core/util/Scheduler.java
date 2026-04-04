@@ -1,7 +1,8 @@
 package org.blackum.blackaddons.core.util;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -31,7 +32,7 @@ public class Scheduler {
             process(task -> task.ticksPassed = currentTicks >= task.targetTicks);
         });
 
-        HudRenderCallback.EVENT.register((graphics, partialTick) -> {
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("blackaddons", "scheduler"), (graphics, deltaTracker) -> {
             process(task -> task.msPassed = System.currentTimeMillis() >= task.targetMs);
         });
     }

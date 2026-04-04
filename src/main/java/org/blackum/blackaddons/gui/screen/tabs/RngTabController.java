@@ -1,5 +1,7 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
+import net.minecraft.client.input.MouseButtonEvent;
+
 import org.blackum.blackaddons.core.manager.ProfileStateManager;
 import org.blackum.blackaddons.core.util.JsonUtils;
 import org.blackum.blackaddons.integration.PriceService;
@@ -9,7 +11,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -226,13 +228,13 @@ public class RngTabController extends ProfileTabController {
         int statsBarY = tab.getParent().getY() + tab.getParent().getHeight() - 30;
         rngStatsBar = new Widget(cx, statsBarY, w - 10, 25) {
             @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY,
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                     float partialTick) {
                 RenderHelper.renderRoundedRect(graphics, x, y, width, height,
                         Theme.BORDER_RADIUS, Theme.BACKGROUND_SECONDARY);
 
                 String stats = calculateRngStats();
-                graphics.drawString(Minecraft.getInstance().font, stats, x + 10, y + 8, Theme.ACCENT);
+                graphics.text(Minecraft.getInstance().font, stats, x + 10, y + 8, Theme.ACCENT);
             }
         };
         tab.addWidget(rngStatsBar);
@@ -506,7 +508,7 @@ public class RngTabController extends ProfileTabController {
                 private EditBox inputBox;
 
                 @Override
-                protected void init() {
+                public void init() {
                     super.init();
 
                     inputBox = new EditBox(
@@ -518,7 +520,7 @@ public class RngTabController extends ProfileTabController {
                             Component.literal("Count"));
                     inputBox.setMaxLength(10);
                     inputBox.setValue(String.valueOf(count));
-                    inputBox.setFilter(s -> s.matches("[0-9]*"));
+                    inputBox.setResponder(s -> s.matches("[0-9]*"));
                     this.addRenderableWidget(inputBox);
 
                     this.addRenderableWidget(net.minecraft.client.gui.components.Button.builder(
@@ -565,17 +567,17 @@ public class RngTabController extends ProfileTabController {
                 }
 
                 @Override
-                public void render(GuiGraphics graphics, int mouseX, int mouseY,
+                public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
                         float partialTick) {
-                    super.render(graphics, mouseX, mouseY, partialTick);
-                    graphics.drawCenteredString(mc.font, "Set count for " + itemName, width / 2, height / 2 - 35,
+                    super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+                    graphics.centeredText(mc.font, "Set count for " + itemName, width / 2, height / 2 - 35,
                             0xFFFFFFFF);
                 }
             });
         }
 
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             float hover = hoverAnimation.getValue();
             if (hover > 0) {
                 int color = Theme.withAlpha(Theme.GLASS_HIGHLIGHT, hover * 0.15f);
@@ -595,19 +597,19 @@ public class RngTabController extends ProfileTabController {
                     : "";
 
             int textColor = count > 0 ? Theme.ACCENT : 0xFF888888;
-            graphics.drawString(Minecraft.getInstance().font, displayName, x + 5, y + 8, textColor);
+            graphics.text(Minecraft.getInstance().font, displayName, x + 5, y + 8, textColor);
 
             int rightMargin = expanded ? 250 : 120;
             int countX = x + width - rightMargin;
             int profitX = x + width - (rightMargin - 50);
 
-            graphics.drawString(Minecraft.getInstance().font, countStr, countX, y + 8, 0xFFFFFFFF);
-            graphics.drawString(Minecraft.getInstance().font, profitStr, profitX, y + 8, 0xFFFFFFFF);
+            graphics.text(Minecraft.getInstance().font, countStr, countX, y + 8, 0xFFFFFFFF);
+            graphics.text(Minecraft.getInstance().font, profitStr, profitX, y + 8, 0xFFFFFFFF);
 
             if (expanded) {
-                minusBtn.render(graphics, mouseX, mouseY, partialTick);
-                plusBtn.render(graphics, mouseX, mouseY, partialTick);
-                setBtn.render(graphics, mouseX, mouseY, partialTick);
+                minusBtn.extractRenderState(graphics, mouseX, mouseY, partialTick);
+                plusBtn.extractRenderState(graphics, mouseX, mouseY, partialTick);
+                setBtn.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
         }
 
@@ -648,13 +650,14 @@ public class RngTabController extends ProfileTabController {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+            int button = event.button();
             if (expanded) {
-                if (minusBtn.mouseClicked(mouseX, mouseY, button))
+                if (minusBtn.mouseClicked(mouseX, mouseY, event))
                     return true;
-                if (plusBtn.mouseClicked(mouseX, mouseY, button))
+                if (plusBtn.mouseClicked(mouseX, mouseY, event))
                     return true;
-                if (setBtn.mouseClicked(mouseX, mouseY, button))
+                if (setBtn.mouseClicked(mouseX, mouseY, event))
                     return true;
             }
 
@@ -675,11 +678,12 @@ public class RngTabController extends ProfileTabController {
         }
 
         @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+            int button = event.button();
             if (expanded) {
-                minusBtn.mouseReleased(mouseX, mouseY, button);
-                plusBtn.mouseReleased(mouseX, mouseY, button);
-                setBtn.mouseReleased(mouseX, mouseY, button);
+                minusBtn.mouseReleased(mouseX, mouseY, event);
+                plusBtn.mouseReleased(mouseX, mouseY, event);
+                setBtn.mouseReleased(mouseX, mouseY, event);
             }
             return false;
         }

@@ -1,7 +1,10 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -32,8 +35,8 @@ public class AutocompleteTextField extends TextField {
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
-        boolean result = super.charTyped(character, modifiers);
+    public boolean charTyped(char chr, CharacterEvent event) {
+        boolean result = super.charTyped(chr, event);
         if (result) {
             updateSuggestions(getText());
         }
@@ -41,7 +44,7 @@ public class AutocompleteTextField extends TextField {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (showSuggestions && isFocused()) {
             if (keyCode == 264) { // Down
                 selectedIndex = Math.min(selectedIndex + 1, currentSuggestions.size() - 1);
@@ -60,8 +63,8 @@ public class AutocompleteTextField extends TextField {
                 return true;
             }
         }
-        boolean result = super.keyPressed(keyCode, scanCode, modifiers);
-        if (result && (keyCode == 259 || keyCode == 261 || (modifiers & 2) != 0)) { // Backspace, Delete, or Ctrl+V
+        boolean result = super.keyPressed(keyCode, scanCode, event);
+        if (result && (keyCode == 259 || keyCode == 261 || event.hasControlDown())) { // Backspace, Delete, or Ctrl+V
             updateSuggestions(getText());
         }
         return result;
@@ -99,7 +102,7 @@ public class AutocompleteTextField extends TextField {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (showSuggestions) {
             int suggestionHeight = 12;
             int totalHeight = currentSuggestions.size() * suggestionHeight + 4;
@@ -112,11 +115,11 @@ public class AutocompleteTextField extends TextField {
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(mouseX, mouseY, event);
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!showSuggestions || !visible || currentSuggestions.isEmpty())
             return;
@@ -147,7 +150,7 @@ public class AutocompleteTextField extends TextField {
                         Theme.withAlpha(Theme.ACCENT, 0.3f));
             }
 
-            graphics.drawString(Minecraft.getInstance().font, suggestion, x + 4, itemY + (suggestionHeight - 8) / 2,
+            graphics.text(Minecraft.getInstance().font, suggestion, x + 4, itemY + (suggestionHeight - 8) / 2,
                     Theme.TEXT_PRIMARY);
         }
 

@@ -11,7 +11,7 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.CommandNode;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -67,7 +67,7 @@ public class CommandUtils {
         String cleanedCommand = command.startsWith("/") ? command.substring(1) : command;
         String usage = getUsageHint(cleanedCommand);
 
-        dispatcher.register(ClientCommandManager.literal(name)
+        dispatcher.register(ClientCommands.literal(name)
                 .executes(context -> {
                     if (!ConfigManager.data.knownAliases.containsKey(name)) {
                         return 0;
@@ -75,7 +75,7 @@ public class CommandUtils {
                     executeUnified(cleanedCommand, context.getSource());
                     return 1;
                 })
-                .then(ClientCommandManager.argument(usage, StringArgumentType.greedyString())
+                .then(ClientCommands.argument(usage, StringArgumentType.greedyString())
                         .suggests((context, builder) -> getAliasSuggestions(cleanedCommand, builder, context.getSource()))
                         .executes(context -> {
                             if (!ConfigManager.data.knownAliases.containsKey(name)) {
@@ -211,9 +211,9 @@ public class CommandUtils {
         }
     }
 
-    static ArgumentBuilder<FabricClientCommandSource, ?> add = ClientCommandManager.literal("add")
-            .then(ClientCommandManager.argument("alias", StringArgumentType.string())
-                    .then(ClientCommandManager.argument("real_command", StringArgumentType.greedyString())
+    static ArgumentBuilder<FabricClientCommandSource, ?> add = ClientCommands.literal("add")
+            .then(ClientCommands.argument("alias", StringArgumentType.string())
+                    .then(ClientCommands.argument("real_command", StringArgumentType.greedyString())
                             .executes(ctx -> {
                                 String name = StringArgumentType.getString(ctx, "alias");
                                 String desc = StringArgumentType.getString(ctx, "real_command");
@@ -232,8 +232,8 @@ public class CommandUtils {
                                 return 1;
                             })));
 
-    static ArgumentBuilder<FabricClientCommandSource, ?> del = ClientCommandManager.literal("del")
-            .then(ClientCommandManager.argument("alias", StringArgumentType.string())
+    static ArgumentBuilder<FabricClientCommandSource, ?> del = ClientCommands.literal("del")
+            .then(ClientCommands.argument("alias", StringArgumentType.string())
                     .suggests((ctx, builder) -> {
                         List<String> existing = new ArrayList<>();
 
@@ -264,7 +264,7 @@ public class CommandUtils {
                         return 1;
                     }));
 
-    static ArgumentBuilder<FabricClientCommandSource, ?> list = ClientCommandManager.literal("list")
+    static ArgumentBuilder<FabricClientCommandSource, ?> list = ClientCommands.literal("list")
             .executes(ctx -> {
                 ChatUtils.send_debug("Aliases: ");
                 ConfigManager.data.knownAliases.forEach((alias, command) -> ChatUtils.send_debug(alias + " -> " + command));
@@ -272,7 +272,7 @@ public class CommandUtils {
                 return 1;
             });
 
-    public static LiteralArgumentBuilder<FabricClientCommandSource> subcommand = ClientCommandManager
+    public static LiteralArgumentBuilder<FabricClientCommandSource> subcommand = ClientCommands
             .literal("commandaliases")
             .then(add)
             .then(del)

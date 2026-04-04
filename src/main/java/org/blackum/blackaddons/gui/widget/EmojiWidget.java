@@ -1,7 +1,8 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.feature.chat.EmojiUtils;
@@ -27,7 +28,7 @@ public class EmojiWidget extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -45,7 +46,7 @@ public class EmojiWidget extends Widget {
                 graphics.fill(currentX, currentY, currentX + BTN_SIZE, currentY + BTN_SIZE, 0x44FFFFFF);
             }
 
-            graphics.drawString(Minecraft.getInstance().font, entry.getValue(),
+            graphics.text(Minecraft.getInstance().font, entry.getValue(),
                     currentX + (BTN_SIZE - 8) / 2, currentY + (BTN_SIZE - 8) / 2, Theme.TEXT_PRIMARY);
 
             count++;
@@ -59,7 +60,7 @@ public class EmojiWidget extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!visible || !isMouseOver(mouseX, mouseY))
             return false;
 

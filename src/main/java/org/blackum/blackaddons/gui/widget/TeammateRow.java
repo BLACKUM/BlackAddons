@@ -2,7 +2,8 @@ package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -40,7 +41,7 @@ public class TeammateRow extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -53,23 +54,23 @@ public class TeammateRow extends Widget {
         int cx = x + 2;
         int cy = y + 5;
 
-        graphics.drawString(Minecraft.getInstance().font, tm.ign, cx, cy, Theme.ACCENT);
+        graphics.text(Minecraft.getInstance().font, tm.ign, cx, cy, Theme.ACCENT);
         cx += COL_IGN;
-        graphics.drawString(Minecraft.getInstance().font, ChatFormatting.WHITE + String.valueOf(tm.count), cx, cy,
+        graphics.text(Minecraft.getInstance().font, ChatFormatting.WHITE + String.valueOf(tm.count), cx, cy,
                 0xFFFFFFFF);
         cx += COL_RUNS;
 
         String classText = String.format("%s%s %d", ChatFormatting.WHITE, tm.lastClass, tm.lastClassLevel);
-        graphics.drawString(Minecraft.getInstance().font, classText, cx, cy, 0xFFFFFFFF);
+        graphics.text(Minecraft.getInstance().font, classText, cx, cy, 0xFFFFFFFF);
         cx += COL_CLASS;
 
-        graphics.drawString(Minecraft.getInstance().font, ChatFormatting.WHITE + tm.lastFloor, cx, cy, 0xFFFFFFFF);
+        graphics.text(Minecraft.getInstance().font, ChatFormatting.WHITE + tm.lastFloor, cx, cy, 0xFFFFFFFF);
         cx += COL_FLOOR;
 
         String timeAgo = FormatUtils.formatRelativeTime(tm.lastTs);
-        graphics.drawString(Minecraft.getInstance().font, ChatFormatting.GRAY + timeAgo, cx, cy, 0xFFFFFFFF);
+        graphics.text(Minecraft.getInstance().font, ChatFormatting.GRAY + timeAgo, cx, cy, 0xFFFFFFFF);
 
-        inviteBtn.render(graphics, mouseX, mouseY, partialTick);
+        inviteBtn.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -87,13 +88,13 @@ public class TeammateRow extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!visible || !enabled)
             return false;
-        if (inviteBtn.mouseClicked(mouseX, mouseY, button))
+        if (inviteBtn.mouseClicked(mouseX, mouseY, event))
             return true;
 
-        if (isMouseOver(mouseX, mouseY) && button == 0) {
+        if (isMouseOver(mouseX, mouseY) && event.buttonInfo().button() == 0) {
             if (Minecraft.getInstance().player != null) {
                 Minecraft.getInstance().player.connection.sendCommand(Constants.BASE_COMMAND + " pv " + tm.ign);
                 return true;
@@ -103,7 +104,7 @@ public class TeammateRow extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return inviteBtn.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        return inviteBtn.mouseReleased(mouseX, mouseY, event);
     }
 }

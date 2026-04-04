@@ -1,7 +1,7 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.core.model.SkyblockItem;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -21,7 +21,7 @@ public class PetDetailWidget extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible || pet == null)
             return;
 
@@ -32,20 +32,20 @@ public class PetDetailWidget extends Widget {
         int currentY = y + padding;
 
         Component name = pet.itemStack().getHoverName();
-        graphics.drawString(Minecraft.getInstance().font, name, x + padding, currentY, 0xFFFFFFFF);
+        graphics.text(Minecraft.getInstance().font, name, x + padding, currentY, 0xFFFFFFFF);
         currentY += 20;
         float iconScale = 4.0f;
         graphics.pose().pushMatrix();
         graphics.pose().translate(x + width / 2.0f, currentY + 32);
         graphics.pose().scale(iconScale, iconScale);
         graphics.pose().translate(-8, -8);
-        graphics.renderItem(pet.itemStack(), 0, 0);
+        graphics.item(pet.itemStack(), 0, 0);
         graphics.pose().popMatrix();
 
         currentY += 75;
 
         String levelPrefix = "Level " + pet.customStackText();
-        graphics.drawString(Minecraft.getInstance().font, levelPrefix, x + padding, currentY, 0xFFBBBBBB);
+        graphics.text(Minecraft.getInstance().font, levelPrefix, x + padding, currentY, 0xFFBBBBBB);
         currentY += 15;
         JsonObject data = pet.extraData();
         int barWidth = width - padding * 2;
@@ -74,26 +74,26 @@ public class PetDetailWidget extends Widget {
 
         if (data != null) {
             if (data.has("exp")) {
-                graphics.drawString(Minecraft.getInstance().font,
+                graphics.text(Minecraft.getInstance().font,
                         "Exp: " + FormatUtils.formatNumber(data.get("exp").getAsDouble()), x + padding, currentY,
                         0xFFAAAAAA);
                 currentY += 12;
             }
             if (data.has("heldItem") && !data.get("heldItem").isJsonNull()) {
-                graphics.drawString(Minecraft.getInstance().font,
+                graphics.text(Minecraft.getInstance().font,
                         "Held Item: §d" + formatPetItem(data.get("heldItem").getAsString()),
                         x + padding, currentY, 0xFFAAAAAA);
                 currentY += 12;
             }
             if (data.has("candyUsed")) {
-                graphics.drawString(Minecraft.getInstance().font,
+                graphics.text(Minecraft.getInstance().font,
                         "Candy Used: " + data.get("candyUsed").getAsInt() + "/10", x + padding, currentY, 0xFFAAAAAA);
                 currentY += 12;
             }
         }
 
         if (isPetMaxLevel(pet)) {
-            graphics.drawCenteredString(Minecraft.getInstance().font, "§b§lMAX LEVEL", x + width / 2, y + height - 20,
+            graphics.centeredText(Minecraft.getInstance().font, "§b§lMAX LEVEL", x + width / 2, y + height - 20,
                     0xFFFFFF);
         }
     }

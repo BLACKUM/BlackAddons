@@ -1,11 +1,12 @@
 package org.blackum.blackaddons.core.util;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.Mth;
@@ -81,7 +82,7 @@ public class AlignUtils {
     private static int sessionAlignCount = 0;
 
     public static void register() {
-        HudRenderCallback.EVENT.register((graphics, partialTick) -> renderOverlay(graphics));
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("blackaddons", "align_overlay"), (graphics, deltaTracker) -> renderOverlay(graphics));
     }
 
     public static void alignToBlock(double x, double z, long timeoutMs, boolean lookAfter, boolean useLookAfterCoords, float postYaw, float postPitch, double lookAtX, double lookAtY, double lookAtZ) {
@@ -328,7 +329,7 @@ public class AlignUtils {
         return info;
     }
 
-    private static void renderOverlay(GuiGraphics graphics) {
+    private static void renderOverlay(GuiGraphicsExtractor graphics) {
         Minecraft mc = Minecraft.getInstance();
         if (!ConfigManager.data.showAlignDebug || mc.options.hideGui) {
             return;
@@ -347,7 +348,7 @@ public class AlignUtils {
 
         int y = overlayY;
         for (String line : info) {
-            graphics.drawString(mc.font, line, overlayX, y, COLOR_WHITE);
+            graphics.text(mc.font, line, overlayX, y, COLOR_WHITE);
             y += LINE_HEIGHT;
         }
     }

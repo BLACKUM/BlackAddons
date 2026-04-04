@@ -2,7 +2,7 @@ package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 
@@ -23,17 +23,17 @@ public class FloorCardWidget extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
         RenderHelper.renderRoundedRect(graphics, x, y, width, height, Theme.BORDER_RADIUS, Theme.BACKGROUND_SECONDARY);
 
-        graphics.drawString(Minecraft.getInstance().font, ChatFormatting.BOLD + title, x + 6, y + 6, Theme.ACCENT);
+        graphics.text(Minecraft.getInstance().font, ChatFormatting.BOLD + title, x + 6, y + 6, Theme.ACCENT);
 
         String runsText = ChatFormatting.WHITE + String.valueOf(runs) + " Runs";
         int runsWidth = Minecraft.getInstance().font.width(runsText);
-        graphics.drawString(Minecraft.getInstance().font, runsText, x + width - runsWidth - 6, y + 6, 0xFFFFFFFF);
+        graphics.text(Minecraft.getInstance().font, runsText, x + width - runsWidth - 6, y + 6, 0xFFFFFFFF);
 
         graphics.fill(x + 6, y + 18, x + width - 6, y + 19, Theme.BACKGROUND_TERTIARY);
 
@@ -41,12 +41,12 @@ public class FloorCardWidget extends Widget {
         int col1X = x + 6;
         int col2X = x + width / 2 + 4;
 
-        graphics.drawString(Minecraft.getInstance().font,
+        graphics.text(Minecraft.getInstance().font,
                 ChatFormatting.GRAY + "Best Score: " + ChatFormatting.WHITE + bestScore, col1X, statY, 0xFFFFFFFF);
 
-        graphics.drawString(Minecraft.getInstance().font, ChatFormatting.GRAY + "S+: " + ChatFormatting.WHITE + sPlus,
+        graphics.text(Minecraft.getInstance().font, ChatFormatting.GRAY + "S+: " + ChatFormatting.WHITE + sPlus,
                 col1X, statY + 12, 0xFFFFFFFF);
-        graphics.drawString(Minecraft.getInstance().font, ChatFormatting.GRAY + "S: " + ChatFormatting.WHITE + s, col2X,
+        graphics.text(Minecraft.getInstance().font, ChatFormatting.GRAY + "S: " + ChatFormatting.WHITE + s, col2X,
                 statY + 12, 0xFFFFFFFF);
     }
 }

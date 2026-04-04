@@ -1,6 +1,7 @@
 package org.blackum.blackaddons.core.manager;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.ChatFormatting;
@@ -19,7 +20,7 @@ public class DebugOverlayManager {
     private static final int LINE_HEIGHT = 10;
 
     public static void register() {
-        HudRenderCallback.EVENT.register((graphics, partialTick) -> {
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("blackaddons", "debug_overlay"), (graphics, deltaTracker) -> {
             if (!BaseScreen.showDebugOverlay)
                 return;
 
@@ -39,7 +40,7 @@ public class DebugOverlayManager {
 
             int lineY = 0;
             for (String line : debugInfo) {
-                graphics.drawString(mc.font, line, 0, lineY, DEFAULT_COLOR);
+                graphics.text(mc.font, line, 0, lineY, DEFAULT_COLOR);
                 lineY += LINE_HEIGHT;
             }
             graphics.pose().popMatrix();

@@ -19,6 +19,10 @@ public class Theme {
     public static int BACKGROUND_TERTIARY = 0xAA333333;
     public static int ACCENT_PRIMARY = ACCENT;
 
+    public static void updateTheme() {
+        refreshColors();
+    }
+
     public static void refreshColors() {
         ACCENT_PRIMARY = ACCENT;
         

@@ -1,6 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -99,11 +102,11 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
-        header.render(graphics, mouseX, mouseY, partialTick);
+        header.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         if (expandAnimation.getValue() > 0) {
             boolean scissored = false;
@@ -113,7 +116,7 @@ public class ExpandableGroup extends Widget {
             }
 
             for (Widget child : children) {
-                child.render(graphics, mouseX, mouseY, partialTick);
+                child.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
 
             if (scissored) {
@@ -123,13 +126,13 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible || expandAnimation.getValue() == 0)
             return;
 
         for (Widget child : children) {
-            child.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+            child.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
         }
     }
 
@@ -174,17 +177,17 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
-        if (header.mouseClicked(mouseX, mouseY, button)) {
+        if (header.mouseClicked(mouseX, mouseY, event)) {
             return true;
         }
 
         if (expanded && expandAnimation.getValue() == 1.0f) {
             for (Widget child : children) {
-                if (child.mouseClicked(mouseX, mouseY, button)) {
+                if (child.mouseClicked(mouseX, mouseY, event)) {
                     return true;
                 }
             }
@@ -193,14 +196,14 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
-        boolean handled = header.mouseReleased(mouseX, mouseY, button);
+        boolean handled = header.mouseReleased(mouseX, mouseY, event);
         if (expanded && expandAnimation.getValue() == 1.0f) {
             for (Widget child : children) {
-                if (child.mouseReleased(mouseX, mouseY, button)) {
+                if (child.mouseReleased(mouseX, mouseY, event)) {
                     handled = true;
                 }
             }
@@ -209,14 +212,14 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (!enabled || !visible)
             return false;
 
-        boolean handled = header.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        boolean handled = header.mouseDragged(mouseX, mouseY, event, dragX, dragY);
         if (expanded && expandAnimation.getValue() == 1.0f) {
             for (Widget child : children) {
-                if (child.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+                if (child.mouseDragged(mouseX, mouseY, event, dragX, dragY)) {
                     handled = true;
                 }
             }
@@ -225,14 +228,14 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         if (!visible)
             return false;
 
-        boolean handled = header.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        boolean handled = header.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY);
         if (expanded && expandAnimation.getValue() == 1.0f) {
             for (Widget child : children) {
-                if (child.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+                if (child.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY)) {
                     handled = true;
                 }
             }
@@ -241,14 +244,14 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (!enabled || !visible)
             return false;
 
-        boolean handled = header.keyPressed(keyCode, scanCode, modifiers);
+        boolean handled = header.keyPressed(keyCode, scanCode, event);
         if (expanded && expandAnimation.getValue() == 1.0f) {
             for (Widget child : children) {
-                if (child.keyPressed(keyCode, scanCode, modifiers)) {
+                if (child.keyPressed(keyCode, scanCode, event)) {
                     handled = true;
                 }
             }
@@ -257,14 +260,14 @@ public class ExpandableGroup extends Widget {
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (!enabled || !visible)
             return false;
 
-        boolean handled = header.charTyped(character, modifiers);
+        boolean handled = header.charTyped(chr, event);
         if (expanded && expandAnimation.getValue() == 1.0f) {
             for (Widget child : children) {
-                if (child.charTyped(character, modifiers)) {
+                if (child.charTyped(chr, event)) {
                     handled = true;
                 }
             }

@@ -2,7 +2,7 @@ package org.blackum.blackaddons.gui.screen;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.*;
@@ -21,13 +21,13 @@ public class DemoScreen extends BaseScreen {
         private void sendMessage(String message) {
                 var player = Minecraft.getInstance().player;
                 if (player != null) {
-                        player.displayClientMessage(Component.literal(
-                                        ChatFormatting.AQUA + "[GUI] " + ChatFormatting.WHITE + message), false);
+                        Minecraft.getInstance().gui.getChat().addClientSystemMessage(Component.literal(
+                                        ChatFormatting.AQUA + "[GUI] " + ChatFormatting.WHITE + message));
                 }
         }
 
         @Override
-        protected void initWidgets() {
+        public void initWidgets() {
                 int contentX = containerX + Theme.SPACING_LARGE;
                 int contentY = containerY + Theme.SPACING_LARGE * 2;
                 int contentWidth = containerWidth - Theme.SPACING_LARGE * 2;
@@ -123,22 +123,22 @@ public class DemoScreen extends BaseScreen {
         }
 
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-                super.render(graphics, mouseX, mouseY, partialTick);
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+                super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
         @Override
-        protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractScrolledContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
                 int contentX = containerX + 30;
                 int contentY = containerY + 60;
 
                 String titleText = "BlackAddons GUI Control Panel";
                 int titleWidth = this.font.width(titleText);
-                graphics.drawString(this.font, titleText, containerX + (containerWidth - titleWidth) / 2,
+                graphics.text(this.font, titleText, containerX + (containerWidth - titleWidth) / 2,
                                 containerY + 20, -1);
 
-                graphics.drawString(this.font, "Interaction Tests:", contentX, contentY - 20, Theme.TEXT_SECONDARY);
-                graphics.drawString(this.font, "Selection Controls:", contentX, contentY + 130, Theme.TEXT_SECONDARY);
+                graphics.text(this.font, "Interaction Tests:", contentX, contentY - 20, Theme.TEXT_SECONDARY);
+                graphics.text(this.font, "Selection Controls:", contentX, contentY + 130, Theme.TEXT_SECONDARY);
         }
 
         @Override

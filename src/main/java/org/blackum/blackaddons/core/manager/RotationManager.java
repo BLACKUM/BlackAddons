@@ -1,15 +1,16 @@
 package org.blackum.blackaddons.core.manager;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 import net.minecraft.ChatFormatting;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.render.Theme;
-import org.blackum.blackaddons.mixin.core.GameRendererAccessor;
+
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
@@ -61,7 +62,7 @@ public class RotationManager {
     private Matrix4f lastViewMatrix = new Matrix4f();
 
     private RotationManager() {
-        HudRenderCallback.EVENT.register(this::onFrame);
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("blackaddons", "rotation_overlay"), this::onFrame);
         ClientTickEvents.END_CLIENT_TICK.register(this::onTick);
     }
 
@@ -454,7 +455,7 @@ public class RotationManager {
         applyPlayerRotation(mc, nextYaw, nextPitch);
     }
 
-    private void onFrame(GuiGraphics graphics, DeltaTracker tracker) {
+    private void onFrame(GuiGraphicsExtractor graphics, DeltaTracker tracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
@@ -562,7 +563,7 @@ public class RotationManager {
         }
     }
 
-    private void renderOverlay(GuiGraphics g, DeltaTracker tracker) {
+    private void renderOverlay(GuiGraphicsExtractor g, DeltaTracker tracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
@@ -580,37 +581,37 @@ public class RotationManager {
         float curYaw = normalizeYaw(mc.player.getYRot());
         float curPitch = mc.player.getXRot();
 
-        g.drawString(mc.font,
+        g.text(mc.font,
                 ChatFormatting.GOLD + "[Rotation] " + (active ? ChatFormatting.GREEN + "ACTIVE" : ChatFormatting.GRAY + "IDLE"),
                 overlayX, y, COLOR_WHITE);
         y += lineH;
 
         if (active) {
-            g.drawString(mc.font, String.format("Yaw:   %.1f -> %.1f", curYaw, targetYawUnwrapped), overlayX, y, COLOR_WHITE);
+            g.text(mc.font, String.format("Yaw:   %.1f -> %.1f", curYaw, targetYawUnwrapped), overlayX, y, COLOR_WHITE);
             y += lineH;
-            g.drawString(mc.font, String.format("Pitch: %.1f -> %.1f", curPitch, targetPitch), overlayX, y, COLOR_WHITE);
+            g.text(mc.font, String.format("Pitch: %.1f -> %.1f", curPitch, targetPitch), overlayX, y, COLOR_WHITE);
             y += lineH;
 
             float progress = durationTicks > 0 ? Math.max(0, currentTicks / durationTicks) : 1.0f;
 
             if (!Double.isNaN(targetX)) {
-                g.drawString(mc.font, String.format("Pos: %.0f %.0f %.0f", targetX, targetY, targetZ), overlayX, y, COLOR_GRAY);
+                g.text(mc.font, String.format("Pos: %.0f %.0f %.0f", targetX, targetY, targetZ), overlayX, y, COLOR_GRAY);
                 y += lineH;
             }
 
             String extra = String.format("Spd: %.1f Curve: %.0f%%%s", ConfigManager.data.rotationSpeed, ConfigManager.data.rotationVariance * 100, ConfigManager.data.rotationHumanizerEnabled
                     ? String.format("  Hum: ON")
                     : "");
-            g.drawString(mc.font, extra, overlayX, y, COLOR_GRAY);
+            g.text(mc.font, extra, overlayX, y, COLOR_GRAY);
             y += lineH;
 
             g.fill(overlayX, y, overlayX + OVERLAY_BAR_WIDTH, y + 4, COLOR_BAR_BG);
             g.fill(overlayX, y, overlayX + (int) (OVERLAY_BAR_WIDTH * progress), y + 4, COLOR_BAR_FILL);
-            g.drawString(mc.font, String.format(" %.0f%%", progress * 100), overlayX + OVERLAY_BAR_WIDTH, y - 2, COLOR_GRAY);
+            g.text(mc.font, String.format(" %.0f%%", progress * 100), overlayX + OVERLAY_BAR_WIDTH, y - 2, COLOR_GRAY);
         }
     }
 
-    private void renderWaypoint(GuiGraphics g, DeltaTracker tracker) {
+    private void renderWaypoint(GuiGraphicsExtractor g, DeltaTracker tracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.gameRenderer == null) return;
 
@@ -623,9 +624,9 @@ public class RotationManager {
         int screenH = mc.getWindow().getGuiScaledHeight();
         
         float partialTicks = tracker.getGameTimeDeltaTicks();
-        float fov = (float) Math.toRadians(((GameRendererAccessor) mc.gameRenderer).invokeGetFov(mc.gameRenderer.getMainCamera(), partialTicks, true));
+        float fov = (float) Math.toRadians(mc.gameRenderer.getMainCamera().getFov());
         float aspect = (float) mc.getWindow().getWidth() / (float) mc.getWindow().getHeight();
-        Matrix4f proj = new Matrix4f().perspective(fov, aspect, 0.05f, mc.gameRenderer.getRenderDistance() * 4.0f);
+        Matrix4f proj = new Matrix4f().perspective(fov, aspect, 0.05f, mc.options.getEffectiveRenderDistance() * 16 * 4.0f);
 
         org.joml.Quaternionf camRot = new org.joml.Quaternionf(mc.gameRenderer.getMainCamera().rotation());
         camRot.conjugate();
@@ -661,10 +662,10 @@ public class RotationManager {
 
         double dist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
         String label = String.format("%.1fm", dist);
-        g.drawString(mc.font, label, ix - mc.font.width(label) / 2, iy + half + 3, Theme.ACCENT);
+        g.text(mc.font, label, ix - mc.font.width(label) / 2, iy + half + 3, Theme.ACCENT);
     }
 
-    private void drawLine2D(GuiGraphics g, int x1, int y1, int x2, int y2, int color) {
+    private void drawLine2D(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int color) {
         float dx = x2 - x1;
         float dy = y2 - y1;
         float dist = (float) Math.sqrt(dx * dx + dy * dy);

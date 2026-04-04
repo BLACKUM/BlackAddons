@@ -1,9 +1,10 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 
@@ -42,7 +43,7 @@ public class Button extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -62,7 +63,7 @@ public class Button extends Widget {
         int textWidth = Minecraft.getInstance().font.width(text);
         int textX = x + (width - textWidth) / 2;
         int textY = y + (height - 8) / 2;
-        graphics.drawString(Minecraft.getInstance().font, text, textX, textY, textColor);
+        graphics.text(Minecraft.getInstance().font, text, textX, textY, textColor);
     }
 
     @Override
@@ -79,10 +80,11 @@ public class Button extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
+        int button = event.buttonInfo().button();
         if (isMouseOver(mouseX, mouseY) && (button == 0 || button == 1)) {
             pressed = true;
             pressAnimation = new Animation(0, 1, Theme.ANIM_CLICK, Easing::easeInOut);
@@ -93,10 +95,11 @@ public class Button extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
+        int button = event.buttonInfo().button();
         if (pressed && (button == 0 || button == 1)) {
             pressed = false;
             pressAnimation = new Animation(pressAnimation.getValue(), 0, Theme.ANIM_CLICK, Easing::easeInOut);

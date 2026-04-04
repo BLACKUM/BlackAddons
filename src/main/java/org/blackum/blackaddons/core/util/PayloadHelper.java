@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import org.blackum.blackaddons.Blackaddons;
 
 public class PayloadHelper {
@@ -19,7 +20,7 @@ public class PayloadHelper {
             Class<?> clazz = original.getClass();
 
             List<Object> idList = channels.stream()
-                    .map(McCompat::tryParseResource)
+                    .map(Identifier::tryParse)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 

@@ -1,6 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 
 import java.util.ArrayList;
@@ -52,25 +55,25 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
         for (ResizableCard card : cards) {
             if (card.isVisible()) {
-                card.render(graphics, mouseX, mouseY, partialTick);
+                card.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
         }
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible)
             return;
         for (ResizableCard card : cards) {
             if (card.isVisible()) {
-                card.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+                card.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
             }
         }
     }
@@ -83,13 +86,13 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
         for (int i = cards.size() - 1; i >= 0; i--) {
             ResizableCard card = cards.get(i);
-            if (card.isVisible() && card.mouseClicked(mouseX, mouseY, button)) {
+            if (card.isVisible() && card.mouseClicked(mouseX, mouseY, event)) {
                 bringToFront(card);
                 activeCard = card;
                 return true;
@@ -100,10 +103,10 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         for (int i = cards.size() - 1; i >= 0; i--) {
             ResizableCard card = cards.get(i);
-            if (card.mouseReleased(mouseX, mouseY, button)) {
+            if (card.mouseReleased(mouseX, mouseY, event)) {
                 return true;
             }
         }
@@ -111,14 +114,14 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (activeCard != null && (activeCard.isDragging() || activeCard.isResizing())) {
-            return activeCard.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return activeCard.mouseDragged(mouseX, mouseY, event, dragX, dragY);
         }
 
         for (int i = cards.size() - 1; i >= 0; i--) {
             ResizableCard card = cards.get(i);
-            if (card.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            if (card.mouseDragged(mouseX, mouseY, event, dragX, dragY)) {
                 return true;
             }
         }
@@ -126,10 +129,10 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         for (int i = cards.size() - 1; i >= 0; i--) {
             ResizableCard card = cards.get(i);
-            if (card.keyPressed(keyCode, scanCode, modifiers)) {
+            if (card.keyPressed(keyCode, scanCode, event)) {
                 return true;
             }
         }
@@ -137,10 +140,10 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         for (int i = cards.size() - 1; i >= 0; i--) {
             ResizableCard card = cards.get(i);
-            if (card.charTyped(character, modifiers)) {
+            if (card.charTyped(chr, event)) {
                 return true;
             }
         }
@@ -148,10 +151,10 @@ public class CardContainer extends Widget {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         for (int i = cards.size() - 1; i >= 0; i--) {
             ResizableCard card = cards.get(i);
-            if (card.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+            if (card.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY)) {
                 return true;
             }
         }

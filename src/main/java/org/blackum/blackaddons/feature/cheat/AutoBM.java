@@ -5,7 +5,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.ChestMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.util.TimeUtils;
 
@@ -57,11 +57,11 @@ public class AutoBM {
         var name = item.getCustomName().getString();
         if (name.startsWith("Ballista Mechanic") && slot.mayPickup(mc.player)) {
 
-            mc.gameMode.handleInventoryMouseClick(
+            mc.gameMode.handleContainerInput(
                     mc.player.containerMenu.containerId,
                     slot.index,
                     0,
-                    ClickType.PICKUP,
+                    ContainerInput.PICKUP,
                     mc.player
             );
 

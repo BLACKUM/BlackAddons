@@ -2,10 +2,6 @@ package org.blackum.blackaddons.mixin.render;
 
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
-//? if < 1.21.11 {
-/*import net.minecraft.world.level.BlockGetter;
-*///?} else
-import net.minecraft.world.level.Level;
 import org.blackum.blackaddons.feature.cheat.Freecam;
 import org.blackum.blackaddons.feature.cheat.Perspective;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,16 +14,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Camera.class)
 public abstract class CameraMixin {
     @Shadow private boolean detached;
-    @Shadow protected abstract void setRotation(float yaw, float pitch);
+    @Shadow private Entity entity;
+    @Shadow protected abstract void setRotation(float yRot, float xRot);
     @Shadow protected abstract void setPosition(double x, double y, double z);
-    @Shadow protected abstract void move(float x, float y, float z);
+    @Shadow protected abstract void move(float forwards, float up, float right);
     @Shadow protected abstract float getMaxZoom(float startingDistance);
 
-    @Inject(method = "setup", at = @At("TAIL"))
-    //? if < 1.21.11 {
-    /*private void onSetupTail(BlockGetter level, Entity entity, boolean detached, boolean flipped, float tickDelta, CallbackInfo ci) {
-    *///?} else
-    private void onSetupTail(Level level, Entity entity, boolean detached, boolean flipped, float tickDelta, CallbackInfo ci) {
+    @Inject(method = "alignWithEntity", at = @At("TAIL"))
+    private void onAlignWithEntity(float tickDelta, CallbackInfo ci) {
         if (Freecam.getInstance().isActive()) {
             this.detached = true;
             setPosition(
@@ -41,7 +35,7 @@ public abstract class CameraMixin {
             );
         } else if (Perspective.getInstance().isActive()) {
             this.detached = true;
-            net.minecraft.world.phys.Vec3 eyePos = entity.getEyePosition(tickDelta);
+            net.minecraft.world.phys.Vec3 eyePos = this.entity.getEyePosition(tickDelta);
             setPosition(eyePos.x, eyePos.y, eyePos.z);
             
             float pYaw = Perspective.getInstance().getYaw(tickDelta);

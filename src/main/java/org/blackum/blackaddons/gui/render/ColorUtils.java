@@ -111,4 +111,8 @@ public class ColorUtils {
             return null;
         }
     }
+    public static int getRainbow(int speed, float saturation, float brightness) {
+        float hue = (System.currentTimeMillis() % (speed * 1000)) / (float) (speed * 1000);
+        return Color.HSBtoRGB(hue, saturation, brightness);
+    }
 }

@@ -1,6 +1,7 @@
 package org.blackum.blackaddons.gui.screen.tabs;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -227,7 +228,7 @@ public class ModHiderTabController extends SimpleTabController {
             }
 
             @Override
-            public void render(GuiGraphics g, int mx, int my, float p) {
+            public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
             }
         });
     }
@@ -330,7 +331,7 @@ public class ModHiderTabController extends SimpleTabController {
             }
 
             @Override
-            public void render(GuiGraphics g, int mx, int my, float p) {
+            public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
             }
         });
 
@@ -534,11 +535,8 @@ public class ModHiderTabController extends SimpleTabController {
 
         Widget wrapper = new Widget(0, 0, 0, 0) {
             @Override
-            public void render(GuiGraphics g, int mx, int my, float p) {
-                cb.setX(getX());
-                cb.setY(getY());
-                cb.setWidth(getWidth());
-                cb.render(g, mx, my, p);
+            public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
+                cb.extractRenderState(g, mx, my, p);
             }
 
             @Override
@@ -551,8 +549,8 @@ public class ModHiderTabController extends SimpleTabController {
             }
 
             @Override
-            public boolean mouseClicked(double mx, double my, int b) {
-                return cb.mouseClicked(mx, my, b);
+            public boolean mouseClicked(double mx, double my, MouseButtonEvent event) {
+                return cb.mouseClicked(mx, my, event);
             }
 
             @Override

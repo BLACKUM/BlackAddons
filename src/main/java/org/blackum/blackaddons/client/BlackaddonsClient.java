@@ -10,8 +10,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.core.config.ConfigManager;
@@ -80,6 +80,26 @@ public class BlackaddonsClient implements ClientModInitializer {
             IrcClient.getInstance().disconnect();
         });
 
+        ClientSendMessageEvents.ALLOW_CHAT.register(message -> {
+            String prefix = IrcPrefixManager.getPrefix();
+            if (message.startsWith(prefix)) {
+                String content = message.substring(prefix.length()).trim();
+                if (!content.isEmpty()) {
+                    IrcClient.getInstance().sendMessage(content);
+                }
+                return false;
+            }
+            return true;
+        });
+
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            ChatActionManager.getInstance().onChatMessage(message);
+        });
+
+        ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
+            ChatActionManager.getInstance().onChatMessage(message);
+        });
+
         Blackaddons.guiOpener = () -> {
             pendingScreen = new DemoScreen();
         };
@@ -104,86 +124,19 @@ public class BlackaddonsClient implements ClientModInitializer {
         DebugOverlayManager.register();
         CommandManager.register();
 
-        HudRenderCallback.EVENT.register((graphics, partialTick) -> {
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("blackaddons", "notifications"), (graphics, deltaTracker) -> {
             if (!(Minecraft.getInstance().screen instanceof BaseScreen)) {
                 NotificationManager.getInstance().render(graphics);
             }
         });
 
-        WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
-            WaypointRenderer.render(context.matrices().last().pose(), context.consumers(), 0.0f);
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player == null || mc.level == null || mc.gameRenderer == null) return;
-            DebugBoxRenderer.render(
-                    context.matrices().last().pose(),
-                    context.consumers(),
-                    mc.gameRenderer.getMainCamera().position(),
-                    LocationUtils.getDebugBoxes()
-            );
-            DebugBoxRenderer.render(
-                    context.matrices().last().pose(),
-                    context.consumers(),
-                    mc.gameRenderer.getMainCamera().position(),
-                    FastLeap.getDebugBoxes()
-            );
-        });
-
         ClientTickEvents.START_CLIENT_TICK.register(client -> AlignUtils.tick());
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            NotificationManager.getInstance().tick();
-            SoloClearsTracker.tick();
+            org.blackum.blackaddons.gui.notification.NotificationManager.getInstance().tick();
             if (pendingScreen != null) {
                 client.setScreen(pendingScreen);
                 pendingScreen = null;
             }
-        });
-
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ConfigManager.save());
-
-        ClientSendMessageEvents.ALLOW_CHAT.register(message -> {
-            if (internalChatMsg) {
-                internalChatMsg = false;
-                return true;
-            }
-
-            if (ConfigManager.data.ircChatMode) {
-                IrcClient.getInstance().sendMessage(message.trim());
-                return false;
-            }
-
-            String prefix = IrcPrefixManager.getPrefix();
-
-            if (prefix.equals("#") && message.startsWith("##")) {
-                internalChatMsg = true;
-                Minecraft.getInstance().player.connection.sendChat(message.substring(1));
-                return false;
-            }
-
-            if (message.startsWith(prefix)) {
-                IrcClient.getInstance().sendMessage(message.substring(prefix.length()).trim());
-                return false;
-            }
-            return true;
-        });
-
-        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            Component handled = ChatImageHandler
-                    .handleMessage(message);
-            RngTracker.onChatMessage(handled);
-            DungeonJoinHandler.onChatMessage(handled);
-            PartyFinderManager.getInstance().onChatMessage(handled);
-            ChatActionManager.getInstance().onChatMessage(handled);
-            SoloClearsTracker.onChatMessage(handled);
-        });
-
-        ClientReceiveMessageEvents.CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
-            Component handled = ChatImageHandler
-                    .handleMessage(message);
-            RngTracker.onChatMessage(handled);
-            DungeonJoinHandler.onChatMessage(handled);
-            PartyFinderManager.getInstance().onChatMessage(handled);
-            ChatActionManager.getInstance().onChatMessage(handled);
-            SoloClearsTracker.onChatMessage(handled);
         });
 
         Blackaddons.LOGGER.info("Client initialization completed");

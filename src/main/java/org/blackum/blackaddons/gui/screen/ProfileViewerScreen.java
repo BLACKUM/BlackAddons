@@ -3,7 +3,7 @@ package org.blackum.blackaddons.gui.screen;
 import com.google.gson.JsonObject;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 
 import org.blackum.blackaddons.gui.widget.*;
@@ -38,7 +38,7 @@ public class ProfileViewerScreen extends BaseScreen {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         if (isLoading) {
             ProfileStateManager.getInstance().getProfile(player, profileName, forceUpdate)
                     .thenAccept(result -> {
@@ -250,18 +250,18 @@ public class ProfileViewerScreen extends BaseScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderConfetti(graphics);
     }
 
     @Override
-    protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void extractScrolledContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!isLoading && profileData != null) {
             String label = "Viewing: " + player;
             int x = containerX + 10;
             int y = containerY + containerHeight - 25;
-            graphics.drawString(Minecraft.getInstance().font, label, x, y, Theme.TEXT_SECONDARY);
+            graphics.text(Minecraft.getInstance().font, label, x, y, Theme.TEXT_SECONDARY);
         }
     }
 
@@ -273,7 +273,7 @@ public class ProfileViewerScreen extends BaseScreen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (tabPanel != null && tabPanel.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+        if (tabPanel != null && tabPanel.mouseScrolled(mouseX, mouseY, null, scrollX, scrollY)) {
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -293,7 +293,7 @@ public class ProfileViewerScreen extends BaseScreen {
         confetti.tick(width, height);
     }
 
-    private void renderConfetti(GuiGraphics graphics) {
+    private void renderConfetti(GuiGraphicsExtractor graphics) {
         confetti.render(graphics);
     }
 }

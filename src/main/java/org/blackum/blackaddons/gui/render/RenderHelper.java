@@ -3,7 +3,7 @@ package org.blackum.blackaddons.gui.render;
 import net.minecraft.client.Minecraft;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public class RenderHelper {
 
@@ -17,7 +17,7 @@ public class RenderHelper {
         return forcedScale / vanillaScale;
     }
 
-    public static void renderSurface(GuiGraphics graphics, int x, int y, int width, int height, int radius,
+    public static void renderSurface(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int radius,
             boolean pressed) {
         int fill = Theme.GLASS_FILL;
         if (pressed) {
@@ -28,7 +28,7 @@ public class RenderHelper {
         renderRoundedOutline(graphics, x, y, width, height, radius, Theme.GLASS_BORDER);
     }
 
-    public static void renderRoundedOutline(GuiGraphics graphics, int x, int y, int width, int height, int radius,
+    public static void renderRoundedOutline(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int radius,
             int color) {
         graphics.fill(x, y, x + width, y + 1, color);
         graphics.fill(x, y + height - 1, x + width, y + height, color);
@@ -36,12 +36,12 @@ public class RenderHelper {
         graphics.fill(x + width - 1, y, x + width, y + height, color);
     }
 
-    public static void renderRoundedRect(GuiGraphics graphics, int x, int y, int width, int height, int radius,
+    public static void renderRoundedRect(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int radius,
             int color) {
         graphics.fill(x, y, x + width, y + height, color);
     }
 
-    public static void renderChromaRect(GuiGraphics graphics, int x, int y, int width, int height) {
+    public static void renderChromaRect(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         long time = System.currentTimeMillis() / 10;
         for (int i = 0; i < width; i++) {
             float hue = ((time + i * 4) % 1000) / 1000f;
@@ -59,7 +59,7 @@ public class RenderHelper {
         return (newAlpha << 24) | rgb;
     }
 
-    public static void drawCenteredString(GuiGraphics graphics, net.minecraft.client.gui.Font font, String text, int x, int y, int color) {
-        graphics.drawString(font, text, x - font.width(text) / 2, y, color);
+    public static void drawCenteredString(GuiGraphicsExtractor graphics, net.minecraft.client.gui.Font font, String text, int x, int y, int color) {
+        graphics.centeredText(font, text, x, y, color);
     }
 }

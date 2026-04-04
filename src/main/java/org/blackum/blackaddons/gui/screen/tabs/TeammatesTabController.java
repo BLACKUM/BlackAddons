@@ -4,7 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
@@ -74,7 +76,7 @@ public class TeammatesTabController extends ProfileTabController {
             }
 
             @Override
-            public void render(GuiGraphics g, int x, int y, float p) {
+            public void extractRenderState(GuiGraphicsExtractor g, int x, int y, float p) {
             }
         });
         currentBtnX += btnW + btnGap;
@@ -91,7 +93,7 @@ public class TeammatesTabController extends ProfileTabController {
             }
 
             @Override
-            public void render(GuiGraphics g, int x, int y, float p) {
+            public void extractRenderState(GuiGraphicsExtractor g, int x, int y, float p) {
             }
         });
 
@@ -100,7 +102,7 @@ public class TeammatesTabController extends ProfileTabController {
 
         tab.addWidget(new Widget(headerX, headerY, contentWidth - 20, 15) {
             @Override
-            public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
                 int x = this.x + 2;
                 drawHeader(graphics, "IGN", x, COL_IGN, SortColumn.IGN);
                 x += COL_IGN;
@@ -115,18 +117,19 @@ public class TeammatesTabController extends ProfileTabController {
                 graphics.fill(this.x, this.y + 14, this.x + width, this.y + 15, 0x40FFFFFF);
             }
 
-            private void drawHeader(GuiGraphics g, String text, int x, int w, SortColumn col) {
+            private void drawHeader(GuiGraphicsExtractor g, String text, int x, int w, SortColumn col) {
                 int color = 0xFFFFFFFF;
                 if (currentSort == col) {
                     color = Theme.ACCENT;
                     String arrow = sortAsc ? " ▲" : " ▼";
                     text += arrow;
                 }
-                g.drawString(Minecraft.getInstance().font, text, x, y + 4, color);
+                g.text(Minecraft.getInstance().font, text, x, y + 4, color);
             }
 
             @Override
-            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+                int button = event.button();
                 if (button == 0 && isMouseOver(mouseX, mouseY)) {
                     int relX = (int) (mouseX - this.x - 2);
                     SortColumn clicked = null;
@@ -188,7 +191,7 @@ public class TeammatesTabController extends ProfileTabController {
             }
 
             @Override
-            public void render(GuiGraphics g, int x, int y, float p) {
+            public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
             }
         });
 
@@ -286,7 +289,7 @@ public class TeammatesTabController extends ProfileTabController {
         if (filtered.isEmpty()) {
             teammatesList.addItem(new Widget(0, 0, 0, 5) {
                 @Override
-                public void render(GuiGraphics g, int x, int y, float p) {
+                public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
                 }
             });
             addInfoRow(teammatesList, "No teammates found.", "");

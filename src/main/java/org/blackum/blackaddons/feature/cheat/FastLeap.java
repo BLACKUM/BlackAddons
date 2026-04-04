@@ -7,7 +7,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemLore;
@@ -334,8 +334,8 @@ public class FastLeap {
                         if (matches) {
                             debugMsg("[FastLeap] Found " + itemName + "! Clicking slot " + slot.index);
                             clickedLeap = true;
-                            client.gameMode.handleInventoryMouseClick(
-                                    containerScreen.getMenu().containerId, slot.index, 0, ClickType.PICKUP, client.player);
+                            client.gameMode.handleContainerInput(
+                                    containerScreen.getMenu().containerId, slot.index, 0, ContainerInput.PICKUP, client.player);
                             finishLeap(client);
                             return;
                         }

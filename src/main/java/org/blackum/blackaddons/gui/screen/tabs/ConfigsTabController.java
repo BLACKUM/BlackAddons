@@ -4,8 +4,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.blackum.blackaddons.core.config.ActionManager;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.config.ProfileManager;
+import net.minecraft.util.Util;
 import org.blackum.blackaddons.core.util.Constants;
-import org.blackum.blackaddons.core.util.McCompat;
 import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.screen.BlackAddonsGUI;
@@ -168,7 +168,7 @@ public class ConfigsTabController extends SimpleTabController {
     private void openConfigFolder() {
         File folder = FabricLoader.getInstance().getConfigDir().resolve(Constants.CONFIG_DIR_NAME).toFile();
         if (folder.exists()) {
-            McCompat.openUri(folder.toURI().toString());
+            Util.getPlatform().openUri(folder.toURI().toString());
         }
     }
 

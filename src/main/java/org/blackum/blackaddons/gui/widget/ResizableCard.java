@@ -1,6 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
@@ -97,7 +100,7 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -118,18 +121,18 @@ public class ResizableCard extends Card {
             int titleColor = dragging ? Theme.ACCENT : Theme.TEXT_PRIMARY;
             String arrow = collapsed ? "◀" : "▼";
 
-            graphics.drawString(Minecraft.getInstance().font,
+            graphics.text(Minecraft.getInstance().font,
                     getTitle(), x + getPadding(), y + (TITLE_BAR_HEIGHT - 8) / 2, titleColor);
 
             int arrowWidth = Minecraft.getInstance().font.width(arrow);
-            graphics.drawString(Minecraft.getInstance().font,
+            graphics.text(Minecraft.getInstance().font,
                     arrow, x + initialWidth - getPadding() - arrowWidth, y + (TITLE_BAR_HEIGHT - 8) / 2, titleColor);
         }
 
         if (!collapsed) {
             for (Widget child : getChildren()) {
                 if (child.isVisible()) {
-                    child.render(graphics, (int) ((mouseX - x) / scale + x),
+                    child.extractRenderState(graphics, (int) ((mouseX - x) / scale + x),
                             (int) ((mouseY - y) / scale + y), partialTick);
                 }
             }
@@ -145,7 +148,7 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible || collapsed)
             return;
@@ -164,7 +167,7 @@ public class ResizableCard extends Card {
 
         for (Widget child : getChildren()) {
             if (child.isVisible()) {
-                child.renderOverlay(graphics, scaledMouseX, scaledMouseY, scaledRawMouseX, scaledRawMouseY, partialTick);
+                child.extractRenderOverlay(graphics, scaledMouseX, scaledMouseY, scaledRawMouseX, scaledRawMouseY, partialTick);
             }
         }
 
@@ -180,10 +183,11 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
+        int button = event.buttonInfo().button();
         if (button == 0) {
             if (!collapsed) {
                 ResizeHandle handle = isOverResizeHandle((int) mouseX, (int) mouseY);
@@ -233,14 +237,14 @@ public class ResizableCard extends Card {
         List<Widget> children = getChildren();
         for (Widget child : children) {
             if (child.isMouseOver(scaledMouseX, scaledMouseY)) {
-                if (child.mouseClicked(scaledMouseX, scaledMouseY, button)) {
+                if (child.mouseClicked(scaledMouseX, scaledMouseY, event)) {
                     return true;
                 }
             }
         }
 
         for (Widget child : children) {
-            if (child.mouseClicked(scaledMouseX, scaledMouseY, button)) {
+            if (child.mouseClicked(scaledMouseX, scaledMouseY, event)) {
                 return true;
             }
         }
@@ -249,8 +253,8 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        if (event.buttonInfo().button() == 0) {
             if (dragging) {
                 dragging = false;
                 if (onLayoutChange != null)
@@ -275,12 +279,12 @@ public class ResizableCard extends Card {
 
         List<Widget> children = getChildren();
         for (Widget child : children) {
-            if (child.mouseReleased(scaledMouseX, scaledMouseY, button)) {
+            if (child.mouseReleased(scaledMouseX, scaledMouseY, event)) {
                 return true;
             }
         }
 
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(mouseX, mouseY, event);
     }
 
     public void pack() {
@@ -309,7 +313,7 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (dragging) {
             int deltaX = (int) mouseX - dragStartX;
             int deltaY = (int) mouseY - dragStartY;
@@ -359,12 +363,12 @@ public class ResizableCard extends Card {
 
         List<Widget> children = getChildren();
         for (Widget child : children) {
-            if (child.mouseDragged(scaledMouseX, scaledMouseY, button, scaledDragX, scaledDragY)) {
+            if (child.mouseDragged(scaledMouseX, scaledMouseY, event, scaledDragX, scaledDragY)) {
                 return true;
             }
         }
 
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, event, dragX, dragY);
     }
 
     private boolean isOverTitleBar(int mouseX, int mouseY) {
@@ -446,7 +450,7 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         if (collapsed)
             return false;
 
@@ -456,12 +460,12 @@ public class ResizableCard extends Card {
 
         List<Widget> children = getChildren();
         for (Widget child : children) {
-            if (child.mouseScrolled(scaledMouseX, scaledMouseY, scrollX, scrollY)) {
+            if (child.mouseScrolled(scaledMouseX, scaledMouseY, event, scrollX, scrollY)) {
                 return true;
             }
         }
 
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY);
     }
 
     @Override
@@ -485,16 +489,16 @@ public class ResizableCard extends Card {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (collapsed)
             return false;
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyCode, scanCode, event);
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (collapsed)
             return false;
-        return super.charTyped(character, modifiers);
+        return super.charTyped(chr, event);
     }
 }

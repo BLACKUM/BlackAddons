@@ -18,8 +18,6 @@ public enum NotificationType {
         switch (this) {
             case INFO:
                 return Theme.ACCENT;
-            case ERROR:
-                return Theme.ACCENT;
             default:
                 return color;
         }

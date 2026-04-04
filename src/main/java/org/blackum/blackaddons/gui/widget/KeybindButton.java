@@ -2,7 +2,9 @@ package org.blackum.blackaddons.gui.widget;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.lwjgl.glfw.GLFW;
@@ -24,7 +26,7 @@ public class KeybindButton extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) {
             return;
         }
@@ -39,49 +41,44 @@ public class KeybindButton extends Widget {
 
         int textX = x + 10;
         int textY = y + (height - 8) / 2;
-        graphics.drawString(Minecraft.getInstance().font, text, textX, textY, textColor);
+        graphics.text(Minecraft.getInstance().font, text, textX, textY, textColor);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible) {
             return false;
         }
-
         if (!isMouseOver(mouseX, mouseY)) {
             listening = false;
             return false;
         }
-
-        if (button == 1) {
-            setKeyCode(unboundCode());
+        if (listening) {
+            setKeyCode(encodeMouseButton(event.button()));
             listening = false;
             return true;
         }
-
-        if (button == 0) {
+        if (event.button() == 1) {
+            setKeyCode(unboundCode());
+            return true;
+        }
+        if (event.button() == 0) {
             listening = true;
             return true;
         }
-
-        setKeyCode(encodeMouseButton(button));
-        listening = false;
         return false;
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (!listening) {
             return false;
         }
-
         if (keyCode == GLFW.GLFW_KEY_DELETE || keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_ESCAPE) {
             setKeyCode(unboundCode());
-            listening = false;
-            return true;
+        } else {
+            setKeyCode(keyCode);
         }
-
-        setKeyCode(keyCode);
         listening = false;
         return true;
     }

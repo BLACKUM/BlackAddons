@@ -1,7 +1,8 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -26,7 +27,7 @@ public class ChatFilterRow extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) {
             return;
         }
@@ -39,8 +40,8 @@ public class ChatFilterRow extends Widget {
             pattern = Minecraft.getInstance().font.plainSubstrByWidth(pattern, maxPatternWidth - 6) + "...";
         }
 
-        graphics.drawString(Minecraft.getInstance().font, pattern, x + 10, y + 10, Theme.TEXT_PRIMARY);
-        graphics.drawString(Minecraft.getInstance().font, describeFilter(), x + 10, y + 28, Theme.TEXT_SECONDARY);
+        graphics.text(Minecraft.getInstance().font, pattern, x + 10, y + 10, Theme.TEXT_PRIMARY);
+        graphics.text(Minecraft.getInstance().font, describeFilter(), x + 10, y + 28, Theme.TEXT_SECONDARY);
 
         toggleButton.setText(filter.enabled ? "Enabled" : "Disabled");
         toggleButton.setX(x + width - deleteButton.getWidth() - toggleButton.getWidth() - 16);
@@ -48,8 +49,8 @@ public class ChatFilterRow extends Widget {
         deleteButton.setX(x + width - deleteButton.getWidth() - 8);
         deleteButton.setY(y + (height - deleteButton.getHeight()) / 2);
 
-        toggleButton.render(graphics, mouseX, mouseY, partialTick);
-        deleteButton.render(graphics, mouseX, mouseY, partialTick);
+        toggleButton.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        deleteButton.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -66,14 +67,14 @@ public class ChatFilterRow extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return toggleButton.mouseClicked(mouseX, mouseY, button) || deleteButton.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+        return toggleButton.mouseClicked(mouseX, mouseY, event) || deleteButton.mouseClicked(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return toggleButton.mouseReleased(mouseX, mouseY, button)
-                || deleteButton.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        return toggleButton.mouseReleased(mouseX, mouseY, event)
+                || deleteButton.mouseReleased(mouseX, mouseY, event);
     }
 
     private String describeFilter() {

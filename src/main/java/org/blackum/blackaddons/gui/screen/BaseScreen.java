@@ -1,8 +1,15 @@
 package org.blackum.blackaddons.gui.screen;
 
+import net.minecraft.client.input.CharacterEvent;
+
+
+import net.minecraft.client.input.KeyEvent;
+
+import net.minecraft.client.input.MouseButtonEvent;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.*;
 import net.minecraft.network.chat.Component;
@@ -127,6 +134,24 @@ public abstract class BaseScreen extends Screen {
         return RenderHelper.getGuiScaleFactor();
     }
 
+    protected double getScaledMouseX(double mouseX) {
+        return mouseX;
+    }
+
+    protected double getScaledMouseY(double mouseY) {
+        return mouseY;
+    }
+
+    protected double getScaledMouseX() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth());
+    }
+
+    protected double getScaledMouseY() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight());
+    }
+
     @Override
     public void init() {
         super.init();
@@ -155,32 +180,25 @@ public abstract class BaseScreen extends Screen {
         this.contentHeight = this.baseContentHeight;
     }
 
-    protected abstract void initWidgets();
+    public abstract void initWidgets();
 
-    protected <T extends Widget> T addWidget(T widget) {
-        widgets.add(widget);
-        return widget;
-    }
-
-    public List<Widget> getWidgets() {
-        return widgets;
-    }
-
-    protected int getContentHeight() {
-        return this.baseContentHeight;
+    protected void initWidgetsInternal() {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+
+        Theme.updateTheme();
+
         float scale = getGuiScaleFactor();
-        
         int scaledMouseX = (int)(mouseX / scale);
         int scaledMouseY = (int)(mouseY / scale);
 
         graphics.enableScissor(
-            (int)(containerX * scale), 
-            (int)(containerY * scale), 
-            (int)((containerX + containerWidth) * scale), 
+            (int)(containerX * scale),
+            (int)(containerY * scale),
+            (int)((containerX + containerWidth) * scale),
             (int)((containerY + containerHeight) * scale)
         );
 
@@ -208,8 +226,8 @@ public abstract class BaseScreen extends Screen {
         graphics.pose().pushMatrix();
         graphics.pose().translate(0f, (float) -scrollOffset);
 
-        renderScrolledContent(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), partialTick);
-
+        extractScrolledContent(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), partialTick);
+ 
         boolean mouseCaptured = false;
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
@@ -222,11 +240,11 @@ public abstract class BaseScreen extends Screen {
                 }
             }
         }
-
+ 
         for (Widget widget : widgets) {
             if (widget.isVisible()) {
-                widget.render(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), partialTick);
-
+                widget.extractRenderState(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), partialTick);
+ 
                 if (showHitboxes) {
                     graphics.fill(widget.getX(), widget.getY(), widget.getX() + widget.getWidth(), widget.getY() + 1,
                             0xFFFF0000); // Top
@@ -239,13 +257,13 @@ public abstract class BaseScreen extends Screen {
                 }
             }
         }
-
+ 
         graphics.pose().popMatrix();
         graphics.disableScissor();
 
         for (Widget widget : widgets) {
             if (widget.isVisible()) {
-                widget.renderOverlay(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), scaledMouseX, scaledMouseY, partialTick);
+                widget.extractRenderOverlay(graphics, scaledMouseX, (int) (scaledMouseY + scrollOffset), scaledMouseX, scaledMouseY, partialTick);
             }
         }
 
@@ -265,19 +283,34 @@ public abstract class BaseScreen extends Screen {
             graphics.fill(scrollBarX, scrollBarY, scrollBarX + 4, scrollBarY + scrollBarHeight, Theme.SCROLLBAR_THUMB);
         }
 
-        renderTooltips(graphics, scaledMouseX, scaledMouseY);
-        
+        extractTooltips(graphics, scaledMouseX, scaledMouseY);
+
         graphics.pose().popMatrix();
 
         NotificationManager.getInstance().render(graphics);
     }
 
-    protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected <T extends Widget> T addWidget(T widget) {
+        widgets.add(widget);
+        return widget;
     }
 
-    protected void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+    public List<Widget> getWidgets() {
+        return widgets;
     }
 
+    protected int getContentHeight() {
+        return this.baseContentHeight;
+    }
+
+    protected void extractScrolledContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    }
+ 
+
+ 
+    protected void extractTooltips(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    }
+ 
     @Override
     public void tick() {
         super.tick();
@@ -287,31 +320,27 @@ public abstract class BaseScreen extends Screen {
             }
         }
     }
-
+ 
     private boolean isDraggingScrollbar = false;
-
+ 
     protected boolean showClickDebug = false;
-
+ 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean pressed) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         float scale = getGuiScaleFactor();
         Minecraft mc = Minecraft.getInstance();
-        double windowWidth = mc.getWindow().getScreenWidth();
-        double windowHeight = mc.getWindow().getScreenHeight();
-        double scaledWidth = this.width / scale;
-        double scaledHeight = this.height / scale;
-
-        double mouseX = (mc.mouseHandler.xpos() * (this.width / windowWidth)) / scale;
-        double rawMouseY = (mc.mouseHandler.ypos() * (this.height / windowHeight)) / scale;
+ 
+        double mouseX = event.x() / scale;
+        double rawMouseY = event.y() / scale;
         double mouseY = rawMouseY + scrollOffset;
         int button = event.button();
-
+ 
         if (showClickDebug && mc.player != null) {
             String msg = String.format("%s[Click] Scaled: %.1f,%.1f (Raw: %.1f,%.1f, Scale: %.2f)", 
-                    ChatFormatting.YELLOW, mouseX, mouseY, mc.mouseHandler.xpos(), mc.mouseHandler.ypos(), scale);
-            mc.player.displayClientMessage(Component.literal(msg), false);
+                    ChatFormatting.YELLOW, mouseX, mouseY, event.x(), event.y(), scale);
+            mc.gui.getChat().addClientSystemMessage(Component.literal(msg));
         }
-
+ 
         if (canScroll) {
             int scrollBarX = containerX + containerWidth - 6;
             if (mouseX >= scrollBarX && mouseX <= scrollBarX + 4 &&
@@ -320,69 +349,67 @@ public abstract class BaseScreen extends Screen {
                 return true;
             }
         }
-
+ 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
             if (widget.isVisible() && widget.isEnabled() && widget.hasActiveOverlay()) {
-                if (widget.mouseClicked(mouseX, mouseY, button)) {
+                if (widget.mouseClicked(mouseX, mouseY, event)) {
                     setFocusedWidget(widget);
                     return true;
                 }
             }
         }
-
+ 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
             if (widget.isVisible() && widget.isEnabled() && widget.isMouseOver(mouseX, mouseY)) {
-                if (widget.mouseClicked(mouseX, mouseY, button)) {
+                if (widget.mouseClicked(mouseX, mouseY, event)) {
                     setFocusedWidget(widget);
                     return true;
                 }
             }
         }
-
+ 
         setFocusedWidget(null);
-        return super.mouseClicked(event, pressed);
+        return super.mouseClicked(event, doubleClick);
     }
-
+ 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         isDraggingScrollbar = false;
         float scale = getGuiScaleFactor();
-        Minecraft mc = Minecraft.getInstance();
-        double mouseX = (mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth())) / scale;
-        double rawMouseY = (mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight())) / scale;
+        double mouseX = event.x() / scale;
+        double rawMouseY = event.y() / scale;
         double mouseY = rawMouseY + scrollOffset;
         int button = event.button();
-
+ 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
             if (widget.isVisible() && widget.isEnabled()) {
-                if (widget.mouseReleased(mouseX, mouseY, button)) {
+                if (widget.mouseReleased(mouseX, mouseY, event)) {
                     return true;
                 }
             }
         }
         return super.mouseReleased(event);
     }
-
+ 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
         float scale = getGuiScaleFactor();
-        Minecraft mc = Minecraft.getInstance();
-        double mouseX = (mc.mouseHandler.xpos() * ((double) this.width / mc.getWindow().getScreenWidth())) / scale;
-        double rawMouseY = (mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight())) / scale;
+        double mouseX = event.x() / scale;
+        double rawMouseY = event.y() / scale;
         double mouseY = rawMouseY + scrollOffset;
         int button = event.button();
-
+ 
         if (isDraggingScrollbar && canScroll) {
             int scrollBarHeight = (int) ((containerHeight / (double) contentHeight) * containerHeight);
             if (scrollBarHeight < 30)
                 scrollBarHeight = 30;
-
+ 
             double trackHeight = containerHeight - scrollBarHeight;
             double movement = (dragY / scale) * ((double) maxScroll / trackHeight);
-
+ 
             scrollOffset += movement;
             if (scrollOffset < 0)
                 scrollOffset = 0;
@@ -391,37 +418,37 @@ public abstract class BaseScreen extends Screen {
             notifyWidgetsScrolled();
             return true;
         }
-
-        if (getFocusedWidget() != null && getFocusedWidget().mouseDragged(mouseX, mouseY, button, dragX / scale, dragY / scale)) {
+ 
+        if (getFocusedWidget() != null && getFocusedWidget().mouseDragged(mouseX, mouseY, event, dragX / scale, dragY / scale)) {
             return true;
         }
         return super.mouseDragged(event, dragX, dragY);
     }
-
+ 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         float scale = getGuiScaleFactor();
         double scaledMouseX = mouseX / scale;
         double scaledMouseY = mouseY / scale;
-
+ 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
             if (widget.isVisible() && widget.isEnabled() && widget.hasActiveOverlay()) {
-                if (widget.mouseScrolled(scaledMouseX, scaledMouseY + scrollOffset, scrollX, scrollY)) {
+                if (widget.mouseScrolled(scaledMouseX, scaledMouseY + scrollOffset, null, scrollX, scrollY)) {
                     return true;
                 }
             }
         }
-
+ 
         for (int i = widgets.size() - 1; i >= 0; i--) {
             Widget widget = widgets.get(i);
             if (widget.isVisible() && widget.isEnabled() && widget.isMouseOver(scaledMouseX, scaledMouseY + scrollOffset)) {
-                if (widget.mouseScrolled(scaledMouseX, scaledMouseY + scrollOffset, scrollX, scrollY)) {
+                if (widget.mouseScrolled(scaledMouseX, scaledMouseY + scrollOffset, null, scrollX, scrollY)) {
                     return true;
                 }
             }
         }
-
+ 
         if (canScroll) {
             scrollOffset -= scrollY * 20;
             if (scrollOffset < 0)
@@ -431,25 +458,25 @@ public abstract class BaseScreen extends Screen {
             notifyWidgetsScrolled();
             return true;
         }
-
+ 
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
-
+ 
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (getFocusedWidget() != null && getFocusedWidget().isVisible() && getFocusedWidget().isEnabled()) {
-            if (getFocusedWidget().keyPressed(event.key(), event.scancode(), event.modifiers())) {
+            if (getFocusedWidget().keyPressed(event.key(), event.scancode(), event)) {
                 return true;
             }
         }
         return super.keyPressed(event);
     }
-
+ 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        char chr = (char)event.codepoint();
         if (getFocusedWidget() != null && getFocusedWidget().isVisible() && getFocusedWidget().isEnabled()) {
-            char character = (char) event.codepoint();
-            if (getFocusedWidget().charTyped(character, event.modifiers())) {
+            if (getFocusedWidget().charTyped(chr, event)) {
                 return true;
             }
         }

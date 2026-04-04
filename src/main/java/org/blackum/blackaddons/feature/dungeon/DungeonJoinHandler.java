@@ -109,6 +109,6 @@ public class DungeonJoinHandler {
 
         response.append(openPv).append(kickBtn);
 
-        mc.gui.getChat().addMessage(response);
+        mc.gui.getChat().addClientSystemMessage(response);
     }
 }

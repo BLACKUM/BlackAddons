@@ -1,7 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -35,7 +37,7 @@ public class Slider extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -81,11 +83,11 @@ public class Slider extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
-        if (isMouseOver(mouseX, mouseY) && button == 0) {
+        if (isMouseOver(mouseX, mouseY) && event.buttonInfo().button() == 0) {
             dragging = true;
             updateValue(mouseX);
             return true;
@@ -94,8 +96,8 @@ public class Slider extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (dragging && button == 0) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        if (dragging && event.buttonInfo().button() == 0) {
             dragging = false;
             if (onRelease != null) {
                 onRelease.accept(value);
@@ -116,7 +118,7 @@ public class Slider extends Widget {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (dragging) {
             updateValue(mouseX);
             return true;

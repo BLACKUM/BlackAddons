@@ -1,8 +1,9 @@
 package org.blackum.blackaddons.gui.screen;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.util.Constants;
-import org.blackum.blackaddons.core.util.McCompat;
+import net.minecraft.util.Util;
 import org.blackum.blackaddons.core.util.MinecraftInstance;
 import org.blackum.blackaddons.feature.chat.ChatImageHandler;
 import org.blackum.blackaddons.feature.chat.IrcClient;
@@ -42,7 +43,7 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         int contentX = containerX + 20;
         int contentY = containerY + 20;
         int contentWidth = containerWidth - 40;
@@ -197,7 +198,7 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
             @SuppressWarnings("null")
             String url = uri.toString();
             if (url != null) {
-                McCompat.openUri(url);
+                Util.getPlatform().openUri(url);
             }
             return true;
         } else if (event instanceof ClickEvent.RunCommand runCommand) {
@@ -320,18 +321,19 @@ public class IrcScreen extends BaseScreen implements IrcClient.IrcAuthListener {
         }
 
         @Override
-        public void render(GuiGraphics g, int mx, int my, float p) {
+        public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
             int currentY = y + 6;
             for (FormattedCharSequence line : lines) {
                 if (line == null)
                     continue;
-                g.drawString(MinecraftInstance.mc.font, line, x + 10, currentY, Theme.TEXT_PRIMARY, false);
+                g.text(MinecraftInstance.mc.font, line, x + 10, currentY, Theme.TEXT_PRIMARY, false);
                 currentY += MinecraftInstance.mc.font.lineHeight + 2;
             }
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+            int button = event.buttonInfo().button();
             if (button != 0)
                 return false;
 

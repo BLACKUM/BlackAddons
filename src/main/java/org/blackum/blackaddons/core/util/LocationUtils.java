@@ -1,9 +1,10 @@
 package org.blackum.blackaddons.core.util;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.model.DungeonFloor;
@@ -120,7 +121,7 @@ public class LocationUtils {
     }
 
     public static void register() {
-        HudRenderCallback.EVENT.register((graphics, partialTick) -> renderOverlay(graphics));
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("blackaddons", "location_overlay"), (graphics, deltaTracker) -> renderOverlay(graphics));
     }
 
     public static List<String> getDebugInfo() {
@@ -183,7 +184,7 @@ public class LocationUtils {
         return boxes;
     }
 
-    private static void renderOverlay(GuiGraphics graphics) {
+    private static void renderOverlay(GuiGraphicsExtractor graphics) {
         Minecraft mc = Minecraft.getInstance();
         if (!ConfigManager.data.showLocationDebug || mc.options.hideGui) return;
 
@@ -197,7 +198,7 @@ public class LocationUtils {
 
         int y = overlayY;
         for (String line : getDebugInfo()) {
-            graphics.drawString(mc.font, line, overlayX, y, COLOR_WHITE);
+            graphics.text(mc.font, line, overlayX, y, COLOR_WHITE);
             y += LINE_HEIGHT;
         }
     }

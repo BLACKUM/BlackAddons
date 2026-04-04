@@ -1,7 +1,8 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.core.config.ConfigManager.WaypointAction;
 import org.blackum.blackaddons.core.waypoint.Waypoint;
 import org.blackum.blackaddons.core.waypoint.WaypointDragState;
@@ -69,7 +70,6 @@ public class WaypointCard extends Widget {
             }
         });
 
-
         actionsBtn = new Button(0, 0, 60, BUTTON_HEIGHT, "Actions", () -> {
             List<WaypointAction> actions = waypoint.actions;
             if (actions.isEmpty()) actions.add(new WaypointAction());
@@ -77,7 +77,6 @@ public class WaypointCard extends Widget {
                 Blackaddons.screenOpener.accept(new WaypointActionEditScreen(screen, waypoint, actions.get(0)));
             }
         });
-
 
         deleteBtn = new Button(0, 0, 55, BUTTON_HEIGHT, "Delete", () -> {
             WaypointManager.getInstance().removeWaypoint(waypoint);
@@ -154,7 +153,7 @@ public class WaypointCard extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) return;
 
         boolean dragged = isBeingDragged();
@@ -177,7 +176,7 @@ public class WaypointCard extends Widget {
         }
     }
 
-    private void renderContents(GuiGraphics graphics, int renderX, int renderY, int renderWidth, int renderHeight, int mouseX, int mouseY, float partialTick, boolean isGhost) {
+    private void renderContents(GuiGraphicsExtractor graphics, int renderX, int renderY, int renderWidth, int renderHeight, int mouseX, int mouseY, float partialTick, boolean isGhost) {
         renderDragHandle(graphics, renderX, renderY, renderHeight, mouseX, mouseY, isGhost);
 
         int swatchX = renderX + CARD_PADDING + CONTENT_OFFSET + indent;
@@ -196,7 +195,7 @@ public class WaypointCard extends Widget {
         if (group != null) {
             nameText += " §7(in " + group.name + ")";
         }
-        graphics.drawString(Minecraft.getInstance().font, nameText, nameX, renderY + CARD_PADDING + (ROW_HEIGHT - 8) / 2, nameColor);
+        graphics.text(Minecraft.getInstance().font, nameText, nameX, renderY + CARD_PADDING + (ROW_HEIGHT - 8) / 2, nameColor);
 
         Minecraft mc = Minecraft.getInstance();
         String coords = String.format(Locale.ROOT, "%.0f, %.0f, %.0f", waypoint.x, waypoint.y, waypoint.z);
@@ -207,19 +206,17 @@ public class WaypointCard extends Widget {
             infoText += " §8• §7" + String.format(Locale.ROOT, "%.0fm", dist);
         }
 
-        graphics.drawString(mc.font, infoText, swatchX, renderY + CARD_PADDING + ROW_HEIGHT + 4 + (ROW_HEIGHT - 8) / 2, Theme.TEXT_SECONDARY);
+        graphics.text(mc.font, infoText, swatchX, renderY + CARD_PADDING + ROW_HEIGHT + 4 + (ROW_HEIGHT - 8) / 2, Theme.TEXT_SECONDARY);
 
         int dividerY = renderY + CARD_PADDING + ROW_HEIGHT * 2 + 6;
         graphics.fill(renderX + CARD_PADDING, dividerY, renderX + renderWidth - CARD_PADDING, dividerY + 1, 0x11FFFFFF);
 
-        if (!isGhost) {
-            for (Widget child : children) {
-                child.render(graphics, mouseX, mouseY, partialTick);
-            }
+        for (Widget child : children) {
+            child.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
     }
 
-    private void renderDragHandle(GuiGraphics graphics, int rx, int ry, int rh, int mx, int my, boolean isGhost) {
+    private void renderDragHandle(GuiGraphicsExtractor graphics, int rx, int ry, int rh, int mx, int my, boolean isGhost) {
         boolean hovered = !isGhost && isInHandleArea(mx, my);
         int dotColor = hovered ? Theme.TEXT_PRIMARY : Theme.withAlpha(Theme.TEXT_SECONDARY, 0.3f);
         int dotSize = 2;
@@ -237,7 +234,7 @@ public class WaypointCard extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY, float partialTick) {
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY, float partialTick) {
         if (!visible) return;
 
         if (isBeingDragged()) {
@@ -245,7 +242,7 @@ public class WaypointCard extends Widget {
             int gy = (int) (mouseY - dragState.mouseOffsetY);
             
             graphics.pose().pushMatrix();
-            graphics.pose().translate(0.0f, 0.0f);
+            
             RenderHelper.renderSurface(graphics, gx, gy, width, height, Theme.BORDER_RADIUS_SMALL, false);
             renderContents(graphics, gx, gy, width, height, mouseX, mouseY, partialTick, true);
             RenderHelper.renderRoundedOutline(graphics, gx, gy, width, height, Theme.BORDER_RADIUS_SMALL, Theme.ACCENT);
@@ -253,7 +250,7 @@ public class WaypointCard extends Widget {
         }
 
         for (Widget child : children) {
-            child.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+            child.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
         }
     }
 
@@ -271,79 +268,66 @@ public class WaypointCard extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible) return false;
-        if (button == 0 && isInHandleArea(mouseX, mouseY)) {
+        if (event.button() == 0 && isInHandleArea(mouseX, mouseY)) {
             handlePressed = true;
             handlePressX = mouseX;
             handlePressY = mouseY;
             return true;
         }
         for (int i = children.size() - 1; i >= 0; i--) {
-            if (children.get(i).mouseClicked(mouseX, mouseY, button)) return true;
+            if (children.get(i).mouseClicked(mouseX, mouseY, event)) return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (handlePressed) {
-            handlePressed = false;
-            if (dragState != null && dragState.active && dragState.draggedCard == this && onDropCallback != null) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        handlePressed = false;
+        if (event.button() == 0 && isBeingDragged()) {
+            if (onDropCallback != null) {
                 onDropCallback.accept(mouseY);
-            } else if (dragState != null) {
-                dragState.reset();
             }
             return true;
         }
+        boolean handled = false;
         for (Widget child : children) {
-            if (child.mouseReleased(mouseX, mouseY, button)) return true;
+            if (child.mouseReleased(mouseX, mouseY, event)) handled = true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return handled;
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (handlePressed) {
-            if (dragState != null) {
-                if (!dragState.active) {
-                    double dx = mouseX - handlePressX;
-                    double dy = mouseY - handlePressY;
-                    if (Math.sqrt(dx*dx + dy*dy) > DRAG_THRESHOLD) {
-                        dragState.onDragStart(waypoint, this, mouseX, mouseY);
-                    }
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
+        if (handlePressed && !isBeingDragged()) {
+            double dist = Math.sqrt(Math.pow(mouseX - handlePressX, 2) + Math.pow(mouseY - handlePressY, 2));
+            if (dist > DRAG_THRESHOLD) {
+                if (dragState != null) {
+                    dragState.onDragStart(waypoint, this, mouseX, mouseY);
                 }
-                dragState.update(mouseY);
+                handlePressed = false;
             }
             return true;
         }
-        for (Widget child : children) {
-            if (child.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
+        if (isBeingDragged()) {
+            if (dragState != null) dragState.update(mouseY);
+            return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        boolean handled = false;
+        for (Widget child : children) {
+            if (child.mouseDragged(mouseX, mouseY, event, dragX, dragY)) handled = true;
+        }
+        return handled;
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
+        if (!visible) return false;
+        boolean handled = false;
         for (Widget child : children) {
-            if (child.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) return true;
+            if (child.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY)) handled = true;
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        for (Widget child : children) {
-            if (child.keyPressed(keyCode, scanCode, modifiers)) return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean charTyped(char character, int modifiers) {
-        for (Widget child : children) {
-            if (child.charTyped(character, modifiers)) return true;
-        }
-        return super.charTyped(character, modifiers);
+        return handled;
     }
 }

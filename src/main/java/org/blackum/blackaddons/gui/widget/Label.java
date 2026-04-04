@@ -1,7 +1,8 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 
 public class Label extends Widget {
@@ -54,7 +55,7 @@ public class Label extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -68,7 +69,7 @@ public class Label extends Widget {
             renderX = x + width - textWidth;
         }
 
-        graphics.drawString(Minecraft.getInstance().font, text, renderX, y, color);
+        graphics.text(Minecraft.getInstance().font, text, renderX, y, color);
     }
 
     public String getText() {
@@ -102,7 +103,7 @@ public class Label extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         return false;
     }
 }

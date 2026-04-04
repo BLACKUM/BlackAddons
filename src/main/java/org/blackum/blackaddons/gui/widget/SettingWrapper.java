@@ -1,7 +1,10 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -83,16 +86,16 @@ public class SettingWrapper extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
         int textY = y + (HEADER_HEIGHT - 8) / 2;
-        graphics.drawString(Minecraft.getInstance().font, label, x, textY, Theme.TEXT_PRIMARY);
+        graphics.text(Minecraft.getInstance().font, label, x, textY, Theme.TEXT_PRIMARY);
 
         if (rightLabel != null && !rightLabel.isEmpty()) {
             int rw = Minecraft.getInstance().font.width(rightLabel);
-            graphics.drawString(Minecraft.getInstance().font, rightLabel, x + width - rw - 10, textY,
+            graphics.text(Minecraft.getInstance().font, rightLabel, x + width - rw - 10, textY,
                     Theme.TEXT_SECONDARY);
         }
 
@@ -100,7 +103,7 @@ public class SettingWrapper extends Widget {
             int expandX = x + labelWidth + 6;
             int expandY = y + (HEADER_HEIGHT - EXPAND_ICON_SIZE) / 2;
             int expandColor = Theme.withAlpha(Theme.TEXT_SECONDARY, 0.6f);
-            graphics.drawString(Minecraft.getInstance().font, expanded ? "▼" : "▶", expandX, expandY, expandColor);
+            graphics.text(Minecraft.getInstance().font, expanded ? "▼" : "▶", expandX, expandY, expandColor);
         }
 
         if (description != null && !description.isEmpty() && expandAnimation.getValue() > 0) {
@@ -113,29 +116,29 @@ public class SettingWrapper extends Widget {
 
             for (String word : words) {
                 if (Minecraft.getInstance().font.width(line + word) > width - 20 && !line.isEmpty()) {
-                    graphics.drawString(Minecraft.getInstance().font, line.toString().trim(), x + 10, descY, descColor);
+                    graphics.text(Minecraft.getInstance().font, line.toString().trim(), x + 10, descY, descColor);
                     descY += 10;
                     line = new StringBuilder();
                 }
                 line.append(word).append(" ");
             }
             if (!line.isEmpty()) {
-                graphics.drawString(Minecraft.getInstance().font, line.toString().trim(), x + 10, descY, descColor);
+                graphics.text(Minecraft.getInstance().font, line.toString().trim(), x + 10, descY, descColor);
             }
         }
 
         if (control != null && control.isVisible()) {
-            control.render(graphics, mouseX, mouseY, partialTick);
+            control.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible)
             return;
         if (control != null && control.isVisible()) {
-            control.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+            control.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
         }
     }
 
@@ -165,11 +168,11 @@ public class SettingWrapper extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
-        if (control != null && control.mouseClicked(mouseX, mouseY, button)) {
+        if (control != null && control.mouseClicked(mouseX, mouseY, event)) {
             return true;
         }
 
@@ -186,47 +189,47 @@ public class SettingWrapper extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
         if (control != null)
-            return control.mouseReleased(mouseX, mouseY, button);
+            return control.mouseReleased(mouseX, mouseY, event);
         return false;
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (!enabled || !visible)
             return false;
         if (control != null)
-            return control.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return control.mouseDragged(mouseX, mouseY, event, dragX, dragY);
         return false;
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         if (!visible)
             return false;
         if (control != null)
-            return control.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+            return control.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY);
         return false;
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (!enabled || !visible)
             return false;
         if (control != null)
-            return control.keyPressed(keyCode, scanCode, modifiers);
+            return control.keyPressed(keyCode, scanCode, event);
         return false;
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (!enabled || !visible)
             return false;
         if (control != null)
-            return control.charTyped(character, modifiers);
+            return control.charTyped(chr, event);
         return false;
     }
 

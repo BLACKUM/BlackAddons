@@ -62,7 +62,7 @@ public class PartyFinderManager {
         pendingRequests.put(leaderName, System.currentTimeMillis());
 
         MinecraftInstance.mc.execute(() -> {
-            MinecraftInstance.mc.gui.getChat().addMessage(ChatUtils.getMessage("Sent join request to " + leaderName));
+            MinecraftInstance.mc.gui.getChat().addClientSystemMessage(ChatUtils.getMessage("Sent join request to " + leaderName));
         });
     }
 
@@ -81,7 +81,7 @@ public class PartyFinderManager {
 
             MinecraftInstance.mc.execute(() -> {
                 MinecraftInstance.mc.gui.getChat()
-                        .addMessage(ChatUtils.getMessage("§aJoin request from " + sender));
+                        .addClientSystemMessage(ChatUtils.getMessage("§aJoin request from " + sender));
             });
 
             if (ConfigManager.data.partyFinderAutoInvite) {
@@ -93,9 +93,9 @@ public class PartyFinderManager {
             } else {
                 MinecraftInstance.mc.execute(() -> {
                     MinecraftInstance.mc.gui.getChat()
-                            .addMessage(ChatUtils.getPrefix()
+                            .addClientSystemMessage(ChatUtils.getPrefix()
                                     .append(Component.literal(sender + " " + Constants.MSG_WANTS_TO_JOIN)));
-                    MinecraftInstance.mc.gui.getChat().addMessage(Component.literal("§7  ")
+                    MinecraftInstance.mc.gui.getChat().addClientSystemMessage(Component.literal("§7  ")
                             .append(Component.literal(Constants.LABEL_INVITE)
                                     .withStyle(
                                             s -> s.withClickEvent(new ClickEvent.RunCommand("/party invite " + sender))
@@ -127,7 +127,7 @@ public class PartyFinderManager {
                 if (System.currentTimeMillis() - time < 60000) {
                     MinecraftInstance.mc.execute(() -> {
                         MinecraftInstance.mc.gui.getChat()
-                                .addMessage(ChatUtils.getMessage(String.format(Constants.MSG_AUTO_ACCEPT, sender)));
+                                .addClientSystemMessage(ChatUtils.getMessage(String.format(Constants.MSG_AUTO_ACCEPT, sender)));
                         LocalPlayer player = MinecraftInstance.mc.player;
                         if (player != null && player.connection != null) {
                             player.connection.sendCommand("p accept " + sender);
@@ -253,7 +253,7 @@ public class PartyFinderManager {
                     }
                     if (MinecraftInstance.mc.player != null && MinecraftInstance.mc.player.connection != null) {
                         MinecraftInstance.mc.gui.getChat()
-                                .addMessage(ChatUtils.getMessage(String.format(Constants.MSG_QUEUE_STARTED, floor)));
+                                .addClientSystemMessage(ChatUtils.getMessage(String.format(Constants.MSG_QUEUE_STARTED, floor)));
                     }
                 } else {
                     String error = response != null && response.has("error") ? response.get("error").getAsString()
@@ -276,7 +276,7 @@ public class PartyFinderManager {
                 currentPartyId = null;
                 MinecraftInstance.mc.execute(() -> {
                     MinecraftInstance.mc.gui.getChat()
-                            .addMessage(ChatUtils.getMessage(Constants.MSG_REMOVED_QUEUE));
+                            .addClientSystemMessage(ChatUtils.getMessage(Constants.MSG_REMOVED_QUEUE));
                 });
             } else {
                 NotificationManager.addNotification(Constants.PARTY_FINDER_TITLE, "Failed to unqueue.",

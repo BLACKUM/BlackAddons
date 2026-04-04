@@ -270,13 +270,13 @@ public class ProfileStateManager {
         Minecraft mc = Minecraft.getInstance();
         if (!quiet) {
             mc.gui.getChat()
-                    .addMessage(
+                    .addClientSystemMessage(
                             ChatUtils.getMessage("Loading stats for " + player + (force ? " (Forced)" : "") + "..."));
         }
 
         getProfile(player, profileName, force).thenAccept(result -> {
             if (result == null) {
-                mc.gui.getChat().addMessage(ChatUtils.error("Failed to fetch data."));
+                mc.gui.getChat().addClientSystemMessage(ChatUtils.error("Failed to fetch data."));
                 NotificationManager.addNotification("Profile Error", "Failed to fetch data from API.",
                         NotificationType.ERROR);
                 return;
@@ -284,14 +284,14 @@ public class ProfileStateManager {
 
             if (result.hasError()) {
                 String err = result.getError();
-                mc.gui.getChat().addMessage(ChatUtils.error(err));
+                mc.gui.getChat().addClientSystemMessage(ChatUtils.error(err));
                 NotificationManager.addNotification("Profile Error", err, NotificationType.ERROR);
                 return;
             }
 
             JsonObject data = result.getData();
             if (data == null) {
-                mc.gui.getChat().addMessage(ChatUtils.error("Invalid response format."));
+                mc.gui.getChat().addClientSystemMessage(ChatUtils.error("Invalid response format."));
                 NotificationManager.addNotification("Profile Error", "Invalid response format.",
                         NotificationType.ERROR);
                 return;
@@ -305,7 +305,7 @@ public class ProfileStateManager {
             }
 
         }).exceptionally(e -> {
-            mc.gui.getChat().addMessage(ChatUtils.error("Exception: " + e.getMessage()));
+            mc.gui.getChat().addClientSystemMessage(ChatUtils.error("Exception: " + e.getMessage()));
             NotificationManager.addNotification("Profile Exception", e.getMessage(), NotificationType.ERROR);
             return null;
         });

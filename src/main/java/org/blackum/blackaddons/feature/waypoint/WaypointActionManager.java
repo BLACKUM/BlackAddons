@@ -4,6 +4,7 @@ import org.blackum.blackaddons.core.util.AlignUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import org.blackum.blackaddons.core.config.ConfigManager;
 import org.blackum.blackaddons.core.config.ConfigManager.WaypointAction;
@@ -12,7 +13,6 @@ import org.blackum.blackaddons.core.waypoint.WaypointGroup;
 import org.blackum.blackaddons.core.waypoint.WaypointManager;
 import org.blackum.blackaddons.feature.chat.ChatActionExecutor;
 import org.blackum.blackaddons.core.util.FormatUtils;
-import org.blackum.blackaddons.core.util.McCompat;
 
 import org.blackum.blackaddons.gui.notification.NotificationManager;
 import java.util.HashMap;
@@ -62,7 +62,7 @@ public class WaypointActionManager {
             return;
         }
 
-        String dimension = McCompat.dimensionId(client.level.dimension());
+        String dimension = client.level.dimension().identifier().toString();
         double playerX = client.player.getX();
         double playerY = client.player.getY();
         double playerZ = client.player.getZ();
@@ -108,7 +108,7 @@ public class WaypointActionManager {
         double playerX = client.player.getX();
         double playerY = client.player.getY();
         double playerZ = client.player.getZ();
-        String dimension = McCompat.dimensionId(client.level.dimension());
+        String dimension = client.level.dimension().identifier().toString();
         double previousX = hasLastPosition ? lastPlayerX : playerX;
         double previousY = hasLastPosition ? lastPlayerY : playerY;
         double previousZ = hasLastPosition ? lastPlayerZ : playerZ;
@@ -294,9 +294,9 @@ public class WaypointActionManager {
 
             if (action.soundId != null && !action.soundId.isEmpty()) {
                 try {
-                    Object location = McCompat.tryParseResource(action.soundId);
-                    if (location == null) location = McCompat.resource("minecraft", action.soundId);
-                    SoundEvent event = McCompat.createVariableRangeEvent(location);
+                    Identifier location = Identifier.tryParse(action.soundId);
+                    if (location == null) location = Identifier.fromNamespaceAndPath("minecraft", action.soundId);
+                    SoundEvent event = SoundEvent.createVariableRangeEvent(location);
                     client.getSoundManager().play(SimpleSoundInstance.forUI(event, action.pitch, action.volume));
                 } catch (Exception ignored) {}
             }

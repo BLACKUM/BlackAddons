@@ -2,7 +2,7 @@ package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.RenderHelper;
 
@@ -17,15 +17,15 @@ public class StatBox extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
         RenderHelper.renderRoundedRect(graphics, x, y, width, height, Theme.BORDER_RADIUS, Theme.BACKGROUND_SECONDARY);
 
         Minecraft mc = Minecraft.getInstance();
-        graphics.drawCenteredString(mc.font, label, x + width / 2, y + 10, Theme.ACCENT);
-        graphics.drawCenteredString(mc.font, ChatFormatting.WHITE + value, x + width / 2, y + 25, 0xFFFFFFFF);
+        graphics.centeredText(mc.font, label, x + width / 2, y + 10, Theme.ACCENT);
+        graphics.centeredText(mc.font, ChatFormatting.WHITE + value, x + width / 2, y + 25, 0xFFFFFFFF);
     }
 
     public void setLabel(String label) {

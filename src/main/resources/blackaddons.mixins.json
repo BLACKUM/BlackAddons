@@ -8,7 +8,7 @@
     "gui.ToastManagerMixin",
     "gui.SystemToastAccessor",
     "core.LanguageAccessor",
-    "core.GameRendererAccessor",
+
     "render.CameraMixin",
     "skyhanni.CurrentChatDisplayMixin"
   ],

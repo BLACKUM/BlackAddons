@@ -1,6 +1,6 @@
 package org.blackum.blackaddons.gui.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.ChatFormatting;
@@ -34,7 +34,7 @@ public class OverlayEditorScreen extends BaseScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fillGradient(0, 0, this.width, this.height, 0xAA000000, 0xAA000000);
 
         renderOverlayPreview(graphics);
@@ -59,7 +59,7 @@ public class OverlayEditorScreen extends BaseScreen {
         graphics.fill(x - 2, y - 1, x - 1, y + boxHeight + 1, 0xFF00FF00);
         graphics.fill(x + boxWidth + 1, y - 1, x + boxWidth + 2, y + boxHeight + 1, 0xFF00FF00);
         *///?} else
-        graphics.renderOutline(x - 2, y - 2, boxWidth + 4, boxHeight + 4, 0xFF00FF00);
+        graphics.outline(x - 2, y - 2, boxWidth + 4, boxHeight + 4, 0xFF00FF00);
 
         int handleSize = 8;
         graphics.fill(x + boxWidth - handleSize + 2, y + boxHeight - handleSize + 2, x + boxWidth + 2,
@@ -68,14 +68,14 @@ public class OverlayEditorScreen extends BaseScreen {
         for (Widget widget : widgets) {
             if (widget.isVisible()) {
                 widget.updateHoverState(mouseX, mouseY);
-                widget.render(graphics, mouseX, mouseY, partialTick);
+                widget.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
         }
 
-        graphics.drawCenteredString(this.font, "Drag to Move | Drag Handle to Resize", this.width / 2, 10, 0xFFFFFFFF);
+        graphics.centeredText(this.font, "Drag to Move | Drag Handle to Resize", this.width / 2, 10, 0xFFFFFFFF);
     }
 
-    private void renderOverlayPreview(GuiGraphics graphics) {
+    private void renderOverlayPreview(GuiGraphicsExtractor graphics) {
         graphics.pose().pushMatrix();
         graphics.pose().translate((float) BaseScreen.overlayX, (float) BaseScreen.overlayY);
         graphics.pose().scale(BaseScreen.overlayScale, BaseScreen.overlayScale);
@@ -91,7 +91,7 @@ public class OverlayEditorScreen extends BaseScreen {
         debugInfo.add("Screen: OverlayEditorScreen");
 
         for (String line : debugInfo) {
-            graphics.drawString(this.font, line, x, y, 0xFFFFFFFF);
+            graphics.text(this.font, line, x, y, 0xFFFFFFFF);
             y += 10;
         }
 
@@ -110,7 +110,7 @@ public class OverlayEditorScreen extends BaseScreen {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         int buttonWidth = 100;
         int buttonX = (this.width - buttonWidth) / 2;
         int buttonY = this.height - Theme.BUTTON_HEIGHT - Theme.MARGIN;
@@ -148,17 +148,12 @@ public class OverlayEditorScreen extends BaseScreen {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean pressed) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (event.button() == 0) {
             Minecraft mc = Minecraft.getInstance();
 
-            double windowWidth = mc.getWindow().getScreenWidth();
-            double windowHeight = mc.getWindow().getScreenHeight();
-            double scaledWidth = this.width;
-            double scaledHeight = this.height;
-
-            double mouseX = mc.mouseHandler.xpos() * (scaledWidth / windowWidth);
-            double mouseY = mc.mouseHandler.ypos() * (scaledHeight / windowHeight);
+            double mouseX = getScaledMouseX();
+            double mouseY = getScaledMouseY();
 
             float scale = BaseScreen.overlayScale;
             int x = BaseScreen.overlayX;
@@ -179,7 +174,7 @@ public class OverlayEditorScreen extends BaseScreen {
                 return true;
             }
         }
-        return super.mouseClicked(event, pressed);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
@@ -192,11 +187,8 @@ public class OverlayEditorScreen extends BaseScreen {
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
         if (isDragging || isResizing) {
-            Minecraft mc = Minecraft.getInstance();
-            double windowWidth = mc.getWindow().getScreenWidth();
-            double scaledWidth = this.width;
-            double mouseX = mc.mouseHandler.xpos() * (scaledWidth / windowWidth);
-            double mouseY = mc.mouseHandler.ypos() * ((double) this.height / mc.getWindow().getScreenHeight());
+            double mouseX = getScaledMouseX();
+            double mouseY = getScaledMouseY();
 
             if (isDragging) {
                 BaseScreen.overlayX = (int) (mouseX - dragOffsetX);

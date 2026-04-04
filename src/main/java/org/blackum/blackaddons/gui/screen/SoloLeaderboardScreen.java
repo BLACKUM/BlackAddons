@@ -4,7 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -37,7 +37,7 @@ public class SoloLeaderboardScreen extends BaseScreen {
     }
 
     @Override
-    protected void initWidgets() {
+    public void initWidgets() {
         int contentX = containerX + 16;
         int contentY = containerY + 16;
         int contentW = containerWidth - 32;
@@ -117,7 +117,7 @@ public class SoloLeaderboardScreen extends BaseScreen {
     }
 
     @Override
-    protected void renderScrolledContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void extractScrolledContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
     private static class RunWidget extends Widget {
@@ -143,21 +143,21 @@ public class SoloLeaderboardScreen extends BaseScreen {
         }
 
         @Override
-        public void render(GuiGraphics g, int mx, int my, float p) {
+        public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
             boolean hov = mx >= x && mx <= x + width && my >= y && my <= y + height;
             RenderHelper.renderSurface(g, x, y, width, height, Theme.BORDER_RADIUS_SMALL, hov);
 
             int rankColor = rank == 1 ? GOLD : rank == 2 ? SILVER : rank == 3 ? BRONZE : Theme.TEXT_SECONDARY;
             String rankStr = rank <= 3 ? (rank == 1 ? "🥇" : rank == 2 ? "🥈" : "🥉") : ("#" + rank);
-            g.drawString(MinecraftInstance.mc.font, rankStr, x + 8, y + 7, rankColor);
+            g.text(MinecraftInstance.mc.font, rankStr, x + 8, y + 7, rankColor);
 
-            g.drawString(MinecraftInstance.mc.font,
+            g.text(MinecraftInstance.mc.font,
                     ChatFormatting.AQUA + "" + ChatFormatting.BOLD + ign,
                     x + 38, y + 7, Theme.TEXT_PRIMARY);
 
             String timeLabel = "⏱ " + timeStr;
             int timeLabelW = MinecraftInstance.mc.font.width(timeLabel);
-            g.drawString(MinecraftInstance.mc.font,
+            g.text(MinecraftInstance.mc.font,
                     ChatFormatting.YELLOW + timeStr,
                     x + width - timeLabelW - 8, y + 7,
                     Theme.TEXT_PRIMARY);
@@ -174,7 +174,7 @@ public class SoloLeaderboardScreen extends BaseScreen {
                     + (prince ? ChatFormatting.GREEN + "✔" : ChatFormatting.RED + "✘")
                     + ChatFormatting.GRAY + "  Mimic: "
                     + (mimic ? ChatFormatting.GREEN + "✔" : ChatFormatting.RED + "✘");
-            g.drawString(MinecraftInstance.mc.font, stats, x + 38, y + 26, Theme.TEXT_SECONDARY);
+            g.text(MinecraftInstance.mc.font, stats, x + 38, y + 26, Theme.TEXT_SECONDARY);
         }
     }
 }

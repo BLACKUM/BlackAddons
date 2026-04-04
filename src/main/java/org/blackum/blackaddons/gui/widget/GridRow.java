@@ -1,6 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,23 +37,23 @@ public class GridRow extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
         for (Map.Entry<Widget, Integer> entry : children) {
-            entry.getKey().render(graphics, mouseX, mouseY, partialTick);
+            entry.getKey().extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible)
             return;
         for (Map.Entry<Widget, Integer> entry : children) {
             Widget widget = entry.getKey();
             if (widget.isVisible()) {
-                widget.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+                widget.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
             }
         }
     }
@@ -96,68 +99,71 @@ public class GridRow extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
         for (Map.Entry<Widget, Integer> entry : children) {
-            if (entry.getKey().mouseClicked(mouseX, mouseY, button))
+            Widget widget = entry.getKey();
+            if (widget.isVisible() && widget.mouseClicked(mouseX, mouseY, event)) {
                 return true;
+            }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
         for (Map.Entry<Widget, Integer> entry : children) {
-            if (entry.getKey().mouseReleased(mouseX, mouseY, button))
+            if (entry.getKey().mouseReleased(mouseX, mouseY, event))
                 return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (!enabled || !visible)
             return false;
         for (Map.Entry<Widget, Integer> entry : children) {
-            if (entry.getKey().mouseDragged(mouseX, mouseY, button, dragX, dragY))
+            if (entry.getKey().mouseDragged(mouseX, mouseY, event, dragX, dragY))
                 return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         if (!visible)
             return false;
         for (Map.Entry<Widget, Integer> entry : children) {
-            if (entry.getKey().mouseScrolled(mouseX, mouseY, scrollX, scrollY))
+            if (entry.getKey().mouseScrolled(mouseX, mouseY, event, scrollX, scrollY))
                 return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (!enabled || !visible)
             return false;
         for (Map.Entry<Widget, Integer> entry : children) {
-            if (entry.getKey().keyPressed(keyCode, scanCode, modifiers))
+            if (entry.getKey().keyPressed(keyCode, scanCode, event))
                 return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyCode, scanCode, event);
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (!enabled || !visible)
             return false;
         for (Map.Entry<Widget, Integer> entry : children) {
-            if (entry.getKey().charTyped(character, modifiers))
+            if (entry.getKey().charTyped(chr, event)) {
                 return true;
+            }
         }
-        return super.charTyped(character, modifiers);
+        return super.charTyped(chr, event);
     }
 }

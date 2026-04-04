@@ -1,8 +1,11 @@
 package org.blackum.blackaddons.gui.widget;
 
+import net.minecraft.client.input.MouseButtonEvent;
+
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -64,7 +67,7 @@ public class MovementKeybindSelector extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) {
             return;
         }
@@ -93,8 +96,8 @@ public class MovementKeybindSelector extends Widget {
             int titleWidth = Minecraft.getInstance().font.width(chip.label);
             int detailWidth = Minecraft.getInstance().font.width(chip.detail);
             int centerX = chip.x + chip.width / 2;
-            graphics.drawString(Minecraft.getInstance().font, chip.label, centerX - titleWidth / 2, chip.y + 8, titleColor);
-            graphics.drawString(Minecraft.getInstance().font, chip.detail, centerX - detailWidth / 2, chip.y + 19, detailColor);
+            graphics.text(Minecraft.getInstance().font, chip.label, centerX - titleWidth / 2, chip.y + 8, titleColor);
+            graphics.text(Minecraft.getInstance().font, chip.detail, centerX - detailWidth / 2, chip.y + 19, detailColor);
         }
     }
 
@@ -114,8 +117,8 @@ public class MovementKeybindSelector extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (!enabled || !visible || button != 0) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+        if (!enabled || !visible || event.button() != 0) {
             return false;
         }
 

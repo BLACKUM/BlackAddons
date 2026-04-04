@@ -41,7 +41,7 @@ public class UpdateManager {
                                                     .withBold(true)
                                                     .withClickEvent(new ClickEvent.OpenUrl(URI.create(Constants.GITHUB_RELEASES_URL)))
                                                     .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to open GitHub releases")))));
-                            mc.gui.getChat().addMessage(message);
+                            mc.gui.getChat().addClientSystemMessage(message);
                         }
                     });
                 }

@@ -18,13 +18,16 @@ public abstract class KeyboardInputMixin {
     private boolean onIsDown(KeyMapping keyMapping) {
         if (Freecam.getInstance().isActive()) {
             if (keyMapping instanceof KeyBindingAccessor accessor && accessor.blackaddons$isForced()) {
-                return keyMapping.isDown();
+                return true;
             }
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
         if (AlignUtils.shouldBlockMovementInput() && mc.options != null && isMovementKey(mc, keyMapping)) {
             return AlignUtils.isAllowedMovementKey(mc, keyMapping);
+        }
+        if (keyMapping instanceof KeyBindingAccessor accessor && accessor.blackaddons$isForced()) {
+            return true;
         }
         return keyMapping.isDown();
     }

@@ -13,10 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MinecraftMixin {
 
     @Shadow
-    public abstract void resizeDisplay();
+    public Screen screen;
 
     @Shadow
-    public Screen screen;
+    public abstract void resizeGui();
 
     @Inject(method = "setScreen", at = @At("HEAD"))
     private void onBeforeSetScreen(Screen screen, CallbackInfo ci) {
@@ -27,6 +27,6 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "setScreen", at = @At("TAIL"))
     private void onSetScreen(Screen screen, CallbackInfo ci) {
-        this.resizeDisplay();
+        this.resizeGui();
     }
 }

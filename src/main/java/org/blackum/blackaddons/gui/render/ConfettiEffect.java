@@ -1,6 +1,6 @@
 package org.blackum.blackaddons.gui.render;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -81,7 +81,7 @@ public class ConfettiEffect {
         }
     }
 
-    public void render(GuiGraphics graphics) {
+    public void render(GuiGraphicsExtractor graphics) {
         if (particles.isEmpty())
             return;
         for (Confetti c : particles) {

@@ -1,7 +1,10 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.animation.Animation;
 import org.blackum.blackaddons.gui.animation.Easing;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -83,7 +86,7 @@ public class TabPanel extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -91,7 +94,7 @@ public class TabPanel extends Widget {
         renderContent(graphics, mouseX, mouseY, partialTick);
     }
 
-    private void renderTabs(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderTabs(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int tabX = x;
         int tabY = y;
 
@@ -126,7 +129,7 @@ public class TabPanel extends Widget {
 
             int textX = tabX + (tabWidth - Minecraft.getInstance().font.width(tab.name)) / 2;
             int textY = currentY + (tabHeight - 8) / 2;
-            graphics.drawString(Minecraft.getInstance().font, tab.name, textX, textY, textColor);
+            graphics.text(Minecraft.getInstance().font, tab.name, textX, textY, textColor);
 
             if (isSelected) {
                 int lineX = tabX + tabWidth - 3;
@@ -140,20 +143,20 @@ public class TabPanel extends Widget {
         graphics.disableScissor();
     }
 
-    private void renderContent(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    private void renderContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (selectedTabIndex < 0 || selectedTabIndex >= tabs.size())
             return;
 
         Tab currentTab = tabs.get(selectedTabIndex);
         for (Widget widget : currentTab.widgets) {
             if (widget.isVisible()) {
-                widget.render(graphics, mouseX, mouseY, partialTick);
+                widget.extractRenderState(graphics, mouseX, mouseY, partialTick);
             }
         }
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible)
             return;
@@ -162,7 +165,7 @@ public class TabPanel extends Widget {
             Tab currentTab = tabs.get(selectedTabIndex);
             for (Widget widget : currentTab.widgets) {
                 if (widget.isVisible()) {
-                    widget.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+                    widget.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
                 }
             }
         }
@@ -205,7 +208,7 @@ public class TabPanel extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible)
             return false;
 
@@ -226,13 +229,13 @@ public class TabPanel extends Widget {
             List<Widget> tabWidgets = currentTab.widgets;
             for (int i = tabWidgets.size() - 1; i >= 0; i--) {
                 Widget widget = tabWidgets.get(i);
-                if (widget.isVisible() && widget.hasActiveOverlay() && widget.mouseClicked(mouseX, mouseY, button)) {
+                if (widget.isVisible() && widget.hasActiveOverlay() && widget.mouseClicked(mouseX, mouseY, event)) {
                     return true;
                 }
             }
             for (int i = tabWidgets.size() - 1; i >= 0; i--) {
                 Widget widget = tabWidgets.get(i);
-                if (widget.isVisible() && widget.mouseClicked(mouseX, mouseY, button)) {
+                if (widget.isVisible() && widget.mouseClicked(mouseX, mouseY, event)) {
                     return true;
                 }
             }
@@ -242,33 +245,33 @@ public class TabPanel extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         if (selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) {
             Tab currentTab = tabs.get(selectedTabIndex);
             for (Widget widget : currentTab.widgets) {
-                if (widget.mouseReleased(mouseX, mouseY, button)) {
+                if (widget.mouseReleased(mouseX, mouseY, event)) {
                     return true;
                 }
             }
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) {
             Tab currentTab = tabs.get(selectedTabIndex);
             for (Widget widget : currentTab.widgets) {
-                if (widget.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+                if (widget.mouseDragged(mouseX, mouseY, event, dragX, dragY)) {
                     return true;
                 }
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         if (mouseX >= x && mouseX <= x + tabWidth && mouseY >= y && mouseY <= y + height) {
             double maxTabScroll = Math.max(0, tabs.size() * tabHeight - height);
             tabScrollOffset -= scrollY * 20;
@@ -284,43 +287,43 @@ public class TabPanel extends Widget {
             for (int i = currentTab.widgets.size() - 1; i >= 0; i--) {
                 Widget widget = currentTab.widgets.get(i);
                 if (widget.isVisible() && widget.hasActiveOverlay()
-                        && widget.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+                        && widget.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY)) {
                     return true;
                 }
             }
             for (Widget widget : currentTab.widgets) {
-                if (widget.isVisible() && widget.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+                if (widget.isVisible() && widget.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY)) {
                     return true;
                 }
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) {
             Tab currentTab = tabs.get(selectedTabIndex);
             for (Widget widget : currentTab.widgets) {
-                if (widget.keyPressed(keyCode, scanCode, modifiers)) {
+                if (widget.keyPressed(keyCode, scanCode, event)) {
                     return true;
                 }
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyCode, scanCode, event);
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) {
             Tab currentTab = tabs.get(selectedTabIndex);
             for (Widget widget : currentTab.widgets) {
-                if (widget.charTyped(character, modifiers)) {
+                if (widget.charTyped(chr, event)) {
                     return true;
                 }
             }
         }
-        return super.charTyped(character, modifiers);
+        return super.charTyped(chr, event);
     }
 
     public void selectTab(int index) {

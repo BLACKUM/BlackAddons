@@ -2,8 +2,10 @@ package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
+import org.blackum.blackaddons.gui.render.RenderHelper;
 
 public class SectionHeader extends Widget {
     private final String title;
@@ -23,46 +25,37 @@ public class SectionHeader extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
-        int currentX = x;
-        if (onToggle != null) {
-            String arrow = collapsed ? "▶ " : "▼ ";
-            graphics.drawString(Minecraft.getInstance().font, arrow, currentX, y + 8, Theme.TEXT_SECONDARY);
-            currentX += 12;
+        int headerColor = Theme.BACKGROUND_SECONDARY;
+        RenderHelper.renderRoundedRect(graphics, x, y, width, height, Theme.BORDER_RADIUS_SMALL, headerColor);
+
+        graphics.text(Minecraft.getInstance().font, title, x + 10, y + (height - 8) / 2, Theme.TEXT_PRIMARY);
+
+        if (onToggle != null && bulkCheckbox == null) {
+            String arrow = collapsed ? "▶" : "▼";
+            graphics.text(Minecraft.getInstance().font, arrow, x + width - 15, y + (height - 8) / 2, Theme.TEXT_PRIMARY);
         }
 
         if (bulkCheckbox != null) {
-            bulkCheckbox.setX(currentX);
-            bulkCheckbox.setY(y + 4);
-            bulkCheckbox.render(graphics, mouseX, mouseY, partialTick);
-            currentX += bulkCheckbox.getWidth() + 8;
-        }
-
-        graphics.drawString(Minecraft.getInstance().font, title, currentX, y + 8, Theme.ACCENT);
-
-        int titleWidth = Minecraft.getInstance().font.width(title);
-        int lineX = currentX + titleWidth + 10;
-        int lineW = width - (lineX - x);
-        if (lineW > 0) {
-            int centerY = y + 8 + 4;
-            graphics.fill(lineX, centerY, x + width, centerY + 1, Theme.withAlpha(Theme.TEXT_SECONDARY, 0.3f));
+            bulkCheckbox.setX(x + width - bulkCheckbox.getWidth() - 10);
+            bulkCheckbox.setY(y + (height - bulkCheckbox.getHeight()) / 2);
+            bulkCheckbox.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (!visible || !enabled)
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+        if (!enabled || !visible)
             return false;
 
-        if (bulkCheckbox != null && bulkCheckbox.isMouseOver(mouseX, mouseY)) {
-            return bulkCheckbox.mouseClicked(mouseX, mouseY, button);
+        if (bulkCheckbox != null && bulkCheckbox.mouseClicked(mouseX, mouseY, event)) {
+            return true;
         }
 
-        if (isMouseOver(mouseX, mouseY) && onToggle != null && button == 0) {
-            collapsed = !collapsed;
+        if (isMouseOver(mouseX, mouseY) && onToggle != null) {
             onToggle.run();
             return true;
         }

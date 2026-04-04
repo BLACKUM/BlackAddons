@@ -146,7 +146,7 @@ public class SoloClearsTabController extends SimpleTabController {
             clearsList.addItem(new Label(0, 0, ChatFormatting.DARK_GRAY + "--------------------------------------------------", Label.Style.BODY));
             clearsList.addItem(new Widget(0, 0, 0, 5) {
                 @Override
-                public void render(net.minecraft.client.gui.GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {}
+                public void extractRenderState(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {}
             });
         }
     }

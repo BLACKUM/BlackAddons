@@ -5,7 +5,7 @@ import com.mojang.brigadier.Command;
 import net.minecraft.ChatFormatting;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
@@ -73,17 +73,17 @@ public class CommandManager {
 
         private static com.mojang.brigadier.builder.LiteralArgumentBuilder<FabricClientCommandSource> createActionTriggerModeNode(
                         String name) {
-                return ClientCommandManager.literal(name)
+                return ClientCommands.literal(name)
                                 .executes(ctx -> handleActionTriggerMode(ctx.getSource(),
                                                 !ConfigManager.data.actionTriggersEnabled))
-                                .then(ClientCommandManager.literal("on")
+                                .then(ClientCommands.literal("on")
                                                 .executes(ctx -> handleActionTriggerMode(ctx.getSource(), true)))
-                                .then(ClientCommandManager.literal("off")
+                                .then(ClientCommands.literal("off")
                                                 .executes(ctx -> handleActionTriggerMode(ctx.getSource(), false)))
-                                .then(ClientCommandManager.literal("toggle")
+                                .then(ClientCommands.literal("toggle")
                                                 .executes(ctx -> handleActionTriggerMode(ctx.getSource(),
                                                                 !ConfigManager.data.actionTriggersEnabled)))
-                                .then(ClientCommandManager.literal("status")
+                                .then(ClientCommands.literal("status")
                                                 .executes(ctx -> sendActionTriggerModeStatus(ctx.getSource())));
         }
 
@@ -95,33 +95,33 @@ public class CommandManager {
                                 return 1;
                         };
 
-                        var testNode = ClientCommandManager.literal("test");
+                        var testNode = ClientCommands.literal("test");
 
-                        testNode.then(ClientCommandManager.literal("DebugGui")
+                        testNode.then(ClientCommands.literal("DebugGui")
                                         .executes(ctx -> {
                                                 if (Blackaddons.guiOpener != null)
                                                         Blackaddons.guiOpener.run();
                                                 return 1;
                                         }));
 
-                        testNode.then(ClientCommandManager.literal("TestMenu")
+                        testNode.then(ClientCommands.literal("TestMenu")
                                         .executes(ctx -> {
                                                 if (Blackaddons.testMenuOpener != null)
                                                         Blackaddons.testMenuOpener.run();
                                                 return 1;
                                         }));
                         
-                        testNode.then(ClientCommandManager.literal("resetalign")
+                        testNode.then(ClientCommands.literal("resetalign")
                                         .executes(ctx -> {
                                                 org.blackum.blackaddons.core.util.AlignUtils.resetSessionStats();
                                                 ctx.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("Alignment session stats reset."));
                                                 return 1;
                                         }));
 
-                        testNode.then(ClientCommandManager.literal("rotate")
-                                        .then(ClientCommandManager
+                        testNode.then(ClientCommands.literal("rotate")
+                                        .then(ClientCommands
                                                         .argument("yaw", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(-180, 180))
-                                                        .then(ClientCommandManager
+                                                        .then(ClientCommands
                                                                         .argument("pitch", com.mojang.brigadier.arguments.FloatArgumentType.floatArg(-90, 90))
                                                                         .executes(ctx -> {
                                                                                 float yaw = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "yaw");
@@ -131,12 +131,12 @@ public class CommandManager {
                                                                                 return 1;
                                                                         }))));
 
-                        testNode.then(ClientCommandManager.literal("rotateTo")
-                                        .then(ClientCommandManager
+                        testNode.then(ClientCommands.literal("rotateTo")
+                                        .then(ClientCommands
                                                         .argument("x", com.mojang.brigadier.arguments.FloatArgumentType.floatArg())
-                                                        .then(ClientCommandManager
+                                                        .then(ClientCommands
                                                                         .argument("y", com.mojang.brigadier.arguments.FloatArgumentType.floatArg())
-                                                                        .then(ClientCommandManager
+                                                                        .then(ClientCommands
                                                                                         .argument("z", com.mojang.brigadier.arguments.FloatArgumentType.floatArg())
                                                                                         .executes(ctx -> {
                                                                                                 float x = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(ctx, "x");
@@ -147,8 +147,8 @@ public class CommandManager {
                                                                                                 return 1;
                                                                                         })))));
 
-                        testNode.then(ClientCommandManager.literal("rng")
-                                        .then(ClientCommandManager
+                        testNode.then(ClientCommands.literal("rng")
+                                        .then(ClientCommands
                                                         .argument(Constants.CMD_ARG_TYPE, StringArgumentType.string())
                                                         .suggests((context, builder) -> SharedSuggestionProvider
                                                                         .suggest(new String[] {
@@ -156,10 +156,10 @@ public class CommandManager {
                                                                                         Constants.DROP_TYPE_CRAZY,
                                                                                         Constants.DROP_TYPE_PRAY },
                                                                                         builder))
-                                                        .then(ClientCommandManager
+                                                        .then(ClientCommands
                                                                         .argument(Constants.CMD_ARG_MAGIC_FIND,
                                                                                         IntegerArgumentType.integer(0))
-                                                                        .then(ClientCommandManager
+                                                                        .then(ClientCommands
                                                                                         .argument(Constants.CMD_ARG_ITEM,
                                                                                                         StringArgumentType
                                                                                                                         .greedyString())
@@ -219,7 +219,7 @@ public class CommandManager {
 
                                                                                                 Minecraft.getInstance().gui
                                                                                                                 .getChat()
-                                                                                                                .addMessage(Component
+                                                                                                                .addClientSystemMessage(Component
                                                                                                                                 .literal(fakeMessage));
                                                                                                 RngTracker.onChatMessage(
                                                                                                                 Component.literal(
@@ -234,7 +234,7 @@ public class CommandManager {
                                                                                                 return 1;
                                                                                         })))));
 
-                        testNode.then(ClientCommandManager.literal("GiveTNT")
+                        testNode.then(ClientCommands.literal("GiveTNT")
                                         .executes(ctx -> {
                                                 Minecraft client = Minecraft.getInstance();
                                                 var player = client.player;
@@ -254,7 +254,7 @@ public class CommandManager {
                                                 return 1;
                                         }));
 
-                        testNode.then(ClientCommandManager.literal("allnames")
+                        testNode.then(ClientCommands.literal("allnames")
                                         .executes(ctx -> {
                                                 Minecraft client = Minecraft.getInstance();
                                                 if (client.level != null && client.getConnection() != null) {
@@ -293,8 +293,8 @@ public class CommandManager {
                                                 return 1;
                                         }));
 
-                        testNode.then(ClientCommandManager.literal("dungeonjoin")
-                                        .then(ClientCommandManager
+                        testNode.then(ClientCommands.literal("dungeonjoin")
+                                        .then(ClientCommands
                                                         .argument(Constants.CMD_ARG_IGN, StringArgumentType.string())
                                                         .executes(ctx -> {
                                                                 String ign = StringArgumentType.getString(ctx,
@@ -304,7 +304,7 @@ public class CommandManager {
                                                                 net.minecraft.network.chat.Component component = net.minecraft.network.chat.Component
                                                                                 .literal(fakeMessage);
                                                                 Minecraft.getInstance().gui.getChat()
-                                                                                .addMessage(component);
+                                                                                .addClientSystemMessage(component);
                                                                 DungeonJoinHandler
                                                                                 .onChatMessage(component);
                                                                 ChatActionManager
@@ -313,8 +313,8 @@ public class CommandManager {
                                                                 return 1;
                                                         })));
 
-                        testNode.then(ClientCommandManager.literal("testinvite")
-                                        .then(ClientCommandManager
+                        testNode.then(ClientCommands.literal("testinvite")
+                                        .then(ClientCommands
                                                         .argument(Constants.CMD_ARG_IGN, StringArgumentType.string())
                                                         .executes(ctx -> {
                                                                 String ign = StringArgumentType.getString(ctx,
@@ -324,14 +324,14 @@ public class CommandManager {
                                                                 net.minecraft.network.chat.Component component = net.minecraft.network.chat.Component
                                                                                 .literal(fakeMessage);
                                                                 Minecraft.getInstance().gui.getChat()
-                                                                                .addMessage(component);
+                                                                                .addClientSystemMessage(component);
                                                                 ChatActionManager.getInstance()
                                                                                 .onChatMessage(component);
                                                                 return 1;
                                                         })));
 
-                        testNode.then(ClientCommandManager.literal("testjoin")
-                                        .then(ClientCommandManager
+                        testNode.then(ClientCommands.literal("testjoin")
+                                        .then(ClientCommands
                                                         .argument(Constants.CMD_ARG_IGN, StringArgumentType.string())
                                                         .executes(ctx -> {
                                                                 String ign = StringArgumentType.getString(ctx,
@@ -341,12 +341,12 @@ public class CommandManager {
                                                                 net.minecraft.network.chat.Component component = net.minecraft.network.chat.Component
                                                                                 .literal(fakeMessage);
                                                                 Minecraft.getInstance().gui.getChat()
-                                                                                .addMessage(component);
+                                                                                .addClientSystemMessage(component);
                                                                 PartyFinderManager.getInstance()
                                                                                 .onChatMessage(component);
                                                                 return 1;
                                                         })
-                                                        .then(ClientCommandManager
+                                                        .then(ClientCommands
                                                                         .argument("id", StringArgumentType.string())
                                                                         .executes(ctx -> {
                                                                                 String ign = StringArgumentType
@@ -363,14 +363,14 @@ public class CommandManager {
                                                                                 net.minecraft.network.chat.Component component = net.minecraft.network.chat.Component
                                                                                                 .literal(fakeMessage);
                                                                                 Minecraft.getInstance().gui.getChat()
-                                                                                                .addMessage(component);
+                                                                                                .addClientSystemMessage(component);
                                                                                 PartyFinderManager.getInstance()
                                                                                                 .onChatMessage(component);
                                                                                 return 1;
                                                                         }))));
 
-                        testNode.then(ClientCommandManager.literal("setid")
-                                        .then(ClientCommandManager.argument("id", StringArgumentType.string())
+                        testNode.then(ClientCommands.literal("setid")
+                                        .then(ClientCommands.argument("id", StringArgumentType.string())
                                                         .executes(ctx -> {
                                                                 String id = StringArgumentType.getString(ctx, "id");
                                                                 try {
@@ -389,14 +389,14 @@ public class CommandManager {
                                                                 return 1;
                                                         })));
 
-                        var pvNode = ClientCommandManager.literal("pv")
+                        var pvNode = ClientCommands.literal("pv")
                                         .executes(ctx -> {
                                                 String player = Minecraft.getInstance().getUser().getName();
                                                 ProfileStateManager.getInstance().loadProfileAndOpen(player, null,
                                                                 false);
                                                 return 1;
                                         })
-                                        .then(ClientCommandManager
+                                        .then(ClientCommands
                                                         .argument(Constants.CMD_ARG_IGN, StringArgumentType.string())
                                                         .executes(ctx -> {
                                                                 String ign = StringArgumentType.getString(ctx,
@@ -405,7 +405,7 @@ public class CommandManager {
                                                                                 .loadProfileAndOpen(ign, null, false);
                                                                 return 1;
                                                         })
-                                                        .then(ClientCommandManager.literal("force")
+                                                        .then(ClientCommands.literal("force")
                                                                         .executes(ctx -> {
                                                                                 String ign = StringArgumentType
                                                                                                 .getString(ctx, Constants.CMD_ARG_IGN);
@@ -416,7 +416,7 @@ public class CommandManager {
                                                                                 return 1;
                                                                         })));
 
-                        var dailyNode = ClientCommandManager.literal("daily")
+                        var dailyNode = ClientCommands.literal("daily")
                                         .executes(ctx -> {
                                                 String player = Minecraft.getInstance().getUser().getName();
                                                 NotificationManager.addNotification("Daily Sync",
@@ -437,18 +437,18 @@ public class CommandManager {
                                                 return 1;
                                         });
 
-                        var ircNode = ClientCommandManager.literal("irc")
-                                        .then(ClientCommandManager.literal("on")
+                        var ircNode = ClientCommands.literal("irc")
+                                        .then(ClientCommands.literal("on")
                                                         .executes(ctx -> handleIrcChatMode(ctx.getSource(), true)))
-                                        .then(ClientCommandManager.literal("off")
+                                        .then(ClientCommands.literal("off")
                                                         .executes(ctx -> handleIrcChatMode(ctx.getSource(), false)))
-                                        .then(ClientCommandManager.literal("toggle")
+                                        .then(ClientCommands.literal("toggle")
                                                         .executes(ctx -> handleIrcChatMode(ctx.getSource(),
                                                                         !ConfigManager.data.ircChatMode)))
-                                        .then(ClientCommandManager.literal("status")
+                                        .then(ClientCommands.literal("status")
                                                         .executes(ctx -> sendIrcChatModeStatus(ctx.getSource())))
-                                        .then(ClientCommandManager.literal("msg")
-                                                        .then(ClientCommandManager
+                                        .then(ClientCommands.literal("msg")
+                                                        .then(ClientCommands
                                                                         .argument("message", StringArgumentType.greedyString())
                                                                         .executes(ctx -> {
                                                                                 String messageArg = StringArgumentType.getString(ctx,
@@ -466,8 +466,8 @@ public class CommandManager {
                                                 return 1;
                                         });
 
-                        dispatcher.register(ClientCommandManager.literal("irc")
-                                        .then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
+                        dispatcher.register(ClientCommands.literal("irc")
+                                        .then(ClientCommands.argument("message", StringArgumentType.greedyString())
                                                         .executes(ctx -> {
                                                                 String messageArg = StringArgumentType.getString(ctx, "message");
                                                                 if (messageArg != null) {
@@ -484,7 +484,7 @@ public class CommandManager {
                                         }));
 
                         for (String alias : new String[] { Constants.BASE_COMMAND, "black", "blackaddons" }) {
-                                var cmd = ClientCommandManager.literal(alias).executes(openGui);
+                                var cmd = ClientCommands.literal(alias).executes(openGui);
 
                                 if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
                                         cmd.then(testNode);
@@ -495,28 +495,28 @@ public class CommandManager {
                                 cmd.then(createActionTriggerModeNode("em"));
                                 cmd.then(createActionTriggerModeNode("editmode"));
                                 cmd.then(CommandUtils.subcommand);
-                                cmd.then(ClientCommandManager.literal("pf").executes(ctx -> {
+                                cmd.then(ClientCommands.literal("pf").executes(ctx -> {
                                         if (Blackaddons.screenOpener != null) {
                                                 Blackaddons.screenOpener.accept(new PartyFinderScreen());
                                         }
 
                                         return 1;
                                 }));
-                                cmd.then(ClientCommandManager.literal("score").executes(ctx -> {
+                                cmd.then(ClientCommands.literal("score").executes(ctx -> {
                                         for (String line : DungeonScore.getScoreBreakdown()) {
                                                 ctx.getSource().sendFeedback(Component.literal(line));
                                         }
                                         return 1;
                                 }));
-                                cmd.then(ClientCommandManager.literal("tablist").executes(ctx -> {
+                                cmd.then(ClientCommands.literal("tablist").executes(ctx -> {
                                         ctx.getSource().sendFeedback(Component.literal("§e--- Current Tablist ---"));
                                         for (String line : org.blackum.blackaddons.core.util.TabListUtils.getTabListLines()) {
                                                 ctx.getSource().sendFeedback(Component.literal("§7- " + line));
                                         }
                                         return 1;
                                 }));
-                                cmd.then(ClientCommandManager.literal("preview")
-                                                .then(ClientCommandManager
+                                cmd.then(ClientCommands.literal("preview")
+                                                .then(ClientCommands
                                                                 .argument("url", StringArgumentType
                                                                                 .greedyString())
                                                                 .executes(ctx -> {
@@ -528,13 +528,13 @@ public class CommandManager {
                                                                         return 1;
                                                                 })));
 
-                                var lbNode = ClientCommandManager.literal("leaderboard")
+                                var lbNode = ClientCommands.literal("leaderboard")
                                         .executes(ctx -> {
                                                 if (Blackaddons.screenOpener != null)
                                                         Blackaddons.screenOpener.accept(new SoloLeaderboardScreen("F7"));
                                                 return 1;
                                         })
-                                        .then(ClientCommandManager.argument("floor", StringArgumentType.string())
+                                        .then(ClientCommands.argument("floor", StringArgumentType.string())
                                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
                                                         new String[]{ "F7", "M7" }, builder))
                                                 .executes(ctx -> {
@@ -552,13 +552,13 @@ public class CommandManager {
                         }
 
                         for (String lbAlias : new String[]{ "leaderboard", "lb" }) {
-                                dispatcher.register(ClientCommandManager.literal(lbAlias)
+                                dispatcher.register(ClientCommands.literal(lbAlias)
                                         .executes(ctx -> {
                                                 if (Blackaddons.screenOpener != null)
                                                         Blackaddons.screenOpener.accept(new SoloLeaderboardScreen("F7"));
                                                 return 1;
                                         })
-                                        .then(ClientCommandManager.argument("floor", StringArgumentType.string())
+                                        .then(ClientCommands.argument("floor", StringArgumentType.string())
                                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
                                                         new String[]{ "F7", "M7" }, builder))
                                                 .executes(ctx -> {

@@ -1,7 +1,10 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.render.ColorUtils;
 import org.blackum.blackaddons.gui.render.RenderHelper;
@@ -102,7 +105,7 @@ public class ColorPicker extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -125,7 +128,7 @@ public class ColorPicker extends Widget {
         renderValues(graphics, mouseX, mouseY, partialTick, innerX, currentY, sbWidth);
     }
 
-    private void renderSBArea(GuiGraphics graphics, int x, int y, int width, int height) {
+    private void renderSBArea(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         int baseColor = ColorUtils.hsvToRgb(hull, 1f, 1f);
         graphics.fill(x, y, x + width, y + height, baseColor | 0xFF000000);
 
@@ -150,10 +153,10 @@ public class ColorPicker extends Widget {
         graphics.fill(cursorX - 4, cursorY - 3, cursorX - 3, cursorY + 3, Theme.TEXT_PRIMARY);
         graphics.fill(cursorX + 3, cursorY - 3, cursorX + 4, cursorY + 3, Theme.TEXT_PRIMARY);
         *///?} else
-        graphics.renderOutline(cursorX - 4, cursorY - 4, 8, 8, Theme.TEXT_PRIMARY);
+        graphics.outline(cursorX - 4, cursorY - 4, 8, 8, Theme.TEXT_PRIMARY);
     }
 
-    private void renderHueSlider(GuiGraphics graphics, int x, int y, int width, int height) {
+    private void renderHueSlider(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         for (int i = 0; i < width; i++) {
             float h = (float) i / width;
             int color = ColorUtils.hsvToRgb(h, 1f, 1f);
@@ -164,7 +167,7 @@ public class ColorPicker extends Widget {
         graphics.fill(selectorX - 2, y - 2, selectorX + 2, y + height + 2, Theme.TEXT_PRIMARY);
     }
 
-    private void renderAlphaSlider(GuiGraphics graphics, int x, int y, int width, int height) {
+    private void renderAlphaSlider(GuiGraphicsExtractor graphics, int x, int y, int width, int height) {
         int baseColor = ColorUtils.hsvToRgb(hull, saturation, brightness) & 0xFFFFFF;
 
         graphics.fill(x, y, x + width, y + height, Theme.SURFACE_LIGHT);
@@ -179,7 +182,7 @@ public class ColorPicker extends Widget {
         graphics.fill(selectorX - 2, y - 2, selectorX + 2, y + height + 2, Theme.TEXT_PRIMARY);
     }
 
-    private void renderValues(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int x, int y,
+    private void renderValues(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick, int x, int y,
             int width) {
         int currentColor = ColorUtils.hsvToRgb(hull, saturation, brightness);
         int packedColor = ((int) (alpha * 255) << 24) | (currentColor & 0xFFFFFF);
@@ -194,13 +197,13 @@ public class ColorPicker extends Widget {
         rgbaField.setX(fieldX);
         rgbaField.setY(y + 8);
         rgbaField.setWidth(fieldWidth);
-        rgbaField.render(graphics, mouseX, mouseY, partialTick);
+        rgbaField.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
-        graphics.drawString(Minecraft.getInstance().font, "RGBA:", fieldX + 3, y, Theme.TEXT_SECONDARY);
+        graphics.text(Minecraft.getInstance().font, "RGBA:", fieldX + 3, y, Theme.TEXT_SECONDARY);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         int sbWidth = 160;
         int sbHeight = 120;
         int innerX = x + (width - sbWidth) / 2;
@@ -230,28 +233,28 @@ public class ColorPicker extends Widget {
         }
 
         if (rgbaField.isMouseOver(mouseX, mouseY)) {
-            rgbaField.mouseClicked(mouseX, mouseY, button);
+            rgbaField.mouseClicked(mouseX, mouseY, event);
             rgbaField.setFocused(true);
             return true;
         }
 
         rgbaField.setFocused(false);
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         draggingHue = false;
         draggingSB = false;
         draggingAlpha = false;
         if (rgbaField.isFocused()) {
-            return rgbaField.mouseReleased(mouseX, mouseY, button);
+            return rgbaField.mouseReleased(mouseX, mouseY, event);
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (draggingHue) {
             updateHue(mouseX);
             return true;
@@ -265,23 +268,23 @@ public class ColorPicker extends Widget {
             return true;
         }
         if (rgbaField.isFocused()) {
-            return rgbaField.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return rgbaField.mouseDragged(mouseX, mouseY, event, dragX, dragY);
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, event, dragX, dragY);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (rgbaField.isFocused())
-            return rgbaField.keyPressed(keyCode, scanCode, modifiers);
-        return super.keyPressed(keyCode, scanCode, modifiers);
+            return rgbaField.keyPressed(keyCode, scanCode, event);
+        return super.keyPressed(keyCode, scanCode, event);
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (rgbaField.isFocused())
-            return rgbaField.charTyped(character, modifiers);
-        return super.charTyped(character, modifiers);
+            return rgbaField.charTyped(chr, event);
+        return super.charTyped(chr, event);
     }
 
     private void updateHue(double mouseX) {

@@ -1,6 +1,9 @@
 package org.blackum.blackaddons.gui.widget;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.render.Theme;
 
 import java.util.ArrayList;
@@ -47,7 +50,7 @@ public class ListView extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -59,7 +62,7 @@ public class ListView extends Widget {
                 item.setY(currentY);
                 item.setWidth(width - scrollbarWidth - 12);
 
-                item.render(graphics, mouseX, mouseY, partialTick);
+                item.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
                 currentY += item.getHeight() + itemSpacing;
             }
@@ -70,7 +73,7 @@ public class ListView extends Widget {
     }
 
     @Override
-    public void renderOverlay(GuiGraphics graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
+    public void extractRenderOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, int rawMouseX, int rawMouseY,
             float partialTick) {
         if (!visible || !(super.isMouseOver(mouseX, mouseY) || hasActiveOverlay()))
             return;
@@ -82,7 +85,7 @@ public class ListView extends Widget {
                 item.setY(currentY);
                 item.setWidth(width - scrollbarWidth - 12);
 
-                item.renderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
+                item.extractRenderOverlay(graphics, mouseX, mouseY, rawMouseX, rawMouseY, partialTick);
             }
             currentY += item.getHeight() + itemSpacing;
         }
@@ -111,7 +114,7 @@ public class ListView extends Widget {
         return false;
     }
 
-    private void renderScrollbar(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderScrollbar(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         updateMaxScroll();
 
         if (maxScroll <= 0)
@@ -142,7 +145,7 @@ public class ListView extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (!enabled || !visible || !isMouseOver(mouseX, mouseY))
             return false;
 
@@ -154,7 +157,7 @@ public class ListView extends Widget {
 
         for (Widget item : items) {
             if (isItemWithinViewport(item)) {
-                if (item.mouseClicked(mouseX, mouseY, button)) {
+                if (item.mouseClicked(mouseX, mouseY, event)) {
                     return true;
                 }
             }
@@ -164,70 +167,71 @@ public class ListView extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
         draggingScrollbar = false;
 
         for (Widget item : items) {
-            if (isItemWithinViewport(item) && item.mouseReleased(mouseX, mouseY, button)) {
+            if (isItemWithinViewport(item) && item.mouseReleased(mouseX, mouseY, event)) {
                 return true;
             }
         }
 
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (draggingScrollbar) {
             updateScrollFromMouse(mouseY);
             return true;
         }
 
         for (Widget item : items) {
-            if (isItemWithinViewport(item) && item.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            if (isItemWithinViewport(item) && item.mouseDragged(mouseX, mouseY, event, dragX, dragY)) {
                 return true;
             }
         }
 
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, MouseButtonEvent event, double scrollX, double scrollY) {
         if (!visible)
             return false;
 
+        double verticalAmount = scrollY;
         for (Widget item : items) {
-            if (isItemWithinViewport(item) && item.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
+            if (isItemWithinViewport(item) && item.mouseScrolled(mouseX, mouseY, event, scrollX, scrollY)) {
                 return true;
             }
         }
 
         if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height) {
-            scroll((int) (-scrollY * 20));
+            scroll((int) (-verticalAmount * 20));
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         for (Widget item : items) {
-            if (isItemWithinViewport(item) && item.keyPressed(keyCode, scanCode, modifiers)) {
+            if (isItemWithinViewport(item) && item.keyPressed(keyCode, scanCode, event)) {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyCode, scanCode, event);
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         for (Widget item : items) {
-            if (isItemWithinViewport(item) && item.charTyped(character, modifiers)) {
+            if (isItemWithinViewport(item) && item.charTyped(chr, event)) {
                 return true;
             }
         }
-        return super.charTyped(character, modifiers);
+        return super.charTyped(chr, event);
     }
 
     private void updateScrollFromMouse(double mouseY) {

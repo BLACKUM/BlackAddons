@@ -1,7 +1,10 @@
 package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -62,7 +65,7 @@ public class CodeEditorWidget extends Widget {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -84,7 +87,7 @@ public class CodeEditorWidget extends Widget {
 
             String lineNum = String.valueOf(i + 1);
             int lineNumWidth = Minecraft.getInstance().font.width(lineNum);
-            graphics.drawString(Minecraft.getInstance().font, lineNum, x + gutterWidth - lineNumWidth - 4, drawY,
+            graphics.text(Minecraft.getInstance().font, lineNum, x + gutterWidth - lineNumWidth - 4, drawY,
                     Theme.TEXT_SECONDARY, false);
 
             String lineText = lines.get(i).toString();
@@ -133,12 +136,12 @@ public class CodeEditorWidget extends Widget {
                 for (int j = 0; j < lineText.length(); j++) {
                     Style style = (styles != null && j < styles.size()) ? styles.get(j) : Style.EMPTY;
                     String charStr = String.valueOf(lineText.charAt(j));
-                    graphics.drawString(Minecraft.getInstance().font, Component.literal(charStr).setStyle(style),
+                    graphics.text(Minecraft.getInstance().font, Component.literal(charStr).setStyle(style),
                             currentX, drawY, Theme.TEXT_PRIMARY, false);
                     currentX += Minecraft.getInstance().font.width(charStr);
                 }
             } else {
-                graphics.drawString(Minecraft.getInstance().font, lineText, textX - scrollX, drawY, Theme.TEXT_PRIMARY,
+                graphics.text(Minecraft.getInstance().font, lineText, textX - scrollX, drawY, Theme.TEXT_PRIMARY,
                         false);
             }
         }
@@ -171,10 +174,10 @@ public class CodeEditorWidget extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
         if (isMouseOver(mouseX, mouseY)) {
             focused = true;
-            if (button == 0) {
+            if (event.button() == 0) {
                 int rY = (int) mouseY - y - 2;
                 int clickedLine = scrollY + (rY / lineHeight);
 
@@ -207,15 +210,15 @@ public class CodeEditorWidget extends Widget {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+    public boolean mouseReleased(double mouseX, double mouseY, MouseButtonEvent event) {
+        if (event.button() == 0) {
             isDragging = false;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(mouseX, mouseY, event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(double mouseX, double mouseY, MouseButtonEvent event, double dragX, double dragY) {
         if (isDragging) {
             int rY = (int) mouseY - y - 2;
             int targetLine = scrollY + (rY / lineHeight);
@@ -239,7 +242,7 @@ public class CodeEditorWidget extends Widget {
             scrollToCursor();
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(mouseX, mouseY, event, dragX, dragY);
     }
 
     private int getColFromX(int lineIdx, int rX) {
@@ -262,11 +265,11 @@ public class CodeEditorWidget extends Widget {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(int keyCode, int scanCode, KeyEvent event) {
         if (!focused)
             return false;
 
-        boolean isCtrlPressed = (modifiers & 2) != 0;
+        boolean isCtrlPressed = event.hasControlDown();
 
         // Undo
         if (isCtrlPressed && keyCode == 90) { // Z
@@ -335,7 +338,8 @@ public class CodeEditorWidget extends Widget {
             return true;
         }
 
-        boolean isShiftPressed = (modifiers & 1) != 0;
+        boolean isShiftPressed = (event.modifiers() & 1) != 0;
+        
 
         if (keyCode == 257) { // Enter
             if (hasSelection())
@@ -672,15 +676,15 @@ public class CodeEditorWidget extends Widget {
     }
 
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(char chr, CharacterEvent event) {
         if (!focused)
             return false;
 
-        if (character >= 32) {
+        if (chr >= 32) {
             if (hasSelection()) {
                 deleteSelection();
             }
-            lines.get(cursorLine).insert(cursorColumn, character);
+            lines.get(cursorLine).insert(cursorColumn, chr);
             cursorColumn++;
             pushHistory();
             scrollToCursor();

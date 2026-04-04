@@ -461,6 +461,7 @@ public class ConfigManager {
         public boolean removeFireOverlay = false;
         public boolean hideStatusEffects = false;
         public boolean disableNearbyParticles = false;
+        public boolean RainbowParticles = false;
 
         // Settings
         public int notificationDuration = 4000;

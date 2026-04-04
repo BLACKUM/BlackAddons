@@ -2,7 +2,8 @@ package org.blackum.blackaddons.gui.widget;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
 import org.blackum.blackaddons.Blackaddons;
 import org.blackum.blackaddons.gui.render.Theme;
@@ -28,19 +29,19 @@ public class LeaderboardRow extends Widget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isMouseOver(mouseX, mouseY) && button == 0) {
+    public boolean mouseClicked(double mouseX, double mouseY, MouseButtonEvent event) {
+        if (isMouseOver(mouseX, mouseY) && event.buttonInfo().button() == 0) {
             if (Blackaddons.screenOpener != null) {
                 Blackaddons.screenOpener.accept(new ProfileViewerScreen(null, ign));
             }
             return true;
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(mouseX, mouseY, event);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible)
             return;
 
@@ -60,11 +61,11 @@ public class LeaderboardRow extends Widget {
         else if (rank == 3)
             rankStr = ChatFormatting.RED + "🥉";
 
-        graphics.drawString(mc.font, rankStr, x + 5, y + 6, 0xFFFFFFFF);
-        graphics.drawString(mc.font, ign, x + 30, y + 6, isCurrentPlayer ? 0xFFFFFFFF : Theme.ACCENT);
+        graphics.text(mc.font, rankStr, x + 5, y + 6, 0xFFFFFFFF);
+        graphics.text(mc.font, ign, x + 30, y + 6, isCurrentPlayer ? 0xFFFFFFFF : Theme.ACCENT);
 
         String valStr = isRuns ? String.format("%,.0f Runs", value) : String.format("%,.0f XP", value);
         int valW = mc.font.width(valStr);
-        graphics.drawString(mc.font, ChatFormatting.WHITE + valStr, x + width - valW - 5, y + 6, 0xFFFFFFFF);
+        graphics.text(mc.font, ChatFormatting.WHITE + valStr, x + width - valW - 5, y + 6, 0xFFFFFFFF);
     }
 }

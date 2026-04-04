@@ -3,8 +3,9 @@ package org.blackum.blackaddons.gui.screen.tabs;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
 import org.blackum.blackaddons.gui.screen.ProfileViewerScreen;
-import org.blackum.blackaddons.gui.widget.Button;
-import org.blackum.blackaddons.gui.widget.ItemGridWidget;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import org.blackum.blackaddons.gui.render.Theme;
 import org.blackum.blackaddons.gui.widget.TabPanel;
 import org.blackum.blackaddons.gui.widget.*;
 import org.blackum.blackaddons.core.util.ItemDeserializer;
@@ -233,7 +234,7 @@ public class InventoryTabController extends ProfileTabController {
 
                         Widget spacer = new Widget(0, 0, 0, 20) {
                             @Override
-                            public void render(net.minecraft.client.gui.GuiGraphics g, int mx, int my, float pt) {
+                            public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float p) {
                             }
                         };
                         pagedListView.addItem(spacer);

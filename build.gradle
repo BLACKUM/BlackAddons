@@ -1,45 +1,39 @@
 plugins {
-    id 'fabric-loom' version '1.15-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
     id 'dev.kikugie.stonecutter'
 }
 
-if (project == rootProject) {
-    stonecutter {
-        active "1.21.11"
-    }
-}
-
 def versionProps = [
-    "1.21.10": [
-        minecraft: "1.21.10",
-        yarn: "1.21.10+build.3",
-        loader: "0.18.1",
-        fabric: "0.138.4+1.21.10",
-        modmenu: "16.0.0",
-        ias: "LgfVj4KS",
-        jarvis: "2.1.0"
+    "26.1": [
+        minecraft         : "26.1",
+        loader            : "0.18.6",
+        fabric            : "0.145.1+26.1",
+        modmenu           : "18.0.0-alpha.8",
+        clothConfigMrId   : "GFM8zh9J",   // maven.modrinth:cloth-config
+        hypixelMrId       : "SlqCF6Or",   // maven.modrinth:hypixel-mod-api
+        devauth           : "dev-auth-neo",
+        fabricKotlin      : "1.13.10+kotlin.2.3.20"
     ],
-    "1.21.11": [
-        minecraft: "1.21.11",
-        yarn: "1.21.11+build.1",
-        loader: "0.18.1",
-        fabric: "0.141.2+1.21.11",
-        modmenu: "17.0.0-beta.2",
-        ias: "oSzaukGT",
-        jarvis: "2.1.0"
+    "26.1.1": [
+        minecraft         : "26.1.1",
+        loader            : "0.18.6",
+        fabric            : "0.145.3+26.1.1",
+        modmenu           : "18.0.0-alpha.8",
+        clothConfigMrId   : "GFM8zh9J",   // maven.modrinth:cloth-config
+        hypixelMrId       : "SlqCF6Or",   // maven.modrinth:hypixel-mod-api
+        devauth           : "dev-auth-neo",
+        fabricKotlin      : "1.13.10+kotlin.2.3.20"
     ]
 ]
 
-def currentStonecutterVersion = versionProps[stonecutter.current.version]
+def currentProps = versionProps[stonecutter.current.version]
 
-project.ext.minecraft_version = currentStonecutterVersion.minecraft
-project.ext.yarn_mappings = currentStonecutterVersion.yarn
-project.ext.loader_version = currentStonecutterVersion.loader
-project.ext.fabric_version = currentStonecutterVersion.fabric
-project.ext.modmenu_version = currentStonecutterVersion.modmenu
-project.ext.ias_version = currentStonecutterVersion.ias
-project.ext.jarvis_version = currentStonecutterVersion.jarvis
+project.ext.minecraft_version     = currentProps.minecraft
+project.ext.loader_version        = currentProps.loader
+project.ext.fabric_version        = currentProps.fabric
+project.ext.modmenu_version       = currentProps.modmenu
+project.ext.fabric_kotlin_version = currentProps.fabricKotlin
 
 version = rootProject.mod_version
 group = rootProject.maven_group
@@ -64,13 +58,7 @@ sourceSets {
     }
 }
 
-
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
     mavenCentral()
     mavenLocal()
     maven { url "https://maven.terraformersmc.com/releases/" }
@@ -88,26 +76,18 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.officialMojangMappings()
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modImplementation "net.fabricmc:fabric-language-kotlin:1.13.8+kotlin.2.3.0"
-    modImplementation("me.shedaniel.cloth:cloth-config-fabric:15.0.+") {
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+    implementation("maven.modrinth:cloth-config:${currentProps.clothConfigMrId}") {
         exclude(group: "net.fabricmc.fabric-api")
     }
+    implementation "maven.modrinth:hypixel-mod-api:${currentProps.hypixelMrId}"
 
-    modImplementation "net.hypixel:mod-api:1.0.1"
-    modImplementation "me.shedaniel.cloth:basic-math:0.6.1"
-    modImplementation "me.shedaniel:mm:2.4.1"
-
-    if (project.jarvis_version != null) {
-        modImplementation "moe.nea.jarvis:jarvis-fabric:${project.jarvis_version}"
-    }
-
-    modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
-    modLocalRuntime "maven.modrinth:in-game-account-switcher:${project.ias_version}"
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    runtimeOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    runtimeOnly "maven.modrinth:${currentProps.devauth}:VCy9sufW"
 }
 
 processResources {
@@ -117,32 +97,21 @@ processResources {
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
+        expand "version"          : project.version,
+               "minecraft_version": project.minecraft_version,
+               "loader_version"   : project.loader_version,
+               "java_version"     : 25
     }
 }
 
-def targetJavaVersion = 21
 tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        it.options.release.set(targetJavaVersion)
-    }
+    it.options.release.set(25)
 }
 
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
     withSourcesJar()
 }
 
@@ -152,7 +121,6 @@ jar {
     }
 }
 
-// configure the maven publication
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
@@ -160,12 +128,5 @@ publishing {
             from components.java
         }
     }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
-    }
+    repositories {}
 }
