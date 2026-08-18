@@ -377,6 +377,19 @@ public class BotIntegration {
             json.add("map_data", mapData);
         }
 
+        // If we have a server clock offset, include server clock times and ticks for enter/clear
+        try {
+            if (serverClockOffsetMs != null) {
+                long scEnter = clientClockEnter + serverClockOffsetMs;
+                long scClear = clientClockClear + serverClockOffsetMs;
+                json.addProperty("server_clock_enter", scEnter);
+                json.addProperty("server_clock_clear", scClear);
+                json.addProperty("server_tick_enter", scEnter / 50);
+                json.addProperty("server_tick_clear", scClear / 50);
+            }
+        } catch (Exception ignored) {
+        }
+
         return sendPostRequest(Constants.BOT_API_SOLO_CLEAR, json.toString()).thenApply(res -> {
             if (res != null && res.statusCode() >= 200 && res.statusCode() < 300) {
                 try {
@@ -391,6 +404,8 @@ public class BotIntegration {
 
     private static boolean authKeyFetched = false;
     private static CompletableFuture<String> activeAuthKeyFuture = null;
+    // Offset (server_clock_ms - client_system_time_ms) discovered from /v1/key
+    private static Long serverClockOffsetMs = null;
 
     public static synchronized CompletableFuture<String> getAuthKey() {
         if (authKeyFetched && EncryptionUtils.isKeySet()) {
@@ -419,19 +434,32 @@ public class BotIntegration {
                     + "&mojang_server_id=" + URLEncoder.encode(serverId, StandardCharsets.UTF_8);
 
             try {
-                HttpRequest request = HttpRequest.newBuilder()
+                HttpRequest.Builder keyBuilder = HttpRequest.newBuilder()
                         .uri(URI.create(url))
                         .header("Content-Type", "application/json")
                         .header("User-Agent", Constants.BOT_USER_AGENT)
                         .timeout(Duration.ofSeconds(10))
-                        .GET()
-                        .build();
+                        .GET();
+                applyBotToken(keyBuilder);
+                HttpRequest request = keyBuilder.build();
 
                 return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                         .thenApply(response -> {
                             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                                 try {
                                     JsonObject responseJson = JsonParser.parseString(response.body()).getAsJsonObject();
+                                    // Read independently of the key. A backend that hands out no key
+                                    // still tells us its clock, and that is the half the solo-clear
+                                    // report needs; nesting this inside the key branch meant no key,
+                                    // no offset, and silently no server timestamps on any clear.
+                                    if (responseJson.has("server_clock_ms")) {
+                                        try {
+                                            long serverClock = responseJson.get("server_clock_ms").getAsLong();
+                                            serverClockOffsetMs = serverClock - System.currentTimeMillis();
+                                            Blackaddons.LOGGER.info("Captured server clock offset: {} ms", serverClockOffsetMs);
+                                        } catch (Exception ignored) {
+                                        }
+                                    }
                                     if (responseJson.has("key")) {
                                         String key = responseJson.get("key").getAsString();
                                         EncryptionUtils.setKeyBase64(key);
@@ -494,6 +522,20 @@ public class BotIntegration {
         return sendRequest("GET", endpoint, null, true);
     }
 
+    /**
+     * Adds the bearer token to a bot request, if one is configured.
+     *
+     * A self-hosted botUrl may refuse anonymous requests outright — the identity headers below say
+     * who a player is, never that the caller may ask at all. Empty by default, so the official
+     * backend sees exactly the request it saw before.
+     */
+    private static void applyBotToken(HttpRequest.Builder builder) {
+        String token = ConfigManager.data.botToken;
+        if (token != null && !token.isEmpty()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+    }
+
     private static CompletableFuture<HttpResponse<String>> sendRequest(String method, String endpoint, String jsonBody,
             boolean allowRetry) {
         return getAuthKey().thenCompose(key -> {
@@ -504,6 +546,7 @@ public class BotIntegration {
                     .timeout(Duration.ofSeconds(Constants.HTTP_TIMEOUT_SECONDS))
                     .header("Content-Type", "application/json")
                     .header("User-Agent", Constants.BOT_USER_AGENT);
+            applyBotToken(builder);
 
             if (ConfigManager.data.developerKey != null && !ConfigManager.data.developerKey.isEmpty()) {
                 builder.header(Constants.HEADER_DEVELOPER_KEY, ConfigManager.data.developerKey);

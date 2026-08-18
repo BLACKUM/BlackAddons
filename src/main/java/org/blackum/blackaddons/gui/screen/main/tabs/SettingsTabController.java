@@ -201,6 +201,21 @@ public class SettingsTabController extends SimpleTabController {
             NotificationManager.addNotification("Config", "Developer key saved.", NotificationType.SUCCESS);
         });
         listView.addItem(saveKeyBtn);
+
+        // Only needed for a self-hosted bot URL that refuses anonymous requests. Empty means no
+        // Authorization header is sent at all, which is what the official backend expects.
+        TextField botTokenField = new TextField(0, 0, width, Theme.TEXTFIELD_HEIGHT,
+                "Bot Token (self-hosted only)");
+        botTokenField.setText(ConfigManager.data.botToken != null ? ConfigManager.data.botToken : "");
+        botTokenField.setMaxLength(128);
+        listView.addItem(botTokenField);
+
+        Button saveBotTokenBtn = new Button(0, 0, 100, Theme.BUTTON_HEIGHT, "Save Token", () -> {
+            ConfigManager.data.botToken = botTokenField.getText();
+            ConfigManager.save();
+            NotificationManager.addNotification("Config", "Bot token saved.", NotificationType.SUCCESS);
+        });
+        listView.addItem(saveBotTokenBtn);
     }
 
     private void updatePriority(int index, String selected) {

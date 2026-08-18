@@ -368,6 +368,10 @@ public class ConfigManager {
                 List.of(ApiPriority.ADJECTILS, ApiPriority.SKYCRYPT, ApiPriority.PLAIN_DAWN));
         public boolean rngTrackerEnabled = true;
         public String developerKey = "";
+        // Sent as "Authorization: Bearer <token>" on every bot request when it is set, and not sent
+        // at all when it is empty. For a self-hosted botUrl that refuses anonymous requests; the
+        // official backend does not need it, so nothing changes by default.
+        public String botToken = "";
         public boolean partyFinderAutoInvite = true;
         public boolean partyFinderAutoAcceptInvite = true;
         public boolean partyFinderShowStatsOnJoin = true;
@@ -614,7 +618,7 @@ public class ConfigManager {
                 "accentColor", "useCardLayout", "forcedGuiScale",
                 "cardStates", "lastLoadedCardStates"));
         GROUP_MAP.put("bot", List.of(
-                "botUrl", "dataSource", "apiPriorityList", "developerKey",
+                "botUrl", "dataSource", "apiPriorityList", "developerKey", "botToken",
                 "rngTrackerEnabled",
                 "partyFinderAutoInvite", "partyFinderAutoAcceptInvite",
                 "partyFinderShowStatsOnJoin", "partyFinderShowStatsOnRequest"));
