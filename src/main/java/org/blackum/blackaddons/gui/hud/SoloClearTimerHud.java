@@ -18,8 +18,8 @@ public class SoloClearTimerHud implements HudElement {
     private static final int DEFAULT_Y = 100;
     private static final float DEFAULT_SCALE = 1.0f;
 
-    private static final String PREVIEW_RTA = "RTA: 01:02.700";
-    private static final String PREVIEW_IGT = "IGT: 01:05.000";
+    private static final String PREVIEW_RTA = "RTA: 01:05.000";
+    private static final String PREVIEW_IGT = "IGT: 01:02.700";
     private static final String PREVIEW_LAG = "Lag: 02.300";
 
     private static final String PREFIX_RTA = "RTA: ";

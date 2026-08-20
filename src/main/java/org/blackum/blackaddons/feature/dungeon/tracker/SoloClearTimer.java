@@ -10,12 +10,14 @@ import java.util.regex.Pattern;
 
 public class SoloClearTimer {
     private static final long NORMAL_TICK_MS = 50L;
+    private static final long TIME_PACKET_INTERVAL_MS = 1000L;
     private static final long FREEZE_THRESHOLD_MS = 100L;
     private static final String MORT_START_MESSAGE = "[NPC] Mort: Here, I found this map when I first entered the dungeon.";
     private static final Pattern CLEAR_CHAT_PATTERN = Pattern.compile("(?i)Team Score:\\s*\\d+|Clear Time:\\s*[0-9]");
 
     private static long startTimeMs = 0L;
     private static long lastPacketTime = 0L;
+    private static long lastTimePacket = 0L;
     private static long totalDesyncMs = 0L;
     private static boolean running = false;
     private static boolean completed = false;
@@ -25,15 +27,26 @@ public class SoloClearTimer {
     private static long finalIgtMs = 0L;
     private static long finalDesyncMs = 0L;
 
-    public static void onPacket() {
+    public static void onSetTimePacket() {
+        if (!running) {
+            return;
+        }
         long now = System.currentTimeMillis();
-        if (running && lastPacketTime > 0L) {
-            long diff = now - lastPacketTime;
-            if (diff > FREEZE_THRESHOLD_MS) {
-                totalDesyncMs += (diff - NORMAL_TICK_MS);
+        if (lastTimePacket > 0L) {
+            long diff = now - lastTimePacket;
+            if (diff > TIME_PACKET_INTERVAL_MS) {
+                totalDesyncMs += (diff - TIME_PACKET_INTERVAL_MS);
             }
         }
+        lastTimePacket = now;
         lastPacketTime = now;
+    }
+
+    public static void onPacket() {
+        long now = System.currentTimeMillis();
+        if (running) {
+            lastPacketTime = now;
+        }
     }
 
     public static void tick() {
@@ -77,8 +90,10 @@ public class SoloClearTimer {
     }
 
     private static void startRun() {
-        startTimeMs = System.currentTimeMillis();
-        lastPacketTime = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        startTimeMs = now;
+        lastPacketTime = now;
+        lastTimePacket = now;
         totalDesyncMs = 0L;
         running = true;
         completed = false;
@@ -89,19 +104,17 @@ public class SoloClearTimer {
 
     private static void completeRun() {
         long now = System.currentTimeMillis();
-        long activeDesync = getCurrentDesyncMs(now);
-        long elapsed = Math.max(0L, now - startTimeMs);
-
-        finalIgtMs = elapsed;
-        finalDesyncMs = activeDesync;
-        finalRtaMs = Math.max(0L, finalIgtMs - finalDesyncMs);
+        finalDesyncMs = getCurrentDesyncMs(now);
+        finalRtaMs = Math.max(0L, now - startTimeMs);
+        finalIgtMs = Math.max(0L, finalRtaMs - finalDesyncMs);
         running = false;
         completed = true;
     }
 
     public static void reset() {
         startTimeMs = 0L;
-        lastPacketTime = System.currentTimeMillis();
+        lastPacketTime = 0L;
+        lastTimePacket = 0L;
         totalDesyncMs = 0L;
         running = false;
         completed = false;
@@ -118,14 +131,20 @@ public class SoloClearTimer {
         if (completed) {
             return finalDesyncMs;
         }
-        long freezeExtra = 0L;
-        if (running && lastPacketTime > 0L) {
-            long diff = now - lastPacketTime;
-            if (diff > FREEZE_THRESHOLD_MS) {
-                freezeExtra = diff - NORMAL_TICK_MS;
+        if (!running) {
+            return 0L;
+        }
+        long currentFreeze = 0L;
+        if (lastTimePacket > 0L && now > lastTimePacket + TIME_PACKET_INTERVAL_MS) {
+            currentFreeze = (now - lastTimePacket) - TIME_PACKET_INTERVAL_MS;
+        }
+        if (lastPacketTime > 0L && now > lastPacketTime + FREEZE_THRESHOLD_MS) {
+            long packetFreeze = (now - lastPacketTime) - NORMAL_TICK_MS;
+            if (packetFreeze > currentFreeze) {
+                currentFreeze = packetFreeze;
             }
         }
-        return totalDesyncMs + freezeExtra;
+        return totalDesyncMs + currentFreeze;
     }
 
     public static long getRtaMs() {
@@ -135,10 +154,7 @@ public class SoloClearTimer {
         if (!running) {
             return 0L;
         }
-        long now = System.currentTimeMillis();
-        long igt = Math.max(0L, now - startTimeMs);
-        long desync = getCurrentDesyncMs(now);
-        return Math.max(0L, igt - desync);
+        return Math.max(0L, System.currentTimeMillis() - startTimeMs);
     }
 
     public static long getIgtMs() {
@@ -148,7 +164,7 @@ public class SoloClearTimer {
         if (!running) {
             return 0L;
         }
-        return Math.max(0L, System.currentTimeMillis() - startTimeMs);
+        return Math.max(0L, getRtaMs() - getDesyncMs());
     }
 
     public static long getDesyncMs() {

@@ -7,17 +7,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.ping.ClientboundPongResponsePacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+
 import org.blackum.blackaddons.common.model.DungeonFloor;
 import org.blackum.blackaddons.common.util.mc.LocationUtils;
+import org.blackum.blackaddons.common.util.mc.ServerUtils;
 import org.blackum.blackaddons.feature.dungeon.listener.DungeonListener;
 import org.blackum.blackaddons.feature.dungeon.score.DungeonScore;
 import org.blackum.blackaddons.feature.dungeon.solver.puzzle.tpmaze.TpMazeHandler;
+import org.blackum.blackaddons.feature.dungeon.tracker.SoloClearTimer;
 import org.blackum.blackaddons.feature.ping.PingFeature;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -66,6 +71,7 @@ public class ClientPacketListenerMixin {
 
     @Inject(method = "handlePongResponse", at = @At("HEAD"), cancellable = true)
     private void onHandlePongResponse(ClientboundPongResponsePacket packet, CallbackInfo ci) {
+        ServerUtils.onPongResponse(packet);
         if (PingFeature.onPongReceive(packet.time())) {
             ci.cancel();
         }
@@ -88,11 +94,17 @@ public class ClientPacketListenerMixin {
                 if ("Wither Key".equals(plain) || "Blood Key".equals(plain)) {
                     if (DungeonListener.lastDetectedKeyEntityId != packet.id()) {
                         DungeonListener.lastDetectedKeyEntityId = packet.id();
-                        DungeonListener.keyTimerTicks = 200; // 10 seconds
-                        DungeonListener.keyTimerType = plain.replace(" Key", ""); // "Wither" or "Blood"
+                        DungeonListener.keyTimerTicks = 200;
+                        DungeonListener.keyTimerType = plain.replace(" Key", "");
                     }
                 }
             }
         }
+    }
+
+    @Inject(method = "handleSetTime", at = @At("HEAD"))
+    private void onHandleSetTime(ClientboundSetTimePacket packet, CallbackInfo ci) {
+        ServerUtils.onSetTimePacket(packet);
+        SoloClearTimer.onSetTimePacket();
     }
 }

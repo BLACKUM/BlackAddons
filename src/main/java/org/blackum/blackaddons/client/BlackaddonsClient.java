@@ -28,6 +28,7 @@ import org.blackum.blackaddons.feature.chat.ChatActionManager;
 import org.blackum.blackaddons.feature.chat.IrcClient;
 import org.blackum.blackaddons.feature.chat.IrcPrefixManager;
 import org.blackum.blackaddons.common.util.mc.LocationUtils;
+import org.blackum.blackaddons.common.util.mc.ServerUtils;
 import org.blackum.blackaddons.feature.TabListToggleHandler;
 import org.blackum.blackaddons.feature.waypoint.AlignUtils;
 import org.blackum.blackaddons.feature.dungeon.listener.DungeonJoinHandler;
@@ -81,6 +82,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             TpMazeSolver.reset();
             DungeonListener.resetKeyTimer();
             SoloClearTimer.reset();
+            ServerUtils.reset();
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
@@ -92,6 +94,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             TpMazeSolver.reset();
             DungeonListener.resetKeyTimer();
             SoloClearTimer.reset();
+            ServerUtils.reset();
         });
 
         Blackaddons.guiOpener = () -> {
@@ -163,6 +166,7 @@ public class BlackaddonsClient implements ClientModInitializer {
             NotificationManager.getInstance().tick();
             SoloClearsTracker.tick();
             SoloClearTimer.tick();
+            ServerUtils.tick();
             TabListToggleHandler.tick();
             if (pendingScreen != null) {
                 McCompat.setScreen(client, pendingScreen);

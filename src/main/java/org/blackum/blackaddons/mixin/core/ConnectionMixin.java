@@ -11,6 +11,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import org.blackum.blackaddons.common.config.ConfigManager;
 import org.blackum.blackaddons.common.util.mc.PayloadHelper;
+import org.blackum.blackaddons.common.util.mc.ServerUtils;
 import org.blackum.blackaddons.feature.chat.PacketLogger;
 import org.blackum.blackaddons.feature.dungeon.tracker.SoloClearTimer;
 import org.blackum.blackaddons.feature.modhider.SpoofMode;
@@ -36,6 +37,7 @@ public abstract class ConnectionMixin {
 
     @Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"))
     private void onChannelRead0(ChannelHandlerContext channelHandlerContext, Packet<?> packet, CallbackInfo ci) {
+        ServerUtils.onPacket(packet);
         SoloClearTimer.onPacket();
     }
 
